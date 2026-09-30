@@ -32,7 +32,9 @@ trừu tượng trước khi có implementation thực tế.
 - Route và layout nằm trong `src/app` theo App Router.
 - Component hiển thị dùng chung chỉ được đưa vào `src/components` khi có nhu cầu
   tái sử dụng thực tế.
-- Business rule nằm trong module nghiệp vụ tương ứng và không phụ thuộc UI.
+- Business rule không phụ thuộc UI. Với booking hiện tại, SQL là nguồn thực thi
+  chính sách; các giá trị cấu hình nằm trong `restaurant_settings`, không nhân
+  bản thành bộ hằng số TypeScript.
 - Data access được gọi từ server; thông tin bí mật không đi vào Client Component.
 - Server Component là mặc định. Chỉ thêm Client Component cho tương tác cần
   trạng thái trình duyệt.
@@ -51,7 +53,17 @@ src/
     └── site.ts
 
 docs/
-└── architecture.md
+├── architecture.md
+├── database.md
+└── database-testing.md
+
+supabase/
+├── migrations/
+│   └── 202609300001_foundation.sql
+└── seed.sql
+
+scripts/
+└── test-database.mjs
 ```
 
 Các thư mục `components`, `features`, `lib` và `types` chỉ được tạo khi giai đoạn
@@ -68,9 +80,28 @@ sau có file sử dụng thực tế.
 - Một booking gắn với một bàn; chưa hỗ trợ ghép hoặc tách bàn.
 - Không triển khai order, hóa đơn, thanh toán, doanh thu hoặc kho trong MVP.
 
+## Nền tảng database đã viết ở Phần 2
+
+- 12 bảng với RLS/default-deny, grants theo cột, FK RESTRICT bảo toàn lịch sử.
+- `create_booking` và `confirm_booking` là RPC database có kiểm tra danh tính;
+  chưa có API route/Server Action hoặc client Supabase trong Next.js.
+- GiST exclusion constraint chống trùng lịch bàn và lịch sử dụng của Customer.
+  Advisory transaction lock chung tuần tự hóa mutation cho một nhà hàng,
+  bảo vệ giới hạn 3 booking và idempotency ở READ COMMITTED.
+- Booking/history/notification/audit ghi trong cùng giao dịch; expiration là
+  helper private, cần scheduler owner cấu hình riêng trước khi vận hành.
+- Không ORM, không thêm abstraction/module rỗng. Chỉ thêm `pg` ở devDependencies
+  để script test điều khiển các kết nối PostgreSQL thật, kiểm thử cạnh tranh và
+  SET ROLE. Next.js không sử dụng dependency này khi phục vụ ứng dụng.
+
+Chi tiết ERD, data dictionary, ranh giới thời gian và phần chưa triển khai nằm
+trong [database.md](database.md). PostgreSQL local/Supabase chưa được cấu hình;
+không coi việc build Next.js thành công là bằng chứng SQL/RLS hoạt động.
+
 ## Dành cho các giai đoạn sau
 
-- Phần 2: ERD, migration, ràng buộc dữ liệu và seed.
+- Việc kiểm chứng còn lại của Phần 2: chạy migration/seed/tests trên PostgreSQL
+  sạch, sau đó kiểm thử JWT/Auth/RLS trên Supabase development.
 - Phần 3: design system và các trang công khai.
 - Phần 4: authentication, hồ sơ và authorization.
 - Phần 5–8: booking, Customer, Staff và Admin.

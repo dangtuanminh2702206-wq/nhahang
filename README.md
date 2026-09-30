@@ -17,7 +17,7 @@ thuộc phạm vi MVP.
 - TypeScript strict
 - Tailwind CSS
 - ESLint với cấu hình Core Web Vitals và TypeScript
-- Supabase PostgreSQL, Auth và Storage ở các giai đoạn sau
+- Supabase PostgreSQL (migration Phần 2); Auth và Storage tích hợp ở giai đoạn sau
 - Vercel cho triển khai
 
 ## Yêu cầu môi trường
@@ -50,6 +50,11 @@ pnpm build
 pnpm start
 ```
 
+Kiểm thử database riêng: `pnpm test:db`. Cần PostgreSQL local và biến môi trường
+`TEST_DATABASE_URL` trỏ tới database trống tên `mocvi_test_*`. Script không tự đọc
+`.env.local`, không kết nối remote và không được chạy trên Supabase đang sử dụng.
+Xem [hướng dẫn và kết quả kiểm thử](docs/database-testing.md).
+
 ## Biến môi trường
 
 `.env.example` chỉ khai báo tên biến dự kiến. Không commit `.env.local` hoặc bất
@@ -63,5 +68,13 @@ Quyết định kiến trúc và cấu trúc module dự kiến được ghi t�
 ## Trạng thái hiện tại
 
 Phần 1 đã thiết lập Next.js, TypeScript, Tailwind CSS, ESLint, metadata, trang
-xác nhận tối thiểu và tài liệu nền móng. Database, authentication, booking và
-các giao diện vận hành chưa được triển khai.
+xác nhận tối thiểu và tài liệu nền móng.
+
+Phần 2 bổ sung schema 12 bảng, constraints/indexes/RLS, hàm tạo và xác nhận
+booking, hết hạn pending, seed demo và bộ kiểm thử tích hợp. Lint, typecheck và
+build đã qua; migration và các ca kiểm thử database **chưa chạy thực tế** vì
+chưa có PostgreSQL/Supabase được cấu hình. Chưa triển khai authentication flow,
+API ứng dụng, giao diện booking/vận hành hoặc scheduler.
+
+- [ERD, data dictionary, policy, quyền và migration/seed](docs/database.md)
+- [Kiểm thử database và giới hạn kiểm chứng](docs/database-testing.md)
