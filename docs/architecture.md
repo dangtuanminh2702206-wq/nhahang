@@ -48,14 +48,29 @@ src/
 ├── app/
 │   ├── globals.css
 │   ├── layout.tsx
-│   └── page.tsx
-└── config/
-    └── site.ts
+│   ├── page.tsx
+│   ├── menu/page.tsx
+│   └── spaces/
+│       ├── page.tsx
+│       └── [slug]/page.tsx
+├── components/
+│   ├── floor-plan.tsx
+│   ├── media-placeholder.tsx
+│   ├── menu-browser.tsx
+│   ├── site-footer.tsx
+│   └── site-header.tsx
+├── config/
+│   └── site.ts
+└── data/
+    └── restaurant.ts
 
 docs/
 ├── architecture.md
+├── asset-manifest.md
 ├── database.md
-└── database-testing.md
+├── database-testing.md
+├── menu-canonical.md
+└── restaurant-world.md
 
 supabase/
 ├── migrations/
@@ -70,6 +85,12 @@ scripts/
 
 Các thư mục `components`, `features`, `lib` và `types` chỉ được tạo khi giai đoạn
 sau có file sử dụng thực tế.
+
+Phần 3A bổ sung `components` và `data` vì đã có nhu cầu tái sử dụng thật: header/footer,
+placeholder ảnh, FloorPlan/TableNode và bộ lọc thực đơn. `src/data/restaurant.ts` là
+catalogue public dùng chung cho Home, Spaces, FloorPlan và Menu; UI không tự khai báo
+lại món hoặc bàn theo trang. Seed database mang cùng catalogue cho môi trường demo,
+không kéo Supabase hay secret vào Client Component.
 
 ## Quyết định đã chốt
 

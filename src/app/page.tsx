@@ -1,33 +1,7 @@
-import { siteConfig } from "@/config/site";
+import Link from "next/link";
+import { MediaPlaceholder } from "@/components/media-placeholder";
+import { featuredMenuItems, formatPrice, menuCombos, restaurantFloors } from "@/data/restaurant";
 
 export default function Home() {
-  return (
-    <div className="page-shell">
-      <header className="site-header">
-        <p className="wordmark">{siteConfig.name}</p>
-        <p className="project-status">Nền móng dự án</p>
-      </header>
-
-      <main className="hero" id="main-content">
-        <p className="eyebrow">Website quản lý và đặt bàn trực tuyến</p>
-        <h1>Một trải nghiệm đặt bàn rõ ràng cho khách và nhà hàng.</h1>
-        <p className="intro">
-          Nền tảng đang được xây dựng dựa trên đặc tả nghiệp vụ đã thống nhất,
-          với trọng tâm là tính nhất quán, khả năng tiếp cận và vận hành ổn định.
-        </p>
-
-        <section aria-labelledby="foundation-heading" className="foundation">
-          <h2 id="foundation-heading">Phạm vi hiện tại</h2>
-          <p>
-            Cấu trúc Next.js, TypeScript, Tailwind CSS và tài liệu kiến trúc đã
-            sẵn sàng cho giai đoạn thiết kế cơ sở dữ liệu.
-          </p>
-        </section>
-      </main>
-
-      <footer className="site-footer">
-        <p>{siteConfig.name} · Đồ án Kỹ thuật phần mềm ứng dụng</p>
-      </footer>
-    </div>
-  );
+  return <><section className="hero-section"><div className="site-container hero-grid"><div className="hero-copy"><p className="eyebrow">Ẩm thực Việt đương đại · Bối cảnh đồ án</p><h1>Những bữa ăn để chậm lại và gần nhau hơn.</h1><p className="lead">Mộc Vị là không gian nhà hàng giả định cho đồ án: ẩm thực Việt hiện đại, ba tầng với những nhịp gặp gỡ khác nhau.</p><div className="action-row"><Link className="button button-primary" href="#booking">Đặt bàn</Link><Link className="button button-secondary" href="/spaces">Khám phá không gian</Link></div></div><MediaPlaceholder className="hero-media" kind="hero" label="Không gian chủ đạo của Mộc Vị" /></div></section><section className="section intro-section"><div className="site-container narrow-copy"><p className="eyebrow">Về Mộc Vị</p><h2>Một thế giới mô phỏng, được thiết kế như một trải nghiệm thật.</h2><p>Mộc Vị Restaurant là bối cảnh giả định của đồ án Kỹ thuật phần mềm ứng dụng. Concept kết hợp vật liệu gỗ ấm, sắc kem, xanh olive dịu và cách phục vụ ẩm thực Việt đương đại; không có địa chỉ, hình ảnh hay cơ sở kinh doanh thật.</p></div></section><section className="section section-tint"><div className="site-container"><div className="section-heading"><div><p className="eyebrow">Ba tầng, ba nhịp điệu</p><h2>Chọn một không gian phù hợp với cuộc gặp.</h2></div><Link className="text-link" href="/spaces">Xem toàn bộ không gian <span aria-hidden="true">→</span></Link></div><div className="space-grid">{restaurantFloors.map((floor) => <article className="space-card" key={floor.slug}><MediaPlaceholder label={`Tầng ${floor.level} · ${floor.name}`} /><div className="space-card-copy"><p className="meta-line">Tầng {floor.level} · {floor.tables.length} bàn · {floor.tables.reduce((total, table) => total + table.capacity, 0)} chỗ</p><h3>{floor.name}</h3><p>{floor.description}</p><Link className="text-link" href={`/spaces/${floor.slug}`}>Xem tầng {floor.level} <span aria-hidden="true">→</span></Link></div></article>)}</div></div></section><section className="section"><div className="site-container"><div className="section-heading"><div><p className="eyebrow">Món nổi bật</p><h2>Những lựa chọn được giới thiệu trong catalogue.</h2></div><Link className="text-link" href="/menu">Xem thực đơn <span aria-hidden="true">→</span></Link></div><div className="featured-menu-grid">{featuredMenuItems.map((item) => <article className="featured-menu-item" key={item.code}><MediaPlaceholder kind="dish" label={item.name} /><div><p className="meta-line">{item.code}</p><h3>{item.name}</h3><strong className="price">{formatPrice(item.price, item.fromPrice)}</strong></div></article>)}</div></div></section><section className="section section-tint"><div className="site-container"><div className="section-heading"><div><p className="eyebrow">Combo gợi ý</p><h2>Một điểm bắt đầu theo số người cùng bàn.</h2></div><p className="section-note">Combo là nội dung tham khảo, không phải giỏ hàng hay đơn đặt món.</p></div><div className="home-combo-grid">{menuCombos.map((combo) => <article className="home-combo-card" key={combo.code}><p className="meta-line">{combo.guestCount} người · {combo.code}</p><h3>{combo.name}</h3><p>{combo.description}</p><strong className="price">{formatPrice(combo.price)}</strong><Link className="text-link" href="/menu">Xem thực đơn <span aria-hidden="true">→</span></Link></article>)}</div></div></section><section id="booking" className="booking-cta section"><div className="site-container booking-cta-inner"><div><p className="eyebrow">Phần tiếp theo</p><h2>Sẵn sàng chọn bàn cho buổi gặp của bạn?</h2><p>Luồng đặt bàn đầy đủ sẽ được triển khai ở giai đoạn nghiệp vụ tiếp theo. Hiện tại, hãy khám phá sơ đồ và sức chứa của từng tầng.</p></div><Link className="button button-primary" href="/spaces">Xem sơ đồ bàn</Link></div></section></>;
 }

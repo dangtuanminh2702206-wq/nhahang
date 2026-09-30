@@ -283,8 +283,10 @@ chung. Chưa triển khai workflow quản trị/audit việc cấp role.
    `supabase/migrations/202609300001_foundation.sql`. Có transaction bao toàn bộ.
    Yêu cầu PostgreSQL 15+ có `btree_gist`, schema `auth`, `auth.users`, `auth.uid()`,
    roles `anon`, `authenticated` (Supabase cung cấp).
-3. Chỉ trên database demo, chạy `supabase/seed.sql`. Có thể chạy lại: UNIQUE code
-   và ON CONFLICT DO NOTHING giữ nguyên dữ liệu đã tồn tại, không nhân đôi.
+3. Chỉ trên database demo, chạy `supabase/seed.sql`. Seed dùng mã ổn định và
+upsert catalogue canonical. Để thay catalogue demo Phase 2 bằng catalogue Phase 3A,
+seed chỉ xóa các mã demo cũ đã biết và sẽ từ chối chạy nếu `bookings` đã có dữ liệu;
+không dùng nó để reset hoặc thay đổi môi trường có lịch sử booking.
 4. Kiểm tra RLS/quyền qua tài khoản development thực tế; fixture local không thay
    thế việc kiểm thử JWT/Auth/PostgREST của Supabase.
 
@@ -299,9 +301,11 @@ sang CLI sau này, phải đối chiếu schema và ghi nhận baseline bằng q
 migration repair trước khi db push, tránh chạy lại migration nền tảng. Không
 dựa riêng vào nhãn "Last migration" trên Dashboard để kết luận chưa có bảng.
 
-Seed là **dữ liệu minh họa đồ án**: 3 khu vực, 16 bàn (4 bàn 2 chỗ, 8 bàn 4 chỗ,
-4 bàn 8 chỗ), 4 danh mục/24 món, giá VND, giờ 10:00–22:00 mỗi ngày. Không khẳng
-định đây là giờ/giá của nhà hàng thật; không có hotline, địa chỉ, ảnh hay account.
+Seed là **dữ liệu minh họa đồ án**: 3 area biểu diễn 3 tầng (Mộc Gia, Mộc Tĩnh,
+Mộc Thượng), 22 bàn sức chứa 2–8 chỗ, 6 danh mục/30 món canonical, giá VND, giờ
+10:00–22:00 mỗi ngày. Xem `docs/restaurant-world.md` và `docs/menu-canonical.md`
+để có mã ổn định, mô hình và catalogue chuẩn. Không khẳng định đây là giờ/giá của
+nhà hàng thật; không có hotline, địa chỉ, ảnh hay account.
 
 ## Vận hành expiration
 
