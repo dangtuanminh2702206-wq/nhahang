@@ -58,7 +58,8 @@ Xem [hướng dẫn và kết quả kiểm thử](docs/database-testing.md).
 ## Biến môi trường
 
 `.env.example` chỉ khai báo tên biến dự kiến. Không commit `.env.local` hoặc bất
-kỳ khóa bí mật nào. Supabase và Resend chưa được kết nối trong giai đoạn này.
+kỳ khóa bí mật nào. Schema đã áp dụng trên Supabase development; ứng dụng Next.js
+chưa kết nối Supabase hoặc Resend trong giai đoạn này.
 
 ## Kiến trúc
 
@@ -72,9 +73,10 @@ xác nhận tối thiểu và tài liệu nền móng.
 
 Phần 2 bổ sung schema 12 bảng, constraints/indexes/RLS, hàm tạo và xác nhận
 booking, hết hạn pending, seed demo và bộ kiểm thử tích hợp. Lint, typecheck và
-build đã qua; migration và các ca kiểm thử database **chưa chạy thực tế** vì
-chưa có PostgreSQL/Supabase được cấu hình. Chưa triển khai authentication flow,
-API ứng dụng, giao diện booking/vận hành hoặc scheduler.
+build đã qua. Migration/seed đã chạy trên Supabase development và PostgreSQL
+local; **18 nhóm kiểm thử database local và smoke test quyền Supabase đều đạt**.
+Chưa triển khai authentication flow, API ứng dụng, giao diện booking/vận hành
+hoặc scheduler. Kiểm thử Auth/JWT qua API sẽ thực hiện khi tích hợp authentication.
 
 - [ERD, data dictionary, policy, quyền và migration/seed](docs/database.md)
 - [Kiểm thử database và giới hạn kiểm chứng](docs/database-testing.md)

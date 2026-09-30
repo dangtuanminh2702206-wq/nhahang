@@ -60,6 +60,8 @@ docs/
 supabase/
 ├── migrations/
 │   └── 202609300001_foundation.sql
+├── tests/
+│   └── development-smoke.sql
 └── seed.sql
 
 scripts/
@@ -95,13 +97,14 @@ sau có file sử dụng thực tế.
   SET ROLE. Next.js không sử dụng dependency này khi phục vụ ứng dụng.
 
 Chi tiết ERD, data dictionary, ranh giới thời gian và phần chưa triển khai nằm
-trong [database.md](database.md). PostgreSQL local/Supabase chưa được cấu hình;
-không coi việc build Next.js thành công là bằng chứng SQL/RLS hoạt động.
+trong [database.md](database.md). Migration/seed đã chạy trên Supabase development;
+18 nhóm kiểm thử PostgreSQL local và smoke test quyền trên Supabase đã đạt.
+Ứng dụng Next.js chưa kết nối database; Auth/JWT qua API chưa được kiểm thử.
 
 ## Dành cho các giai đoạn sau
 
-- Việc kiểm chứng còn lại của Phần 2: chạy migration/seed/tests trên PostgreSQL
-  sạch, sau đó kiểm thử JWT/Auth/RLS trên Supabase development.
+- Trước khi vận hành booking: cấu hình scheduler expiration và kiểm thử JWT/Auth
+  trên Supabase development khi có authentication flow.
 - Phần 3: design system và các trang công khai.
 - Phần 4: authentication, hồ sơ và authorization.
 - Phần 5–8: booking, Customer, Staff và Admin.

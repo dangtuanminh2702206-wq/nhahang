@@ -2,10 +2,11 @@
 
 ## Trạng thái và ranh giới
 
-Đã viết migration, seed và bộ kiểm thử tích hợp PostgreSQL. Chưa kết nối một
-Supabase project, chưa cài scheduler, chưa có authentication flow hoặc API ở ứng
-dụng Next.js. Việc có file SQL **không đồng nghĩa** migration đã chạy thành công.
-Xem [database-testing.md](database-testing.md) để biết bằng chứng kiểm chứng.
+Migration và seed đã chạy thành công trên Supabase development và PostgreSQL
+local. Bộ 18 nhóm kiểm thử tích hợp local và smoke test quyền trên Supabase đều
+đạt. Chưa cài scheduler, chưa có authentication flow hoặc API ở ứng dụng Next.js;
+chưa kiểm chứng Auth/JWT qua HTTP. Xem [database-testing.md](database-testing.md)
+để biết môi trường, bằng chứng và giới hạn kiểm chứng.
 
 SQL là nguồn thực thi chính sách duy nhất. `restaurant_settings` lưu các giá trị
 chính sách; `create_booking` đọc chúng trong giao dịch. Không sao chép các con số
@@ -291,6 +292,12 @@ Có thể dùng SQL Editor của project đã xác minh hoặc psql với kết 
 trong môi trường shell; không paste connection string/password vào Git hay chat.
 Không chạy migration hai lần; không có script reset remote hoặc rollback xóa dữ
 liệu. Sau khi đã áp dụng, thay đổi schema bằng migration mới.
+
+Project `mocvi-development` đã được áp dụng migration này qua SQL Editor ngày
+30/09/2026. Cách này không tự ghi lịch sử migration của Supabase CLI; nếu chuyển
+sang CLI sau này, phải đối chiếu schema và ghi nhận baseline bằng quy trình
+migration repair trước khi db push, tránh chạy lại migration nền tảng. Không
+dựa riêng vào nhãn "Last migration" trên Dashboard để kết luận chưa có bảng.
 
 Seed là **dữ liệu minh họa đồ án**: 3 khu vực, 16 bàn (4 bàn 2 chỗ, 8 bàn 4 chỗ,
 4 bàn 8 chỗ), 4 danh mục/24 món, giá VND, giờ 10:00–22:00 mỗi ngày. Không khẳng

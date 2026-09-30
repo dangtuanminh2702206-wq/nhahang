@@ -255,7 +255,7 @@ try {
     await assert.rejects(actor(left,A,c=>book(c,args(1))),/AUTH_REQUIRED/);
     assert.equal((await admin.query('select status from public.bookings where id=$1',[b.id])).rows[0].status,'pending');
   });
-  console.log(`${passed} database checks passed. Supabase Auth integration still requires a development project.`);
+  console.log(`${passed} database checks passed. Supabase Auth/JWT integration requires separate validation.`);
 } finally {
   await Promise.allSettled(clients.map(c=>c.end()));
 }

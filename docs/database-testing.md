@@ -9,14 +9,28 @@
 | `node --check scripts/test-database.mjs` | PASS — chỉ cú pháp JavaScript |
 | `pnpm build` | PASS — Next.js tạo production build |
 | Khởi động production tại localhost:3100 | PASS — ready, trang chủ HTTP 200 và có tên Mộc Vị |
-| `pnpm test:db` | NOT RUN — script exit 2 vì thiếu TEST_DATABASE_URL |
-| Migration database sạch / seed hai lần | Chưa chạy; không có PostgreSQL local được cấu hình |
-| Test RLS, cạnh tranh, expiration, rollback | Đã viết test; chưa có kết quả thực thi database |
-| Supabase Auth/JWT/PostgREST | Chưa kết nối project development |
+| `node scripts/test-database.mjs` (script của `pnpm test:db`) | PASS — 18 nhóm kiểm thử trên PostgreSQL 18.4 local |
+| Migration database sạch / seed hai lần | PASS — cả PostgreSQL local và Supabase development |
+| Test RLS, cạnh tranh, expiration, rollback | PASS — suite local dùng role thực và hai kết nối cạnh tranh |
+| Supabase schema/seed | PASS — 12 bảng bật RLS, 14 policies, 2 exclusion constraints; 3 khu vực/16 bàn/24 món |
+| `supabase/tests/development-smoke.sql` | PASS trên Supabase — quyền anon/authenticated và yêu cầu danh tính của RPC |
+| Supabase Auth/JWT/PostgREST | Chưa kiểm thử đăng nhập/JWT qua API; SQL Editor không thay thế kiểm thử này |
 | Scheduler expiration | Chưa cài; có hướng dẫn trong database.md |
 
-Không quy đổi việc script tồn tại, lint/build đạt hoặc kiểm tra SQL bằng mắt
-thành kết quả PASS cho database. Chưa tuyên bố Phần 2 đã được kiểm chứng đầy đủ.
+Supabase project `mocvi-development` đã được kiểm tra trống trước khi chạy
+migration qua SQL Editor. Seed chạy hai lần không nhân đôi. Smoke test dùng
+`SET LOCAL ROLE` thực, kết thúc bằng ROLLBACK, không tạo tài khoản hoặc booking
+thử trên cloud. File smoke test có thể chạy lại sau seed trên development.
+
+Suite đầy đủ chạy riêng trên PostgreSQL 18.4 portable, binary từ npm package
+`@embedded-postgres/windows-x64@18.4.0-beta.17`, trong thư mục tạm ngoài repo.
+Server chỉ lắng nghe `127.0.0.1:55439`, database tên `mocvi_test_phase2`, đã dừng
+sau khi hoàn thành. Không cài Windows service, không thêm dependency vào project.
+Runtime/package portable này phục vụ kiểm thử, không phải cấu hình production.
+
+Kết quả cuối: `18 database checks passed`. Lần chạy trước khi có môi trường từng
+trả NOT RUN; bảng trên phản ánh lần kiểm chứng mới nhất. Lint/typecheck/build và
+HTTP 200 là kiểm tra ứng dụng đã đạt ở commit nền tảng; lần này không sửa UI.
 
 ## Chạy bộ kiểm thử local
 
@@ -83,9 +97,10 @@ owner. Fixture từ chối roles có SUPERUSER/BYPASSRLS.
 
 ## Phần cần kiểm chứng thêm khi có môi trường
 
-1. Chạy suite local và sửa lỗi thực thi nếu có trước khi đánh dấu database PASS.
-2. Trên Supabase development mới: chạy migration, seed, đăng ký tài khoản test
-   qua Auth thật và xác minh trigger luôn tạo Customer kể cả metadata giả role.
+1. Suite local và smoke test development đã đạt. Chạy lại khi thay đổi schema
+   hoặc business rule; luôn dùng database local trống cho suite đầy đủ.
+2. Khi triển khai authentication: đăng ký tài khoản test qua Auth thật trên
+   development và xác minh trigger luôn tạo Customer kể cả metadata giả role.
 3. Gọi RPC với JWT Guest/Customer/Staff/Admin thật; kiểm tra schema private không
    exposed, RLS/grants và principal service_role không xuất hiện ở client.
 4. Cấu hình cron expiration mỗi phút; thử giữ pending qua deadline, xem lịch sử
