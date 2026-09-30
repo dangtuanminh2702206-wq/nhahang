@@ -1,6 +1,11 @@
 # Kiểm thử Phần 2
 
-## Kết quả kiểm chứng ngày 30/09/2026
+## Kết quả lịch sử Phần 2 · 30/09/2026 (trước đổi catalogue Phần 3A)
+
+Các PASS bên dưới là bằng chứng đã ghi nhận cho catalogue cũ 3 khu vực/16 bàn/
+24 món ở Phần 2, không phải lần kiểm thử mới của seed hiện tại. Seed được đổi
+sang 3 tầng/22 bàn/30 món ở commit `5e89275`; lần đồng bộ tài liệu này không
+chạy SQL, không kết nối Supabase và không chạy lại suite.
 
 | Kiểm tra | Kết quả thực tế |
 | --- | --- |
@@ -28,9 +33,25 @@ Server chỉ lắng nghe `127.0.0.1:55439`, database tên `mocvi_test_phase2`, �
 sau khi hoàn thành. Không cài Windows service, không thêm dependency vào project.
 Runtime/package portable này phục vụ kiểm thử, không phải cấu hình production.
 
-Kết quả cuối: `18 database checks passed`. Lần chạy trước khi có môi trường từng
-trả NOT RUN; bảng trên phản ánh lần kiểm chứng mới nhất. Lint/typecheck/build và
+Kết quả lịch sử: `18 database checks passed`. Lần chạy trước khi có môi trường từng
+trả NOT RUN; bảng trên phản ánh lần kiểm chứng Phần 2 đã ghi nhận. Lint/typecheck/build và
 HTTP 200 là kiểm tra ứng dụng đã đạt ở commit nền tảng; lần này không sửa UI.
+
+## Chênh lệch hiện tại cần xử lý trong nhiệm vụ code riêng
+
+| Nguồn | Trạng thái đối chiếu ngày 30/09/2026 |
+| --- | --- |
+| `src/data/restaurant.ts` và `supabase/seed.sql` | Khớp mã/tầng/capacity của 22 bàn; khớp tên/danh mục/mô tả/giá/featured của 30 món |
+| `scripts/test-database.mjs` | Assertion vẫn 16 bàn/24 món; SELECT menu anon vẫn kỳ vọng 24; test tắt area vẫn dùng `main` không còn trong seed |
+| `supabase/tests/development-smoke.sql` | Kiểm tra tổng số vẫn kỳ vọng 16 bàn/24 món và anon đọc 24 món; cũng cần cập nhật trước chạy lại với seed mới |
+| Supabase development | Lần kiểm chứng có ghi nhận là catalogue cũ; chưa xác minh catalogue hiện tại |
+| Auth/JWT thật và scheduler | Chưa kiểm chứng / chưa cài như các giới hạn bên dưới |
+
+Suite hiện không tương thích seed mới và sẽ không qua assertion số lượng đầu
+tiên. Chỉ đổi các con số là chưa đủ: phải kiểm tra fixture chọn bàn, capacity,
+mapping area và mục đích từng ca (đặc biệt việc vô hiệu hóa khu vực). Không sửa
+script hoặc smoke SQL trong nhiệm vụ tài liệu này; phải cập nhật và chạy lại trên database local
+trống trước khi công bố kết quả mới. Không tự chạy seed lên cloud để ép khớp.
 
 ## Chạy bộ kiểm thử local
 
@@ -64,7 +85,7 @@ chạy; chỉ quản trị viên môi trường test mới nên dọn khi không
 không cần framework test/ORM. `pg` cung cấp các kết nối độc lập và query tham số
 mà stack frontend hiện tại chưa có.
 
-## Các ca đã viết
+## Các ca đã viết ở Phần 2 (fixture hiện cần cập nhật)
 
 - Áp migration trên database sạch; seed hai lần vẫn đúng 3 khu vực/16 bàn/24 món.
 - Retry đúng payload trả cùng ID; đổi payload với cùng key bị từ chối.

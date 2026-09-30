@@ -6,13 +6,23 @@ Mộc Vị Restaurant là bối cảnh giả định của đồ án Kỹ thuậ
 
 Schema hiện tại không có thực thể `floor` riêng. Mỗi tầng được biểu diễn bằng một dòng `areas`, sau đó mỗi `tables` thuộc đúng một `area`.
 
-| Tầng | Area code | Tên | Định hướng | Số bàn |
-| --- | --- | --- | --- | --- |
-| 1 | `floor-1` | Mộc Gia | Đón khách, sáng, gia đình, cửa kính, cây xanh | 8 |
-| 2 | `floor-2` | Mộc Tĩnh | Yên tĩnh, khoảng cách rộng, nhóm bạn và công ty | 8 |
-| 3 | `floor-3` | Mộc Thượng | Rooftop, ban công, thoáng, một khu VIP nhỏ | 6 |
+| Tầng | Area code | Tên | Định hướng | Số bàn | Tổng chỗ cấu hình |
+| --- | --- | --- | --- | ---: | ---: |
+| 1 | `floor-1` | Mộc Gia | Đón khách, sáng, gia đình, cửa kính, cây xanh | 8 | 32 |
+| 2 | `floor-2` | Mộc Tĩnh | Yên tĩnh, khoảng cách rộng, nhóm bạn và công ty | 8 | 34 |
+| 3 | `floor-3` | Mộc Thượng | Rooftop, ban công, thoáng, một khu VIP nhỏ | 6 | 26 |
 
 Tổng cộng có **22 bàn**, sức chứa từng bàn từ 2 đến 8 người. `areas` là mô hình tầng hiện hành; không tạo migration chỉ nhằm phục vụ hiển thị UI.
+
+Đối chiếu ngày 30/09/2026: mã bàn, mapping tầng và capacity trong
+`src/data/restaurant.ts` khớp `supabase/seed.sql`. Tổng **92 chỗ cấu hình**;
+đây không phải 92 chỗ đang trống hoặc có thể đặt ngay. Chưa xác minh lại catalogue
+trên Supabase sau thay đổi seed Phần 3A.
+
+Một booking chỉ gắn một bàn, số khách từ 1 đến `min(capacity, max_guests)`;
+`max_guests` mặc định 8. Không ghép/tách bàn. Khả dụng thực tế còn phụ thuộc
+is_active của tầng/bàn, trạng thái bàn, giờ mở cửa, ngày nghỉ, lịch booking và
+chính sách thời gian trong [database.md](database.md).
 
 ## Bàn theo tầng
 

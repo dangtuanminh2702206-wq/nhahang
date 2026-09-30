@@ -4,7 +4,10 @@
 
 Migration và seed đã chạy thành công trên Supabase development và PostgreSQL
 local. Bộ 18 nhóm kiểm thử tích hợp local và smoke test quyền trên Supabase đều
-đạt. Chưa cài scheduler, chưa có authentication flow hoặc API ở ứng dụng Next.js;
+đạt với catalogue Phần 2 cũ (16 bàn/24 món). Seed trong repo thay đổi ở Phần 3A
+sang 22 bàn/30 món; chưa có bằng chứng chạy lại suite hoặc áp dụng seed mới trên
+Supabase. Không coi kết quả cũ là chứng nhận catalogue mới.
+Chưa cài scheduler, chưa có authentication flow hoặc API ở ứng dụng Next.js;
 chưa kiểm chứng Auth/JWT qua HTTP. Xem [database-testing.md](database-testing.md)
 để biết môi trường, bằng chứng và giới hạn kiểm chứng.
 
@@ -305,7 +308,17 @@ Seed là **dữ liệu minh họa đồ án**: 3 area biểu diễn 3 tầng (M�
 Mộc Thượng), 22 bàn sức chứa 2–8 chỗ, 6 danh mục/30 món canonical, giá VND, giờ
 10:00–22:00 mỗi ngày. Xem `docs/restaurant-world.md` và `docs/menu-canonical.md`
 để có mã ổn định, mô hình và catalogue chuẩn. Không khẳng định đây là giờ/giá của
-nhà hàng thật; không có hotline, địa chỉ, ảnh hay account.
+nhà hàng thật; seed không chứa hotline, địa chỉ, ảnh hay account. Ảnh public là
+asset độc lập, không có nghĩa `menu_items.image_path` đã được tích hợp Storage.
+
+Catalogue trong repo khớp data public: mỗi tầng có 8/8/6 bàn và 32/34/26 chỗ,
+tổng 92 chỗ cấu hình. Đây không phải số chỗ khả dụng tại thời điểm đặt. Mỗi
+booking vẫn chỉ một bàn, tối đa 8 khách và không vượt capacity; các điều kiện
+lịch, trạng thái và quyền vẫn do SQL kiểm tra.
+4 combo, tọa độ FloorPlan và tiền tố giá “Từ” chỉ nằm ở data/UI, chưa có thực thể
+hoặc cột tương ứng trong schema. Không tự mở rộng database để khớp cách trình bày.
+Seed là định nghĩa demo trong repo, không phải snapshot dữ liệu cloud hiện tại;
+không chạy lại seed chỉ để đồng bộ tài liệu.
 
 ## Vận hành expiration
 

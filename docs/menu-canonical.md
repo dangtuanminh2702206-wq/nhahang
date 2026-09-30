@@ -2,6 +2,30 @@
 
 Đây là catalogue mô phỏng chuẩn của đồ án. Giá được ghi bằng VND và không phải giá của cơ sở kinh doanh thật. `menu_items.code` là mã ổn định trong database; UI chỉ đọc catalogue từ `src/data/restaurant.ts` thay vì tạo danh sách menu riêng theo trang.
 
+## Tổng hợp hiện tại
+
+Đối chiếu ngày 30/09/2026: 30 mã món duy nhất có tên, danh mục, mô tả, giá và
+featured khớp giữa `src/data/restaurant.ts` và `supabase/seed.sql`. Không dùng
+số ảnh để suy ra số món. Chưa xác minh seed này đã áp dụng lên Supabase.
+
+| Danh mục | Món UI / seed | Có ảnh / thiếu ảnh |
+| --- | ---: | ---: |
+| Khai vị | 5 / 5 | 5 / 0 |
+| Món Việt đặc sắc | 5 / 5 | 5 / 0 |
+| Món chính | 7 / 7 | 5 / 2 |
+| Lẩu & dùng chung | 4 / 4 | 2 / 2 |
+| Tráng miệng | 4 / 4 | 2 / 2 |
+| Đồ uống | 5 / 5 | 1 / 4 |
+| Tổng | 30 / 30 | 20 / 10 |
+
+Tất cả 30 món có `available=true` trong data public; seed đặt `is_available`
+và `is_active` true. Đây là trạng thái demo, không phải tồn kho thời gian thực.
+UI vẫn hiển thị món tạm hết nếu đổi `available=false`; thiếu ảnh chỉ dùng fallback.
+
+UI dùng tiền tố “Từ” cho MV-LA01, MV-LA02, MV-LA03 và MV-TM04. Database chỉ lưu
+giá số VND, chưa có cột tương đương `fromPrice`; không tự bổ sung schema để đồng bộ
+cách trình bày. 9 món nổi bật là tập con của 30 món, không cộng thêm vào tổng.
+
 ## Khai vị
 
 | Mã | Món | Giá |
@@ -78,3 +102,8 @@ Combo là nội dung recommendation theo số khách, không tạo order/cart/ch
 | MV-CB04 | Combo Mộc Thượng | 8 | 1.799.000đ |
 
 Chi tiết đầy đủ của từng combo nằm trong data module public, đúng theo đặc tả Phase 3A.
+
+4 combo là dữ liệu public riêng trong `menuCombos`, không có bản ghi combo trong
+seed/schema hiện tại và không cộng vào 30 `menu_items`. Cả 4 ảnh combo còn thiếu;
+xem [asset-integration-status.md](asset-integration-status.md). Thành phần combo
+là mô tả gợi ý (có tên rút gọn và số phần), không phải FK hoặc định lượng order.
