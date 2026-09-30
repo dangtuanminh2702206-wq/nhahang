@@ -66,7 +66,19 @@ chưa kết nối Supabase hoặc Resend trong giai đoạn này.
 Quyết định kiến trúc và cấu trúc module dự kiến được ghi tại
 [`docs/architecture.md`](docs/architecture.md).
 
-## Trạng thái hiện tại
+## Bản xem thử trên GitHub Pages
+
+Workflow `.github/workflows/pages.yml` xuất bản giao diện public từ nhánh
+`codex/restaurant-booking-platform`. Repository cần bật Settings → Pages →
+Source: GitHub Actions. Link dự kiến sau khi deploy thành công:
+https://dangtuanminh2702206-wq.github.io/nhahang/
+
+Đây chỉ là bản demo giao diện: chưa đăng nhập, đặt bàn hoặc vận hành nhà hàng.
+Chế độ export được bật riêng bằng `GITHUB_PAGES=true`, dùng prefix `/nhahang`
+và ảnh WebP gốc. Build thông thường/local/Vercel vẫn giữ chế độ Next.js server
+và tối ưu ảnh mặc định. Không đưa biến bí mật hoặc kết nối database vào Pages.
+
+## Tiến trình triển khai
 
 Phần 1 đã thiết lập Next.js, TypeScript, Tailwind CSS, ESLint, metadata, trang
 xác nhận tối thiểu và tài liệu nền móng.
@@ -80,3 +92,9 @@ hoặc scheduler. Kiểm thử Auth/JWT qua API sẽ thực hiện khi tích h�
 
 - [ERD, data dictionary, policy, quyền và migration/seed](docs/database.md)
 - [Kiểm thử database và giới hạn kiểm chứng](docs/database-testing.md)
+
+Phần 3A có Home, Spaces, ba trang tầng, FloorPlan tương tác và Menu public.
+Phần 3B.1 đã tích hợp bộ ảnh AI accepted partial: 16 ảnh nhà hàng và 20 ảnh món.
+10 ảnh món cùng 4 combo final còn pending và dùng fallback. Xem
+[trạng thái tích hợp và path cần bổ sung](docs/asset-integration-status.md).
+Sau khi copy ảnh accepted mới vào đúng path, build/deploy lại để cập nhật trang tĩnh.

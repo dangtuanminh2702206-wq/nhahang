@@ -12,6 +12,8 @@ export const metadata: Metadata = {
   },
   description: siteConfig.description,
   applicationName: siteConfig.name,
+  // No approved favicon yet; avoid the browser's implicit /favicon.ico request.
+  icons: { icon: "data:," },
 };
 
 type RootLayoutProps = Readonly<{

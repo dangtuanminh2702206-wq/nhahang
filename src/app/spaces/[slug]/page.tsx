@@ -1,10 +1,71 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AssetImage } from "@/components/asset-image";
 import { FloorPlan } from "@/components/floor-plan";
-import { MediaPlaceholder } from "@/components/media-placeholder";
+import { floorScenes, restaurantMedia } from "@/data/media";
 import { getFloor, restaurantFloors } from "@/data/restaurant";
+import { resolveMedia } from "@/lib/media.server";
+
 type FloorPageProps = { params: Promise<{ slug: string }> };
 export function generateStaticParams() { return restaurantFloors.map((floor) => ({ slug: floor.slug })); }
-export async function generateMetadata({ params }: FloorPageProps): Promise<Metadata> { const floor = getFloor((await params).slug); return floor ? { title: `Tầng ${floor.level} · ${floor.name}`, description: floor.description } : {}; }
-export default async function FloorPage({ params }: FloorPageProps) { const floor = getFloor((await params).slug); if (!floor) notFound(); const capacity = floor.tables.reduce((total, table) => total + table.capacity, 0); return <><section className="floor-hero"><div className="site-container floor-hero-grid"><div><Link className="back-link" href="/spaces">← Tất cả không gian</Link><p className="eyebrow">Tầng {floor.level} · {floor.tables.length} bàn · {capacity} chỗ</p><h1>{floor.name}</h1><p className="lead">{floor.description}</p><ul className="feature-list">{floor.features.map((feature) => <li key={feature}>{feature}</li>)}</ul></div><MediaPlaceholder kind="space" label={`Hero Tầng ${floor.level} · ${floor.name}`} /></div></section><main className="section"><div className="site-container"><FloorPlan floor={floor} /><section className="floor-details"><div><p className="eyebrow">Danh sách bàn</p><h2>{floor.tables.length} bàn trong {floor.name}</h2><div className="table-list">{floor.tables.map((table) => <article key={table.code}><strong>{table.code}</strong><span>{table.capacity} chỗ</span><p>{table.position}{table.note ? ` · ${table.note}` : ""}</p></article>)}</div></div><div className="isometric-block"><MediaPlaceholder kind="isometric" label={`Minh họa isometric Tầng ${floor.level} · ${floor.name}`} /><p>Minh họa isometric sẽ dùng cùng logic bố trí với sơ đồ bàn, không thay thế sơ đồ tương tác.</p></div></section><div className="floor-cta"><div><p className="eyebrow">Bước tiếp theo</p><h2>Khám phá menu trước khi chọn bàn.</h2></div><Link className="button button-primary" href="/menu">Xem thực đơn</Link></div></div></main></>; }
+export async function generateMetadata({ params }: FloorPageProps): Promise<Metadata> {
+  const floor = getFloor((await params).slug);
+  return floor ? { title: `Tầng ${floor.level} · ${floor.name}`, description: floor.description } : {};
+}
+
+export default async function FloorPage({ params }: FloorPageProps) {
+  const floor = getFloor((await params).slug);
+  if (!floor) notFound();
+  const capacity = floor.tables.reduce((total, table) => total + table.capacity, 0);
+
+  return (
+    <>
+      <section className="floor-hero">
+        <div className="site-container floor-hero-grid">
+          <div>
+            <Link className="back-link" href="/spaces">← Tất cả không gian</Link>
+            <p className="eyebrow">Tầng {floor.level} · {floor.tables.length} bàn · {capacity} chỗ</p><h1>{floor.name}</h1>
+            <p className="lead">{floor.description}</p>
+            <ul className="feature-list">{floor.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
+          </div>
+          <AssetImage asset={resolveMedia(restaurantMedia[floor.slug])} label={`Tầng ${floor.level} · ${floor.name}`} sizes="(max-width: 1024px) calc(100vw - 40px), 510px" eager />
+        </div>
+      </section>
+      <div className="section">
+        <div className="site-container">
+          <FloorPlan floor={floor} />
+          <section className="floor-details">
+            <div>
+              <p className="eyebrow">Danh sách bàn</p><h2>{floor.tables.length} bàn trong {floor.name}</h2>
+              <div className="table-list">
+                {floor.tables.map((table) => (
+                  <article key={table.code}><strong>{table.code}</strong><span>{table.capacity} chỗ</span><p>{table.position}{table.note ? ` · ${table.note}` : ""}</p></article>
+                ))}
+              </div>
+            </div>
+            <figure className="isometric-block">
+              <AssetImage asset={resolveMedia(restaurantMedia[`isometric-${floor.slug}`])} label={`Isometric · ${floor.name}`} kind="isometric" sizes="(max-width: 704px) calc(100vw - 32px), (max-width: 1024px) 40vw, 480px" />
+              <figcaption>Minh họa AI về concept không gian. Vị trí và sức chứa bàn được xác định bằng sơ đồ tương tác phía trên.</figcaption>
+            </figure>
+          </section>
+          <section className="floor-scene-section" aria-labelledby="floor-scenes-heading">
+            <div className="section-heading"><div><p className="eyebrow">Góc không gian</p><h2 id="floor-scenes-heading">Một vài góc nhìn của {floor.name}.</h2></div><p className="section-note">Ảnh AI minh họa concept, không gắn với mã bàn cụ thể.</p></div>
+            <div className="floor-scene-grid">
+              {floorScenes[floor.slug].map((scene) => (
+                <figure key={scene.asset.path}>
+                  <AssetImage asset={resolveMedia(scene.asset)} label={scene.title} sizes="(max-width: 704px) calc(100vw - 32px), (max-width: 1024px) 46vw, 384px" />
+                  <figcaption>{scene.title}</figcaption>
+                </figure>
+              ))}
+            </div>
+          </section>
+          <div className="floor-cta">
+            <div><p className="eyebrow">Bước tiếp theo</p><h2>Khám phá menu trước khi chọn bàn.</h2></div>
+            <Link className="button button-primary" href="/menu">Xem thực đơn</Link>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

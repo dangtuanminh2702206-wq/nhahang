@@ -54,6 +54,7 @@ src/
 │       ├── page.tsx
 │       └── [slug]/page.tsx
 ├── components/
+│   ├── asset-image.tsx
 │   ├── floor-plan.tsx
 │   ├── media-placeholder.tsx
 │   ├── menu-browser.tsx
@@ -62,7 +63,11 @@ src/
 ├── config/
 │   └── site.ts
 └── data/
+    ├── media.ts
     └── restaurant.ts
+
+src/lib/
+└── media.server.ts
 
 docs/
 ├── architecture.md
@@ -91,6 +96,13 @@ placeholder ảnh, FloorPlan/TableNode và bộ lọc thực đơn. `src/data/re
 catalogue public dùng chung cho Home, Spaces, FloorPlan và Menu; UI không tự khai báo
 lại món hoặc bàn theo trang. Seed database mang cùng catalogue cho môi trường demo,
 không kéo Supabase hay secret vào Client Component.
+
+Phần 3B dùng `src/data/media.ts` quản lý path/alt/ratio/object-position cho toàn bộ
+50 asset dự kiến. `media.server.ts` kiểm tra file trong `public` khi render/build;
+MenuBrowser chỉ nhận metadata serializable về trạng thái available/pending.
+`AssetImage` là Client Component nhỏ để xử lý lỗi tải, dùng `next/image` và fallback
+giữ nguyên tỷ lệ. Ảnh pending không phát sinh request tới file chưa tồn tại. Khi bổ
+sung ảnh đúng expected path, cần build/deploy lại các trang tĩnh.
 
 ## Quyết định đã chốt
 

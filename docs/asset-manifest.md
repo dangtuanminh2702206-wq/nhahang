@@ -72,4 +72,4 @@ Mỗi ảnh: `public/images/menu/combos/<slug>.webp`, **4:3 · 1600×1200**, gó
 | COMBO-03 | `moc-tinh.webp` | Combo Mộc Tĩnh 6 người | Bố cục ngang, nhiều đĩa dễ nhận diện |
 | COMBO-04 | `moc-thuong.webp` | Combo Mộc Thượng 8 người | Cảnh table spread rộng, không quá đông chi tiết |
 
-Tổng: **2 branding + 3 floor + 4 area + 3 isometric + 4 optional table + 11 dish + 4 combo = 31 asset**; trong đó 27 asset không optional.
+Phạm vi Phase 3B đã mở rộng từ 11 featured dishes lên **30 món có path riêng** và bao gồm cả 4 table scenes đã accepted. Mục tiêu đầy đủ hiện tại: **16 restaurant + 30 dish + 4 combo = 50 asset**. Trạng thái accepted/pending và path cho phần còn thiếu nằm trong [asset-integration-status.md](asset-integration-status.md); expected mapping dùng chung tại `src/data/media.ts`.
