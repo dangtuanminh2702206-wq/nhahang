@@ -2,6 +2,30 @@
 
 ## Identity Phần 4 · trạng thái kiểm chứng
 
+### Tiếp tục nghiệm thu · sau commit Phần 3 `4709528`
+
+Implementation Phần 4 đã được đưa lên GitHub trước nhiệm vụ này, nhưng chưa đủ
+bằng chứng để công bố toàn bộ Auth integration PASS. Không đánh dấu hoàn tất chỉ
+vì UI đăng nhập hoặc bộ kiểm thử mock chạy được.
+
+- Chạy lại `node scripts/test-identity-contract.mjs`: PASS identity/role matrix,
+  callback và các contract Proxy mới. Proxy được kiểm tra trực tiếp từ module
+  ứng dụng với cookie giả: truyền cookie refresh tới request/response, xóa chunk
+  cũ, giữ header SDK/no-store, không tạo phiên khi provider lỗi hoặc chưa cấu hình.
+- `pnpm test:identity:smoke`: PASS HTTP, CSRF, callback cố định, cookie sai định
+  dạng và guest no-store trên server local 3002. Không dùng phiên browser thật.
+- Typecheck/lint và `git diff --check`: PASS. Chỉ bổ sung test/tài liệu, không đổi
+  runtime/UI, schema, cấu hình Supabase hoặc booking. Không cần build lại cho
+  thay đổi test/tài liệu; hai build đã đạt ở nghiệm thu Phần 3 cùng runtime này.
+- Các ca còn thiếu vẫn là callback email end-to-end, metadata staff thật,
+  expired-JWT cookie refresh thật và JWT Staff/Admin từ tài khoản test được duyệt.
+  Bằng chứng A/B, own profile, inactive và explicit SDK refresh bên dưới được giữ
+  nguyên là kết quả lịch sử, không giả định đã chạy lại trong lần này.
+
+Không nâng quyền Customer hiện có để tạo kết quả kiểm thử. Callback email cần
+operator mở thư trong cùng browser PKCE; Staff/Admin cần tài khoản test chuyên
+dụng được operator cấp quyền. Không dùng mock thay thế các điều kiện đó.
+
 Implementation email/password, signup Customer + email confirmation, session,
 callback, profile và server authorization đã có. Không đổi database foundation.
 
