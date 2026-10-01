@@ -137,7 +137,9 @@ Chi tiết: [không gian và sức chứa](docs/restaurant-world.md),
 chỉ một bàn, tối đa 8 khách và không vượt sức chứa bàn.
 
 Phần 4 đã có implementation Auth/phiên, hồ sơ và authorization; kiểm chứng
-Auth/JWT thật còn BLOCKED vì chưa có tài khoản test đã xác nhận được duyệt.
+Auth/JWT thật đã kiểm chứng một phần với một Customer: server đọc/lưu hồ sơ,
+reload duy trì phiên và logout chặn lại profile đạt. Signup mới còn bị giới hạn
+email; callback, refresh khi hết hạn và các ca quyền/cross-user chưa kiểm chứng.
 Không coi build hoặc smoke HTTP là chứng nhận đăng nhập/RLS thật.
 
 ## Identity / Auth · Phần 4

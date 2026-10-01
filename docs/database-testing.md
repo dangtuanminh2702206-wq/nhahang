@@ -8,9 +8,15 @@ callback, profile và server authorization đã có. Không đổi database foun
 | Kiểm tra Auth/JWT thật | Trạng thái |
 | --- | --- |
 | Signup Customer qua form thật | BLOCKED — đã gửi request với email được duyệt; Supabase trả `over_email_send_rate_limit` / HTTP 429 |
-| Trigger profile, metadata giả admin/staff | NOT RUN — chưa có signup test thành công để kiểm chứng |
-| Confirmation email, login/logout, persistence/refresh | BLOCKED — chưa có tài khoản đã xác nhận và phiên Auth thật |
-| Profile read/update, cấm sửa role/is_active, cross-user | BLOCKED — cần JWT thật của Customer A/B |
+| Phiên đăng nhập Customer thật, đọc profile qua server/RLS | PASS — người dùng đăng nhập; server xác minh Auth user đã confirm email, profile có role customer |
+| Trigger tạo profile trong signup mới, metadata giả admin/staff | NOT RUN — chưa có signup test mới thành công để quan sát trigger/attack |
+| Email confirmation callback | NOT RUN — chưa quan sát callback thành công; không dùng việc account đã confirm để gán PASS cho flow |
+| Logout và `/profile` sau logout | PASS — logout thật về login; truy cập lại profile tiếp tục redirect login |
+| Session persistence khi reload | PASS — reload profile vẫn đọc được hồ sơ bằng phiên thật |
+| Refresh JWT khi hết hạn | NOT RUN — reload với phiên hợp lệ không chứng minh token refresh |
+| Profile read/update của chính Customer | PASS — lưu payload hiện tại; đổi full_name tạm, reload thấy giá trị mới, khôi phục tên gốc và reload xác minh; phone giữ nguyên |
+| Cấm sửa role/is_active qua JWT thật | NOT RUN — đã review whitelist/grants; chưa gửi request tấn công bằng JWT thật |
+| Cross-user | BLOCKED — chưa có phiên Customer thứ hai được duyệt |
 | Inactive account | NOT RUN — chưa được phép thay trạng thái account cloud |
 | Staff/Admin JWT | NOT RUN — chưa có trusted test account được duyệt |
 
@@ -33,8 +39,9 @@ Kiểm tra này không chứng minh callback allowlist, email delivery hoặc JW
 Lần thử signup development ngày 01/10/2026 bị giới hạn gửi email. Không retry
 liên tục, không tắt xác nhận email, không tạo/nâng quyền qua Admin API. Chưa có
 bằng chứng user test hoặc email xác nhận được tạo thành công. Không lưu email,
-mật khẩu, token hoặc liên kết xác nhận trong tài liệu. Người dùng đã báo có một
-tài khoản đăng nhập, nhưng chưa kiểm chứng được phiên đó trong browser kiểm thử.
+mật khẩu, token hoặc liên kết xác nhận trong tài liệu. Sau đó người dùng đăng nhập
+tài khoản Customer hiện có trong browser kiểm thử. Phiên thật, lưu hồ sơ/reload và
+logout đã được kiểm chứng như bảng trên; không ghi email/tên/phone/ID cá nhân.
 Route session phân loại lỗi rate-limit (429), SMTP không cho phép địa chỉ (503)
 và lỗi dịch vụ/kết nối (503); các lỗi credentials vẫn dùng thông báo chung.
 Chẩn đoán server chỉ ghi action/code/status, không ghi payload/provider message.

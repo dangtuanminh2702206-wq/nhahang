@@ -179,7 +179,7 @@ booking để ép khớp UI.
 - Trước khi vận hành booking: cấu hình scheduler expiration và kiểm thử JWT/Auth
   trên Supabase development khi có authentication flow.
 - Phần 3: design system và các trang công khai đã có; giao diện chốt, ảnh còn pending.
-- Phần 4: có implementation authentication, hồ sơ và authorization; kiểm chứng Auth/JWT còn BLOCKED.
+- Phần 4: có implementation authentication, hồ sơ và authorization; một Customer đã kiểm chứng đọc/lưu hồ sơ, reload và logout. Signup mới/các ca JWT còn thiếu xem database-testing.md.
 - Phần 5–8: booking, Customer, Staff và Admin.
 - Phần 9–10: kiểm thử, CI, Vercel và bàn giao.
 
@@ -209,5 +209,6 @@ booking để ép khớp UI.
 Không đổi migration/seed/grants/RLS; không cấp role hoặc deactivate tài khoản.
 Chưa làm booking/availability/dashboard/scheduler. Quên mật khẩu và Staff/Admin
 test account ngoài phạm vi hiện tại. Public URL/key đã cấu hình local; kiểm chứng
-cloud còn cần tài khoản xác nhận và quyền kiểm thử, xem
+cloud đã kiểm chứng một Customer, còn cần ca signup/callback/refresh và tài khoản
+thứ hai cho cross-user, xem
 database-testing.md; không coi implementation là chứng nhận tích hợp đã hoàn tất.
