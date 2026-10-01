@@ -173,4 +173,25 @@ URL tùy ý. Không có Staff/Admin test account hoặc workflow tự cấp quy�
 `pnpm test:identity:smoke` kiểm tra HTTP local, CSRF, callback và cache headers;
 **không** đăng ký user hoặc chứng nhận JWT. Auth/RLS thật cần config và quyền
 thử development riêng. Xem trạng thái ở `docs/database-testing.md`.
-Reservation vẫn mô phỏng; ảnh pending không chặn Auth nhưng Phần 3 chưa hoàn tất.
+Pages vẫn mô phỏng; ảnh pending không chặn Auth nhưng Phần 3 chưa hoàn tất.
+
+## Phần 5 · nền tảng local, chưa kích hoạt cloud
+
+- `GET /api/availability`: gọi RPC `find_available_tables`, chỉ trả ID/mã bàn,
+  mã tầng và sức chứa, không trả thông tin booking/khách hàng.
+- `POST /api/bookings`: Customer active, cùng origin, gọi `create_booking` bằng
+  phiên người dùng; không nhận role/user ID/source từ client, không dùng service-role.
+- `BOOKING_LOCAL_MUTATIONS_ENABLED=false` mặc định. Khi bật còn bắt buộc URL
+  Supabase loopback; cloud vẫn bị từ chối. Cần Supabase Auth/PostgREST local cô lập
+  để kiểm thử toàn tuyến; PostgreSQL fixture không thay thế môi trường đó.
+- Migration mới `supabase/migrations/202610010001_availability.sql` chỉ đã test local,
+  **chưa áp cloud**. Với config development hiện tại, tìm bàn báo dịch vụ chưa sẵn
+  sàng, không giả định bàn trống; tạo booking và ô liên hệ bị khóa.
+- Form/FloorPlan giữ thiết kế và catalogue hiện tại, có loading/error/empty/retry,
+  key retry chỉ ở bộ nhớ trang. GitHub Pages vẫn không gọi Auth/booking API.
+- `pnpm test:booking`: validation/cờ/handler **mock**; thêm
+  `BOOKING_TEST_BASE_URL=http://127.0.0.1:3002` để kiểm tra HTTP cờ tắt/CSRF/input.
+  `pnpm test:db` chạy SQL trên database mới `mocvi_test_*`, áp tất cả migration theo thứ tự.
+
+Xem [kết quả và giới hạn kiểm thử](docs/database-testing.md). Chưa chứng nhận
+Phần 4/5 tích hợp hoàn tất; không tự bật cloud hoặc chạy migration cloud.

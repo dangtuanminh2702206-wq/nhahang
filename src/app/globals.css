@@ -10,6 +10,8 @@
 .identity-form input { width: 100%; min-width: 0; min-height: 48px; padding: .75rem; border: 1px solid var(--muted-foreground); background: var(--surface); color: var(--foreground); font: inherit; }
 .identity-form .button { justify-self: start; }
 .identity-form fieldset:disabled, .account-control button:disabled { opacity: .65; cursor: wait; }
+.reservation-form input:disabled, .reservation-form textarea:disabled, .reservation-form > .reservation-confirm button:disabled { opacity: .55; cursor: not-allowed; }
+.reservation-form[aria-busy="true"] { cursor: progress; }
 .identity-message:not(:empty) { margin-bottom: 1.25rem; padding: 1rem; border: 1px solid var(--border); overflow-wrap: anywhere; }
 .identity-message[role="alert"] { color: var(--destructive); }
 .account-control { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; font-size: .875rem; }

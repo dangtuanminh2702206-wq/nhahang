@@ -207,8 +207,30 @@ booking để ép khớp UI.
   Identity pages demo không gọi cookies/Auth/connection hoặc nhận mật khẩu.
 
 Không đổi migration/seed/grants/RLS; không cấp role hoặc deactivate tài khoản.
-Chưa làm booking/availability/dashboard/scheduler. Quên mật khẩu và Staff/Admin
+Tại baseline Phần 4 chưa làm booking/availability/dashboard/scheduler. Quên mật khẩu và Staff/Admin
 test account ngoài phạm vi hiện tại. Public URL/key đã cấu hình local; kiểm chứng
 cloud đã kiểm chứng một Customer, còn cần ca signup/callback/refresh và tài khoản
 thứ hai cho cross-user, xem
 database-testing.md; không coi implementation là chứng nhận tích hợp đã hoàn tất.
+
+## Booking foundation · Phần 5 local · 01/10/2026
+
+- `booking-input.ts`: kiểu dữ liệu và validation transport; không nhân bản policy SQL.
+- `booking.ts` server-only: mapping lỗi và cờ local-only fail closed. Cờ không nằm
+  trong `next.config.env`; UI chỉ nhận Boolean từ Server Component mỗi request.
+- Availability handler chỉ gọi public RPC, projection 4 trường; Guest không đọc bookings.
+  Lookup read-only bỏ pending hết hạn; create_booking dọn expiration dưới lock rồi
+  kiểm tra lại policy/exclusion. Snapshot tìm bàn không phải giữ chỗ.
+- Booking handler kiểm tra origin/JSON/whitelist, Customer active qua helpers Phần 4,
+  RPC dưới cookie session; customer/source không do client quyết định. Chỉ trả ID,
+  trạng thái và expiresAt của kết quả thuộc user. Không cache phản hồi hoặc log payload.
+- ReservationPreview giữ một giao diện: demo tĩnh trên Pages, tìm bàn/chờ backend
+  trên server. Khi cờ tắt, không gửi liên hệ; không nhận booking cloud. Khi bật local,
+  khóa thao tác đang gửi, giữ key cho retry cùng payload, xóa khả dụng khi đổi slot.
+- FloorPlan nhận danh sách mã khả dụng đã lọc, disable bàn không phù hợp và có nhãn
+  bằng chữ. Catalogue/ảnh/logic RPC foundation không thay đổi. Proxy thêm reservation
+  và booking endpoint để refresh cookie; Guest lookup không bị yêu cầu đăng nhập.
+- Chưa có Supabase local Auth/PostgREST: toàn tuyến JWT/booking và happy-path UI
+  còn NOT RUN. Không thêm Auth bypass, không dùng service-role hay mock làm bằng chứng JWT.
+- Không có dashboard/scheduler/cloud migration; Phần 3 vẫn thiếu ảnh và Phần 4 còn
+  các ca Auth chưa kiểm chứng. Xem database-testing.md trước khi bật nghiệp vụ cloud.

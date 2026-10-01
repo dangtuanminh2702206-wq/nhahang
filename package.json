@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:db": "node scripts/test-database.mjs",
+    "test:booking": "node scripts/test-booking.mjs",
     "test:identity:smoke": "node scripts/test-identity-smoke.mjs"
   },
   "dependencies": {

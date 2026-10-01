@@ -36,7 +36,7 @@ Design direction: Vietnamese contemporary fine-casual. The interface is warm, ca
 - Status always has text plus visual treatment; color alone is not meaningful.
 - Media stays inside a fixed aspect ratio. Before Phase 3B, use `MediaPlaceholder`, never a broken image URL.
 - FloorPlan is an HTML/CSS plan with keyboard-operable TableNode buttons; current public state is neutral.
-- Reservation is a browser-only mock with optional controlled FloorPlan selection; no API, persistence, availability claim or real booking. Contact has no invented address or map. Phase 3 remains pending missing images.
+- Reservation stays browser-only mock on Pages. The server version has Phase 5 availability states and local-only booking, disabled by default; errors/status are focusable, unavailable tables have text labels. No cloud booking activation. Contact has no invented address or map; Phase 3 remains pending missing images.
 
 ## Motion and accessibility
 

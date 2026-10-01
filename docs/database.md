@@ -8,8 +8,9 @@ local. Bộ 18 nhóm kiểm thử tích hợp local và smoke test quyền trên
 sang 22 bàn/30 món. Fixture đã cập nhật, 18 nhóm test và smoke mới PASS local;
 development đã sao lưu/thay seed có xác nhận, catalogue khớp UI và smoke cloud
 PASS. Không coi local hoặc SQL Editor là chứng nhận tích hợp Auth/JWT thật.
-Chưa cài scheduler hoặc API booking trong Next.js. Phần 4 có implementation
-Identity/Auth nhưng chưa kiểm chứng Auth/JWT thật qua HTTP. Xem [database-testing.md](database-testing.md)
+Chưa cài scheduler. Phần 5 có API booking/tìm bàn Next.js với mutation local-only
+mặc định tắt; migration availability chưa áp cloud. Phần 4 đã kiểm chứng một
+Customer thật nhưng chưa đủ các ca Auth/JWT. Xem [database-testing.md](database-testing.md)
 để biết môi trường, bằng chứng và giới hạn kiểm chứng.
 
 SQL là nguồn thực thi chính sách duy nhất. `restaurant_settings` lưu các giá trị
@@ -223,8 +224,13 @@ INSERT. Mọi mutation vận hành về sau phải dùng cùng thứ tự khóa 
 `occupied/cleaning` là trạng thái vật lý hiện tại, không thay thế lịch đặt tương
 lai. Không tự chuyển bàn về available khi hết 120 phút. Khách ở quá giờ cần Staff
 xử lý xung đột, đổi lịch/bàn theo quy trình; chưa có thao tác check-in/complete.
-Chưa có hàm tìm bàn công khai: giai đoạn sau phải trả availability đã lọc, không
-được mở SELECT booking/contact cho Guest để tự tính ở trình duyệt.
+Phần 5 bổ sung `find_available_tables` trong migration mới
+`202610010001_availability.sql`, **chỉ đã kiểm thử local, chưa áp cloud**.
+Hàm SECURITY DEFINER `search_path=''` trả table_id/table_code/area_code/capacity;
+thu hồi PUBLIC EXECUTE, chỉ cấp anon/authenticated. Không mở SELECT booking/contact.
+Lookup read-only bỏ pending đã hết hạn; create_booking vẫn expire/recheck dưới lock.
+`occupied/cleaning` không chặn lịch website tương lai; `out_of_service` và inactive
+bị lọc như foundation. Không thay policy/rule của RPC đã deploy.
 
 ## Vòng đời booking
 

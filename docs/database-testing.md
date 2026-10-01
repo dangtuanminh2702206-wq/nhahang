@@ -229,3 +229,36 @@ owner. Fixture từ chối roles có SUPERUSER/BYPASSRLS.
 Các thao tác cancel/check-in/complete/no-show/đổi bàn chưa được triển khai nên
 chưa có kiểm thử mutation tương ứng. Giai đoạn sau phải bổ sung vào cùng cơ chế
 khóa, authorization và transaction history; không cập nhật bảng trực tiếp từ UI.
+
+## Phần 5 · kiểm chứng local · 01/10/2026
+
+| Nhóm | Bằng chứng / giới hạn |
+| --- | --- |
+| Database | PASS 23 nhóm trên PostgreSQL 18.4, database mới trống `mocvi_test_phase5_20261001`, loopback 55439 |
+| Migration | Foundation + `202610010001_availability.sql` áp theo thứ tự; seed 2 lần; 3 tầng/22 bàn/92 chỗ/30 món giữ nguyên |
+| Availability SQL | PASS Guest projection 4 trường, capacity, inactive table/area, out_of_service, occupied tương lai, opening/closing buffer, notice/advance hai phía, ngày nghỉ, pending hết hạn read-only |
+| Booking SQL | PASS ownership/RLS/Guest denial, idempotency, race cùng bàn/Customer limit, rollback; snapshot lookup cũ không vượt exclusion |
+| Handler unit | PASS validation, cờ mặc định tắt và từ chối cloud cả khi true, whitelist, mock Guest/active-role denial, retry key/RPC source, lỗi conflict và public projection; **mock không chứng minh JWT** |
+| HTTP server local | PASS cờ tắt 503, CSRF 403, availability input 400/no-store; không tạo booking cloud |
+| Identity regression | PASS HTTP public/Identity, CSRF, callback không open redirect, Guest no-store; không phải Auth integration |
+| Build | PASS typecheck, lint, Next.js server và Pages `/nhahang`; diff whitespace sạch |
+| Static artifact | PASS 442 liên kết/asset references, không export API booking/availability, không có cloud project URL trong browser chunks |
+| Browser | PASS 320/704/1024/1600 không overflow, native labels, focusable errors, loading/disabled, chọn tầng/bàn đồng bộ, service unavailable không báo bàn trống, demo Pages xác nhận mô phỏng; không thấy console error/warn trong các ca này |
+| JWT → RPC → booking endpoint | NOT RUN: chưa có Supabase Auth/PostgREST local cô lập; máy không có Docker/Supabase CLI sẵn. Không cài mới hoặc thay config cloud để ép test |
+| UI live empty/conflict/success | NOT RUN toàn tuyến; handler/SQL đã test các lớp, chưa có backend local Auth thật để xác minh UI happy path |
+| Cloud | Migration mới **chưa áp**, booking mutation **chưa bật**, không seed/reset/đổi RLS/grants/role/SMTP/scheduler cloud |
+
+Kiểm thử bổ sung không thay thế các ca Phần 4 signup/callback/refresh JWT,
+cross-user/inactive/Staff/Admin thật còn thiếu. Không đánh dấu Phần 4/5 tích hợp
+hoàn tất. Trước khi kích hoạt cloud cần hoàn thiện kiểm chứng Auth, môi trường
+Supabase local (Auth + PostgREST), chạy toàn tuyến, người dùng duyệt migration
+development và kế hoạch vận hành/expiration. Cờ hiện tại cố ý không thể bật cloud.
+
+`BOOKING_LOCAL_MUTATIONS_ENABLED=true` chỉ dùng với public URL/key của Supabase
+**local cô lập**; không thay `.env.local` development để chạy fixture PostgreSQL.
+Fixture SET ROLE chỉ dành cho `pnpm test:db`. Test runner vẫn từ chối database
+không trống/non-loopback và không xóa database sau test.
+
+Chạy `pnpm test:booking`; tùy chọn `BOOKING_TEST_BASE_URL=http://127.0.0.1:3002`
+để thêm HTTP cờ tắt, `BOOKING_CHECK_PAGES=true` để kiểm tra artifact `.next-pages`
+sau export. Chỉ bật các tùy chọn khi đúng môi trường, không dùng URL cloud.

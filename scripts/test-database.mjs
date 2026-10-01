@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import pg from 'pg';
 
 // This harness intentionally accepts only an empty loopback test database.
@@ -95,8 +95,9 @@ try {
   `);
   assert.equal((await admin.query("select count(*)::int n from pg_roles where rolname in ('anon','authenticated') and (rolsuper or rolbypassrls)")).rows[0].n,0,
     'Fixture roles must not bypass RLS');
-  const migration = await readFile(new URL('../supabase/migrations/202609300001_foundation.sql', import.meta.url), 'utf8');
-  await check('migration on clean PostgreSQL', () => admin.query(migration));
+  for (const file of (await readdir(new URL('../supabase/migrations/', import.meta.url))).filter(f=>f.endsWith('.sql')).sort()) {
+    await check(`migration ${file} on clean PostgreSQL`, async () => admin.query(await readFile(new URL(`../supabase/migrations/${file}`, import.meta.url), 'utf8')));
+  }
   const seed = await readFile(new URL('../supabase/seed.sql', import.meta.url), 'utf8');
   await admin.query(seed);
   await admin.query(seed);
@@ -262,6 +263,61 @@ try {
     }
     await admin.query('drop trigger test_event_failure on public.booking_history; drop function private.test_fail()');
   });
+  await clearBookings();
+  function availability(time = start, count = 2) {
+    return actor(right,null,c=>c.query('select * from public.find_available_tables($1,$2)',[time,count]),'anon');
+  }
+  await check('Guest availability is minimal; capacity and inactive catalogue filtered', async () => {
+    const all = await availability();
+    assert.equal(all.rowCount,22);
+    assert.deepEqual(Object.keys(all.rows[0]).sort(),['area_code','capacity','table_code','table_id']);
+    assert((await availability(start,8)).rows.every(t=>t.capacity>=8));
+    await admin.query("update public.tables set is_active=false where id=$1",[tables[0].id]);
+    assert(!(await availability()).rows.some(t=>t.table_id===tables[0].id));
+    await admin.query("update public.tables set is_active=true,status='out_of_service' where id=$1",[tables[0].id]);
+    assert(!(await availability()).rows.some(t=>t.table_id===tables[0].id));
+    await admin.query("update public.tables set status='occupied' where id=$1",[tables[0].id]);
+    assert((await availability()).rows.some(t=>t.table_id===tables[0].id),'Physical occupied does not block future website schedule');
+    await admin.query("update public.tables set status='available' where id=$1",[tables[0].id]);
+    await admin.query('update public.areas set is_active=false where id=$1',[tables[0].area_id]);
+    assert.equal((await availability()).rowCount,14);
+    await admin.query('update public.areas set is_active=true where id=$1',[tables[0].area_id]);
+    assert.equal((await admin.query("select has_function_privilege('public','public.find_available_tables(timestamptz,integer)','EXECUTE') allowed")).rows[0].allowed,false);
+  });
+  await check('availability opening / closing / notice / advance / closures', async () => {
+    assert.equal((await availability(new Date(start.getTime()-2*3600000))).rowCount,22);
+    assert.equal((await availability(new Date(start.getTime()+465*60000))).rowCount,22);
+    await assert.rejects(availability(new Date(start.getTime()+466*60000)),/OUTSIDE_BUSINESS_HOURS/);
+    await assert.rejects(availability(new Date()),/MIN_NOTICE/);
+    await assert.rejects(availability(new Date(Date.now()+31*86400000)),/MAX_ADVANCE/);
+    await assert.rejects(availability(start,0),/INVALID_CAPACITY/);
+    await assert.rejects(availability(start,9),/INVALID_CAPACITY/);
+    await admin.query("insert into public.closure_dates values(($1::timestamptz at time zone 'Asia/Ho_Chi_Minh')::date,'test')",[start]);
+    await assert.rejects(availability(),/OUTSIDE_BUSINESS_HOURS/);
+    await admin.query('delete from public.closure_dates');
+  });
+  await check('availability buffer boundaries and expired pending are read-only', async () => {
+    const booking=(await actor(left,A,c=>book(c,args()))).rows[0];
+    assert(!(await availability()).rows.some(t=>t.table_id===tables[0].id));
+    assert(!(await availability(new Date(start.getTime()+134*60000))).rows.some(t=>t.table_id===tables[0].id));
+    assert((await availability(new Date(start.getTime()+135*60000))).rows.some(t=>t.table_id===tables[0].id));
+    await admin.query("update public.bookings set expires_at=clock_timestamp()-interval '1 second' where id=$1",[booking.id]);
+    assert((await availability()).rows.some(t=>t.table_id===tables[0].id));
+    assert.equal((await admin.query('select status from public.bookings where id=$1',[booking.id])).rows[0].status,'pending');
+    await actor(left,B,c=>book(c,args()));
+    assert.equal((await admin.query('select status from public.bookings where id=$1',[booking.id])).rows[0].status,'cancelled');
+  });
+  await clearBookings();
+  await check('stale availability cannot bypass transactional overlap or ownership', async () => {
+    assert((await availability()).rows.some(t=>t.table_id===tables[0].id));
+    const key=randomUUID();
+    await actor(left,A,c=>book(c,args(0,start,2,key)));
+    await assert.rejects(actor(right,B,c=>book(c,args(0,start,2,key))),e=>e.code==='23P01');
+    const other=(await actor(right,B,c=>book(c,args(1,start,2,key)))).rows[0];
+    assert.equal(other.customer_id,B);
+    assert.equal((await actor(right,B,c=>c.query('select id from public.bookings where customer_id=$1',[A]))).rowCount,0);
+  });
+  await clearBookings();
   await check('locked customer denied; existing booking preserved', async () => {
     const b=(await actor(left,A,c=>book(c,args()))).rows[0];
     await admin.query('update public.profiles set is_active=false where id=$1',[A]);
