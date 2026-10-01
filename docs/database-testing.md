@@ -7,7 +7,8 @@ callback, profile và server authorization đã có. Không đổi database foun
 
 | Kiểm tra Auth/JWT thật | Trạng thái |
 | --- | --- |
-| Signup Customer, trigger profile, metadata giả admin/staff | BLOCKED — cần email sở hữu/tài khoản test development được duyệt |
+| Signup Customer qua form thật | BLOCKED — đã gửi request với email được duyệt; Supabase trả `over_email_send_rate_limit` / HTTP 429 |
+| Trigger profile, metadata giả admin/staff | NOT RUN — chưa có signup test thành công để kiểm chứng |
 | Confirmation email, login/logout, persistence/refresh | BLOCKED — chưa có tài khoản đã xác nhận và phiên Auth thật |
 | Profile read/update, cấm sửa role/is_active, cross-user | BLOCKED — cần JWT thật của Customer A/B |
 | Inactive account | NOT RUN — chưa được phép thay trạng thái account cloud |
@@ -27,7 +28,18 @@ Kiểm tra này không chứng minh callback allowlist, email delivery hoặc JW
 | Pages artifact | PASS — 442 local href/src hợp lệ; không chứa URL/key development, form Identity hoặc session endpoint |
 | Login/signup và guest profile responsive 320/704/1024/1600px | PASS — không tràn ngang, label hiện hữu |
 | Keyboard focus, console login, thông báo lỗi form | PASS — lỗi form chỉ thử với dịch vụ loopback QA, không phải Auth thật |
-| Loading/disabled | Đã review implementation; NOT RUN quan sát runtime trạng thái pending bằng phiên Auth thật |
+| Loading/disabled | PASS — quan sát fields/button disabled và “Đang xử lý…” trong request signup thật; được bật lại sau lỗi 429 |
+
+Lần thử signup development ngày 01/10/2026 bị giới hạn gửi email. Không retry
+liên tục, không tắt xác nhận email, không tạo/nâng quyền qua Admin API. Chưa có
+bằng chứng user test hoặc email xác nhận được tạo thành công. Không lưu email,
+mật khẩu, token hoặc liên kết xác nhận trong tài liệu. Người dùng đã báo có một
+tài khoản đăng nhập, nhưng chưa kiểm chứng được phiên đó trong browser kiểm thử.
+Route session phân loại lỗi rate-limit (429), SMTP không cho phép địa chỉ (503)
+và lỗi dịch vụ/kết nối (503); các lỗi credentials vẫn dùng thông báo chung.
+Chẩn đoán server chỉ ghi action/code/status, không ghi payload/provider message.
+Sáu ca phân loại lỗi (rate-limit, SMTP, network, server, credentials, signup
+validation) đã chạy và PASS; chỉ xác nhận xử lý lỗi, không thay thế Auth/JWT.
 
 Build lần đầu trong sandbox bị `spawn EPERM` khi tạo tiến trình TypeScript;
 chạy lại với quyền thực thi được duyệt đã đạt. Không bỏ qua TypeScript/build.

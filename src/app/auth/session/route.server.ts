@@ -8,6 +8,24 @@ function reply(body: object, status = 200) {
   return NextResponse.json(body, { status, headers: { "Cache-Control": "private, no-store" } });
 }
 
+function authFailure(error: { code?: string; status?: number }, action: "signup" | "login") {
+  // Log only bounded error identifiers, never provider messages or request data.
+  const code = error.code && /^[a-z_]{1,64}$/.test(error.code) ? error.code : "unknown";
+  console.warn("AUTH_REQUEST_FAILED", { action, code, status: error.status });
+  if (error.status === 429 || code === "over_email_send_rate_limit" || code === "over_request_rate_limit") {
+    return reply({ message: "Dịch vụ đã giới hạn số lần thử hoặc gửi email. Vui lòng chờ rồi thử lại, không bấm liên tục." }, 429);
+  }
+  if (code === "email_address_not_authorized") {
+    return reply({ message: "Dịch vụ email chưa cho phép gửi thư xác nhận tới địa chỉ này. Người quản trị cần cấu hình SMTP trước khi đăng ký." }, 503);
+  }
+  if (!error.status || error.status >= 500) {
+    return reply({ message: "Dịch vụ tài khoản tạm thời chưa khả dụng. Vui lòng thử lại sau." }, 503);
+  }
+  return action === "signup"
+    ? reply({ message: "Chưa thể đăng ký. Kiểm tra thông tin hoặc thử lại sau." }, 400)
+    : reply({ message: "Email, mật khẩu chưa đúng hoặc email chưa được xác nhận." }, 401);
+}
+
 export async function GET() {
   if (!getSupabaseConfig()) return reply({ authenticated: false, configured: false });
   try {
@@ -53,7 +71,7 @@ export async function POST(request: NextRequest) {
     if (fields.action === "signup") {
       const origin = getApplicationOrigin(request);
       const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: new URL("/auth/confirm", origin).href } });
-      if (error) return reply({ message: "Chưa thể đăng ký. Kiểm tra thông tin hoặc thử lại sau." }, 400);
+      if (error) return authFailure(error, "signup");
       if (data.session) {
         await supabase.auth.signOut({ scope: "local" });
         return reply({ message: "Máy chủ cần bật xác nhận email trước khi sử dụng đăng ký." }, 503);
@@ -62,7 +80,8 @@ export async function POST(request: NextRequest) {
       return reply({ message: "Nếu email có thể đăng ký, bạn sẽ nhận được thư xác nhận. Vui lòng kiểm tra hộp thư và thư rác." });
     }
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error || !data.user?.email_confirmed_at) {
+    if (error) return authFailure(error, "login");
+    if (!data.user?.email_confirmed_at) {
       if (data.session) await supabase.auth.signOut({ scope: "local" });
       return reply({ message: "Email, mật khẩu chưa đúng hoặc email chưa được xác nhận." }, 401);
     }
