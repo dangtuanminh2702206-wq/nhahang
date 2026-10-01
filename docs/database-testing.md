@@ -9,8 +9,10 @@ callback, profile và server authorization đã có. Không đổi database foun
 | --- | --- |
 | Signup Customer qua form thật | PARTIAL — lần thử đầu bị HTTP 429; lần sau form nhận phản hồi thành công, người dùng báo đã tạo Customer thứ hai và login thật thành công; chưa quan sát callback |
 | Phiên đăng nhập Customer thật, đọc profile qua server/RLS | PASS — người dùng đăng nhập; server xác minh Auth user đã confirm email, profile có role customer |
-| Trigger tạo profile với metadata signup giả admin/staff | NOT RUN — chưa chạy signup metadata tấn công qua Auth thật; profile Customer thứ hai đã đọc được nhưng không thay thế ca này |
-| Email confirmation callback | NOT RUN — chưa quan sát callback thành công; không dùng việc account đã confirm để gán PASS cho flow |
+| Trigger tạo profile với metadata signup giả admin | PASS — signup Auth thật với role=admin/is_active=false; owner query thấy metadata admin nhưng profile customer/active=true, email chưa confirm |
+| Metadata signup giả staff | BLOCKED — một signup thật trả over_email_send_rate_limit; owner SELECT sau đó không thấy user/profile mới, không retry |
+| Email confirmation callback | PARTIAL — user mở thư QA mới rồi báo trang hồ sơ; probe xác minh đúng QA đã confirm/Customer active; chưa quan sát request callback trực tiếp, không gán PASS chỉ từ phiên |
+| Cookie phiên sai định dạng | PASS — HTTP với cookie giả lỗi trả authenticated=false; /profile redirect /login; không sửa cookie phiên browser thật |
 | Logout và `/profile` sau logout | PASS — logout thật về login; truy cập lại profile tiếp tục redirect login |
 | Session persistence khi reload | PASS — reload profile vẫn đọc được hồ sơ bằng phiên thật |
 | Refresh JWT khi hết hạn | NOT RUN — reload với phiên hợp lệ không chứng minh token refresh |
@@ -18,7 +20,7 @@ callback, profile và server authorization đã có. Không đổi database foun
 | Profile read/update của chính Customer | PASS — lưu payload hiện tại; đổi full_name tạm, reload thấy giá trị mới, khôi phục tên gốc và reload xác minh; phone giữ nguyên |
 | Cấm sửa role/is_active qua JWT thật | PASS — cả hai Customer gửi ghi no-op vào từng cột qua JWT; PostgREST trả 42501; không nâng quyền/khóa tài khoản |
 | Cross-user | PASS — hai Customer khác ID đã xác minh bằng Auth; A/B đọc nhau trả 0 dòng, cập nhật nhau trả 0 dòng; đọc lại bằng JWT chủ hồ sơ thấy dữ liệu không đổi |
-| Inactive account | BLOCKED — operator đã duyệt tạm inactive Customer thứ hai rồi khôi phục; Dashboard project/SQL Editor chưa tải ổn định để đọc đúng hồ sơ |
+| Inactive account | PASS — đúng Customer thứ hai: JWT Auth vẫn hợp lệ nhưng RLS ẩn profile, server từ chối lưu và chặn /profile; đã khôi phục active và xác minh truy cập lại |
 | Staff/Admin JWT | NOT RUN — chưa có trusted test account được duyệt |
 
 Ngày 01/10/2026, operator đã cấu hình `.env.local` (được Git ignore). Kiểm tra
@@ -83,7 +85,8 @@ không phải route Next.js và không được deploy/expose ra mạng. Form x�
 ngay sau submit; không lưu credentials/session. Có thể chạy một Customer, nhưng
 runner khi đó ghi rõ cross-user NOT RUN. Dừng QA server sau khi kiểm thử.
 Runner chỉ dùng public key của project development được khóa cứng, JWT Customer
-thật; không gọi signup/Admin API, không thay role/trạng thái, không tạo booking.
+thật; không gọi Admin API, không thay role/trạng thái, không tạo booking. Signup
+QA riêng chỉ bật khi có mapping email được operator duyệt; không nằm trong runner A/B.
 Credentials/session chỉ giữ trong RAM; kết thúc logout riêng các phiên runner.
 Nó kiểm tra profile của hai user khác nhau, cập nhật chính mình, cách ly đọc/cập
 nhật A/B, chặn ghi cột role/is_active và explicit refresh. Các ghi kiểm thử dùng
@@ -100,8 +103,9 @@ metadata, callback, expired-cookie refresh, inactive và Staff/Admin vẫn riên
 `node scripts/test-identity-contract.mjs` PASS các contract bằng mock: bỏ qua
 user_metadata role, ma trận customer/staff/admin, inactive/missing/foreign profile,
 unconfirmed/unconfigured, callback PKCE/OTP, redirect cố định và inactive callback.
-Đây không phải JWT thật của Staff/Admin/inactive hay callback email thật; các ca
-cloud đó giữ nguyên NOT RUN. Không thay code ứng dụng, dependency hoặc cloud.
+Đây không phải JWT thật của Staff/Admin/inactive hay callback email thật; mock
+không thay thế các ca cloud. Ca inactive thật được kiểm chứng riêng bên dưới.
+Không thay code ứng dụng hoặc dependency.
 
 Gate mới sau bổ sung runner/contract ngày 01/10/2026: syntax hai script, lint,
 typecheck, contract mock, HTTP Identity smoke, server build, Pages build và
@@ -110,7 +114,7 @@ API availability/bookings export hoặc URL Supabase trong browser chunks.
 Không chạy lại responsive toàn bộ vì không thay UI ứng dụng; kết quả UI ở bảng
 trên là kiểm chứng đã ghi nhận trước. QA form chỉ phục vụ kiểm thử loopback.
 
-Lần tiếp tục ngày 01/10/2026: operator duyệt thử inactive Customer thứ hai và
+Lần tiếp tục trước khi operator đăng nhập lại ngày 01/10/2026: operator duyệt thử inactive Customer thứ hai và
 khôi phục active ngay, không duyệt nâng Staff/Admin. Dashboard ban đầu báo
 session expired; mở lại sign-in vào được organization nhưng project/SQL Editor
 tiếp tục treo/timeout, chưa đọc được hồ sơ đích. Không chạy UPDATE, không thay
@@ -120,6 +124,88 @@ degraded/Eastern US latency, Dashboard/Auth Operational; chưa đủ bằng ch�
 nguyên nhân project UI vào incident đó. Contract mock và HTTP Identity smoke
 chạy lại PASS. Cần mở được project/SQL Editor bằng phiên quản trị hợp lệ trước
 khi thử inactive thật.
+
+### Inactive thật và khôi phục · 01/10/2026
+
+Sau khi operator đăng nhập lại, Dashboard/SQL Editor đã truy cập được. Đối chiếu
+email được duyệt với auth.users/profiles cho đúng một Customer active đã confirm.
+QA probe xác minh phiên hiện có bằng auth.getUser và khớp ID hồ sơ đích; không
+lấy token ra chat/log. Phiên đầu không khớp nên không đổi cloud; operator đăng
+nhập Customer thứ hai, probe khớp và hồ sơ visible/active/customer.
+
+Owner SQL Editor tạm đổi is_active=false của đúng hồ sơ, kiểm tra guarded theo
+ID/email/role/active; không dùng quyền postgres cho request ứng dụng. Phiên thật
+vẫn được Auth xác minh nhưng profile invisible qua RLS. Form đang mở gửi lưu bị
+server từ chối; reload /profile hiện trạng thái không được truy cập, không render
+form hồ sơ. Đã chụp bằng chứng không chứa dữ liệu cá nhân.
+
+Khôi phục đầu tiên lỗi 42601 vì Monaco ghép nội dung editor; chưa đổi được
+trạng thái. Đã chọn toàn bộ/xóa editor, kiểm tra lại câu lệnh guarded, chạy lại
+và xác minh owner thấy customer/active=true. Probe cùng phiên thấy profile
+visible/active/customer, reload /profile truy cập lại được. Không đổi role,
+full_name/phone, RLS, migration, Auth settings hoặc tạo booking. updated_at có
+thể được trigger cập nhật do chuyển trạng thái; không đặt lùi timestamp.
+
+Runner --browser hỗ trợ IDENTITY_QA_TARGET_ID chỉ giữ trong môi trường tiến
+trình (không hardcode ID cá nhân). Nút probe gửi cookie HttpOnly theo HTTP bình
+thường tới server QA cùng host loopback, xác minh Auth và query profile bằng JWT
+user; chỉ trả authenticated/targetMatches/profileVisible/active/role. Cookie
+refresh nếu có được trả với HttpOnly/SameSite; không xuất cookie/JWT/ID hay email.
+Probe có Host/Origin/CSRF gate như runner, không thực hiện UPDATE/owner API.
+Ca này chứng minh chặn phiên đang đăng nhập; chưa thử login mới lúc inactive.
+
+### Signup metadata thật · đang xác nhận email
+
+Operator đã duyệt hai alias trong hộp thư mình sở hữu để kiểm thử metadata admin
+và staff giả. Owner preflight xác nhận cả hai chưa tồn tại. Runner gửi một signup
+thật cho ca admin qua public SDK/SSR PKCE, không dùng Admin API; random password
+chỉ trong RAM, không log/lưu. Supabase trả user mới có identities, chưa confirm,
+không session; owner đọc auth.users/profiles thấy requested_role=admin nhưng
+trusted_role=customer, active=true. Đây là PASS cho trigger/metadata admin, không
+phải tài khoản Admin thật. Lúc đầu chưa gửi ca staff để tránh ghi đè verifier;
+kết quả lần thử tiếp theo ở mục dưới. Không resend/retry tự động hoặc thay email settings.
+
+IDENTITY_QA_SIGNUP_EMAILS là mapping role tấn công tới email operator duyệt trong
+môi trường tiến trình, không chứa email cá nhân trong code. Một attempt mỗi role
+mỗi lần chạy; không khởi động lại để vượt gate khi chờ confirmation/rate-limit.
+Probe confirmed QA so ID user được auth.getUser xác minh với user mới trả từ
+signup (giữ RAM), rồi đọc profile qua JWT. Không trả ID/token hoặc đọc thư hộp thư.
+Email callback chỉ PASS sau quan sát phiên của user mới và /profile qua flow thật.
+
+### QA đăng ký bằng mật khẩu riêng và giới hạn thư · 01/10/2026
+
+Operator duyệt thêm đúng callback loopback vào allowlist; đã lưu và đọc lại một
+URL, không đổi Site URL, provider, template hoặc yêu cầu confirm email. Link QA
+cũ đã dùng/hết hạn trả otp_expired; không có mật khẩu ngẫu nhiên để gửi lại. Sau
+đó operator duyệt alias QA mới, tự nhập mật khẩu/signup và mở thư trong Codex.
+Probe dùng IDENTITY_QA_TARGET_EMAIL từ môi trường, xác minh email của auth.getUser
+(không đọc email từ cookie/metadata), confirmed và profile customer/active=true.
+Chỉ xuất booleans/role. Phiên QA mới đã đạt; callback end-to-end còn PARTIAL vì
+không ghi nhận trực tiếp request exchange, không biến lời báo đăng nhập thành PASS.
+
+Preflight alias staff chưa tồn tại; một signup thật gửi metadata staff/is_active=false
+bị over_email_send_rate_limit. Owner SELECT join auth.users/profiles không trả dòng.
+Ca metadata staff BLOCKED, không tạo tài khoản thành công, không nâng quyền và không
+retry/resend liên tục. Không đòi user biết mật khẩu ngẫu nhiên của ca tấn công.
+
+HTTP cookie lỗi dùng giá trị giả độc lập, không lấy/sửa cookie browser thật: session
+unauthenticated và profile redirect login. Không chứng minh refresh JWT thật hết hạn.
+Không đánh dấu toàn bộ Phần 4 integration hoàn tất; ca staff/callback cần kiểm chứng
+thêm, Staff/Admin thật vẫn NOT RUN theo phạm vi đã duyệt.
+
+Gate cuối sau bổ sung probe/cookie test: syntax script, lint/typecheck, contract
+mock, server build, Pages build và 442 references đều PASS. HTTP Identity smoke
+PASS sau khởi động lại server, gồm session cookie lỗi và không render profile form.
+Next.js streaming redirect có thể trả HTTP 200 với meta refresh về login; test
+chấp nhận đúng semantic redirect này hoặc HTTP 307, không chỉ chấp nhận status 200.
+Reload hồ sơ QA mới sau build giữ Customer; console không có error trong ca đó.
+Không chạy lại toàn bộ responsive vì không đổi UI; dùng bằng chứng trước đã ghi.
+
+Build sandbox đầu tiên gặp spawn EPERM; chạy với quyền thực thi được duyệt đạt.
+Không chạy song song hai mode: Next.js dùng chung đầu ra .next nội bộ trước khi
+export Pages, từng gây lỗi server tạm thời thiếu middleware-manifest. Đã build
+Pages/kiểm tra artifact trước, build lại normal, khởi động server 3002 và smoke PASS.
+Đã dừng QA server riêng sau test; server ứng dụng vẫn chạy local. Không đổi workflow.
 
 ## Kết quả lịch sử Phần 2 · 30/09/2026 (trước đổi catalogue Phần 3A)
 

@@ -3,6 +3,7 @@ import { createInterface } from 'node:readline/promises';
 import { createClient } from '@supabase/supabase-js';
 import { createServer } from 'node:http';
 import { randomBytes } from 'node:crypto';
+import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr';
 
 // Interactive, real Customer JWT checks. Never save or print credentials/tokens.
 const browserMode = process.argv.includes('--browser');
@@ -162,6 +163,16 @@ if (!browserMode) {
   // Local QA only: not part of Next.js, never deploy or expose on the network.
   const origin = 'http://127.0.0.1:3004';
   const csrf = randomBytes(24).toString('hex');
+  const targetId = process.env.IDENTITY_QA_TARGET_ID;
+  const targetEmail = process.env.IDENTITY_QA_TARGET_EMAIL?.trim().toLowerCase();
+  if (targetEmail) assert.match(targetEmail, /^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Approved target email required');
+  if (targetId) assert.match(targetId, /^[0-9a-f-]{36}$/i, 'Valid target ID required');
+  const signupEmails = JSON.parse(process.env.IDENTITY_QA_SIGNUP_EMAILS || '{}');
+  for (const [role, email] of Object.entries(signupEmails)) {
+    assert.ok(['admin', 'staff'].includes(role) && typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email), 'Explicit approved QA email mapping required');
+  }
+  const signupAttempted = new Set();
+  const signupTargets = new Map();
   let busy = false;
   const form = `<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Identity QA local</title><main><h1>Kiểm thử Identity — chỉ local</h1><p>Chỉ dùng Customer development đã xác nhận email. Mật khẩu/JWT không lưu vào file hoặc log. Không tạo tài khoản, nâng quyền hay khóa tài khoản.</p><form method="post" action="/run" autocomplete="off"><input type="hidden" name="csrf" value="${csrf}"><fieldset><legend>Customer 1 (bắt buộc)</legend><label>Email <input type="email" name="email1" required></label><label>Mật khẩu <input type="password" name="password1" required autocomplete="off"></label></fieldset><fieldset><legend>Customer 2 (tùy chọn, cần cho A/B)</legend><label>Email <input type="email" name="email2"></label><label>Mật khẩu <input type="password" name="password2" autocomplete="off"></label></fieldset><button>Chạy kiểm thử JWT</button></form><pre role="status" aria-live="polite"></pre></main><script nonce="${csrf}">
 const form = document.querySelector('form');
@@ -179,7 +190,31 @@ form.addEventListener('submit', async event => {
   } catch { status.textContent = 'BLOCKED: local QA connection failed.'; }
   finally { button.disabled = false; }
 });
-</script></html>`;
+</script>${targetId || targetEmail ? `<button id="probe">Kiểm tra phiên hiện tại</button><pre id="probe-result" role="status"></pre><script nonce="${csrf}">
+document.querySelector('#probe').addEventListener('click', async () => {
+  const button = document.querySelector('#probe');
+  const result = document.querySelector('#probe-result');
+  button.disabled = true;
+  try {
+    const response = await fetch('/probe', {method:'POST', credentials:'same-origin', body:new URLSearchParams({csrf:'${csrf}'})});
+    result.textContent = await response.text();
+  } catch { result.textContent = 'BLOCKED: session probe unavailable'; }
+  finally { button.disabled = false; }
+});
+</script>` : ''}${Object.keys(signupEmails).map(role => `<button class="signup-qa" data-role="${role}">Signup QA ${role} metadata</button><button class="signup-probe" data-role="${role}">Probe confirmed QA ${role}</button>`).join('')}<pre id="signup-result" role="status"></pre><script nonce="${csrf}">
+for (const button of document.querySelectorAll('.signup-qa,.signup-probe')) {
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    const result = document.querySelector('#signup-result');
+    result.textContent = 'Đang kiểm thử, không bấm lại…';
+    try {
+      const response = await fetch(button.classList.contains('signup-qa') ? '/signup' : '/probe', {method:'POST',credentials:'same-origin',body:new URLSearchParams({csrf:'${csrf}',role:button.dataset.role})});
+      result.textContent = await response.text();
+    } catch { result.textContent = 'BLOCKED: QA connection failed.'; }
+    finally { if (button.classList.contains('signup-probe')) button.disabled = false; }
+  });
+}
+</script></html>`.replace('Không tạo tài khoản, nâng quyền hay khóa tài khoản.', 'Không nâng quyền hay khóa tài khoản. Signup QA chỉ bật khi có danh sách email được operator duyệt.');
   const server = createServer(async (request, response) => {
     response.setHeader('Cache-Control', 'no-store');
     response.setHeader('Referrer-Policy', 'no-referrer');
@@ -190,7 +225,7 @@ form.addEventListener('submit', async event => {
     };
     if (request.headers.host !== '127.0.0.1:3004') return reply(403, 'Forbidden');
     if (request.method === 'GET' && request.url === '/') return reply(200, form, 'text/html; charset=utf-8');
-    if (request.method !== 'POST' || request.url !== '/run') return reply(404, 'Not found');
+    if (request.method !== 'POST' || !['/run', '/probe', '/signup'].includes(request.url)) return reply(404, 'Not found');
     if (request.headers.origin !== origin || !request.headers['content-type']?.startsWith('application/x-www-form-urlencoded')) return reply(403, 'Forbidden');
     if (busy) return reply(409, 'A test is already running. Do not retry.');
     let body = '';
@@ -203,6 +238,46 @@ form.addEventListener('submit', async event => {
       const fields = new URLSearchParams(body);
       body = '';
       if (fields.get('csrf') !== csrf) return reply(403, 'Forbidden');
+      if (request.url === '/probe' || request.url === '/signup') {
+        const role = fields.get('role');
+        const expectedId = role ? signupTargets.get(role) : targetId;
+        if (request.url === '/probe' && !expectedId && (role || !targetEmail)) return reply(404, 'No target configured');
+        // Browser sends its normal HttpOnly cookies to a same-host local server.
+        // Verify identity via Auth; output only booleans/role, never cookie/token/ID.
+        const client = createServerClient(url, key, {
+          global: { fetch: (input, options) => fetch(input, { ...options, signal: AbortSignal.timeout(20000) }) },
+          cookies: {
+            getAll: () => parseCookieHeader(request.headers.cookie || '').filter(cookie => typeof cookie.value === 'string'),
+            setAll: values => response.setHeader('Set-Cookie', values.map(({name,value,options}) => serializeCookieHeader(name,value,{...options,httpOnly:true,sameSite:'lax',secure:false}))),
+          },
+        });
+        if (request.url === '/signup') {
+          if (!Object.hasOwn(signupEmails, role) || !['admin', 'staff'].includes(role)) return reply(403, 'No approved email for this case');
+          if (signupAttempted.has(role)) return reply(409, 'Already attempted; no automatic retry or resend');
+          signupAttempted.add(role);
+          let password = randomBytes(32).toString('hex');
+          try {
+            const { data, error } = await client.auth.signUp({ email: signupEmails[role], password,
+              options: { emailRedirectTo: 'http://127.0.0.1:3002/auth/confirm', data: { role, is_active:false, full_name:`Identity QA ${role} metadata` } },
+            });
+            if (error) {
+              const code = /^[a-z_]{1,64}$/.test(error.code || '') ? error.code : 'unknown';
+              return reply(error.status === 429 ? 429 : 400, `BLOCKED: signup ${role}; code=${code}; no retry`);
+            }
+            if (data.session || data.user?.email_confirmed_at) return reply(503, 'FAIL: expected email confirmation before session');
+            if (!data.user?.id || !data.user.identities?.length) return reply(409, 'BLOCKED: cannot prove a newly created account');
+            signupTargets.set(role, data.user.id);
+            return reply(200, `Signup QA ${role} accepted; confirmation required. NOT PASS until owner profile and callback verified.`);
+          } finally { password = ''; }
+        }
+        const { data, error } = await client.auth.getUser();
+        if (error || !data.user?.email_confirmed_at) return reply(401, 'authenticated=false');
+        const targetMatches = expectedId ? data.user.id === expectedId : data.user.email?.toLowerCase() === targetEmail;
+        if (!targetMatches) return reply(403, 'authenticated=true; targetMatches=false; do not change cloud state');
+        const own = await client.from('profiles').select('role,is_active').eq('id', data.user.id).maybeSingle();
+        if (own.error) return reply(503, 'BLOCKED: profile query failed');
+        return reply(200, JSON.stringify({ authenticated:true,targetMatches:true,profileVisible:!!own.data,active:own.data?.is_active ?? false,role:own.data?.role ?? null }));
+      }
       for (const index of [1, 2]) {
         const email = fields.get(`email${index}`)?.trim() || '';
         const password = fields.get(`password${index}`) || '';

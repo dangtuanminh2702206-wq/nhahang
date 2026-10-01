@@ -24,5 +24,22 @@ assert.equal(destination.pathname, '/login');
 const session = await fetch(new URL('/auth/session', base));
 assert.match(session.headers.get('cache-control'), /no-store/);
 assert.equal((await session.json()).authenticated, false);
+// Synthetic malformed cookie only: never borrow or change a real browser session.
+const invalidCookie = { Cookie: 'sb-unhybmmbgumyhzaftlli-auth-token=base64-not-a-valid-session' };
+const invalidSession = await fetch(new URL('/auth/session', base), { headers: invalidCookie });
+assert.equal(invalidSession.status, 200);
+assert.match(invalidSession.headers.get('cache-control'), /no-store/);
+assert.equal((await invalidSession.json()).authenticated, false);
+const invalidProfile = await fetch(new URL('/profile', base), { headers: invalidCookie, redirect: 'manual' });
+if (invalidProfile.status === 307) {
+  assert.equal(new URL(invalidProfile.headers.get('location'), base).pathname, '/login');
+} else {
+  // Next.js can stream the shell before redirecting via a meta refresh.
+  assert.equal(invalidProfile.status, 200);
+  const html = await invalidProfile.text();
+  assert.ok(/<meta\b[^>]*http-equiv="refresh"[^>]*content="[01];url=\/login"\s*\/>/.test(html), 'Streamed redirect must target login');
+  assert.ok(!html.includes('identity-name'), 'Private profile form must never render');
+}
+console.log('PASS: malformed session cookie denied; not a real expired-JWT refresh test');
 console.log('PASS: public/identity HTTP smoke, CSRF rejection, safe callback and no-store guest session');
 console.log('NOT RUN: real signup, email confirmation, login/logout, refresh, JWT/RLS and role accounts');

@@ -141,8 +141,12 @@ Auth/JWT thật đã kiểm chứng một phần với hai Customer: server đ�
 reload duy trì phiên và logout chặn lại profile đạt. Customer thứ hai đã login
 thành công sau lần signup bị giới hạn email trước đó. Runner đã kiểm chứng JWT
 A/B thật: grants role/is_active, cách ly đọc/cập nhật hai chiều, cập nhật chính
-mình và refresh chủ động đạt. Callback email thật, metadata signup giả, cookie
-hết hạn, inactive và Staff/Admin JWT chưa chạy. Có runner tương tác
+mình và refresh chủ động đạt. Inactive thật cũng đạt: phiên đang có bị server/RLS
+chặn; đã khôi phục active và truy cập hồ sơ lại được. Signup Auth thật với metadata
+admin giả tạo Customer active đúng. Phiên QA mới sau xác nhận đã được Auth xác minh
+đúng Customer active; chưa quan sát trực tiếp request callback nên không coi phiên
+đăng nhập là bằng chứng độc lập cho callback. Ca staff bị giới hạn gửi email.
+Cookie lỗi bị từ chối; refresh cookie hết hạn và Staff/Admin JWT chưa chứng nhận. Có runner tương tác
 `node scripts/test-identity-live.mjs` hoặc thêm `--browser` cho QA loopback riêng;
 xem `docs/database-testing.md`. Chưa tuyên bố toàn bộ integration Phần 4 hoàn tất.
 Không coi build hoặc smoke HTTP là chứng nhận đăng nhập/RLS thật.
@@ -168,8 +172,9 @@ Legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` được hỗ trợ như fallback; tuyệ
 sau thay đổi env. Không dùng origin Pages cho Auth thật.
 
 Email provider, signup và yêu cầu Confirm email đã được kiểm tra chỉ đọc trên
-development ngày 01/10/2026. Operator còn cần kiểm tra allowlist callback
-`http://127.0.0.1:3002/auth/confirm` trong development. App hỗ trợ callback PKCE
+development ngày 01/10/2026. Sau khi operator duyệt, đã thêm đúng allowlist callback
+`http://127.0.0.1:3002/auth/confirm` trong development; Site URL giữ nguyên.
+App hỗ trợ callback PKCE
 `code` (mở email trong trình duyệt đã signup) và token_hash/type signup hoặc email
 nếu operator đã cấu hình SSR email template. Không tự thay provider/template,
 Site URL hoặc redirect allowlist. Liên kết lỗi/hết hạn về login, không nhận next
