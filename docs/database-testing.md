@@ -4,8 +4,8 @@
 
 Các PASS bên dưới là bằng chứng đã ghi nhận cho catalogue cũ 3 khu vực/16 bàn/
 24 món ở Phần 2, không phải lần kiểm thử mới của seed hiện tại. Seed được đổi
-sang 3 tầng/22 bàn/30 món ở commit `5e89275`; lần đồng bộ tài liệu này không
-chạy SQL, không kết nối Supabase và không chạy lại suite.
+sang 3 tầng/22 bàn/30 món ở commit `5e89275`. Kết quả chạy lại và đồng bộ
+development được ghi riêng ở mục catalogue mới bên dưới.
 
 | Kiểm tra | Kết quả thực tế |
 | --- | --- |
@@ -37,21 +37,50 @@ Kết quả lịch sử: `18 database checks passed`. Lần chạy trước khi 
 trả NOT RUN; bảng trên phản ánh lần kiểm chứng Phần 2 đã ghi nhận. Lint/typecheck/build và
 HTTP 200 là kiểm tra ứng dụng đã đạt ở commit nền tảng; lần này không sửa UI.
 
-## Chênh lệch hiện tại cần xử lý trong nhiệm vụ code riêng
+## Kiểm chứng catalogue mới · 30/09/2026
+
+- Đã cập nhật fixture chọn rõ T1-B01/T1-B02/T1-B03/T1-B04, kiểm tra capacity
+  2/2/4/4; test vô hiệu hóa đúng area_id của bàn và xác nhận UPDATE tác động 1 dòng.
+- Seed chạy hai lần trên PostgreSQL 18.4 local, database mới trống
+  `mocvi_test_catalogue_ddc1cf911aea4e2ab6d48c857676312f`: đủ 3 tầng/22 bàn/
+  6 danh mục/30 món; từng tầng có 8/8/6 bàn và 32/34/26 chỗ.
+- Toàn bộ **18 nhóm kiểm thử database đã đạt với seed hiện tại**, bao gồm RLS,
+  chống trùng, idempotency, expiration, rollback và cạnh tranh hai kết nối.
+- `supabase/tests/development-smoke.sql` đã cập nhật kỳ vọng 22 bàn/30 món/
+  6 danh mục/92 chỗ; chạy PASS trên database local và Supabase development.
+- Lint, typecheck, cú pháp script và production build đều PASS.
+- SQL Editor project `mocvi-development` (`unhybmmbgumyhzaftlli`) đã được kiểm
+  tra chỉ đọc: 3 area cũ (`main/private/window`), 16 bàn `DEMO-*`, 4 danh mục,
+  24 món cũ; 0 booking/0 profile; 12 bảng bật RLS, 14 policies, 2 exclusions,
+  1 trigger `create_customer_profile`; 7 lịch mở cửa 10:00–22:00.
+- Sau xác nhận của người dùng, đã xuất snapshot catalogue cũ ra CSV và kiểm
+  tra đọc lại đủ 3 area/16 bàn/4 danh mục/24 món/7 lịch mở cửa. Bản sao lưu local
+  ngoài repo: `../mocvi-development-backups/catalogue-before-phase3-seed-20260930.csv`;
+  SHA-256 `BB63E6AC0B5DA90434A68FD5BE0EC808B0B5CAC42D3BE44F8873CC8FD25DF5B2`.
+- Đã áp dụng seed mới trong transaction, dùng booking advisory lock và khóa
+  catalogue; guard từ chối nếu có booking/profile hoặc snapshot đã thay đổi.
+  Chỉ thay các mã demo cũ đã xác minh; không reset schema/chạy lại migration,
+  không thay grants/RLS, không tạo tài khoản/booking thử trên cloud.
+- Smoke SQL mới trả **PASS trên Supabase**: 12 bảng RLS, 2 exclusions, số lượng
+  catalogue, quyền anon đọc menu, chặn đọc booking, chặn RPC thiếu identity/quyền,
+  chặn nâng role/ghi audit/gọi helper. Đây là SET LOCAL ROLE trong SQL Editor,
+  không phải kiểm thử JWT đăng nhập qua HTTP.
+- Đọc lại cloud và đối chiếu data public: khớp mã bàn/tầng/capacity của 22 bàn,
+  tên/mô tả/danh mục/giá/featured của 30 món; tất cả active/available. Tầng có
+  8/8/6 bàn, 32/34/26 chỗ; đủ 6 danh mục. Auth/JWT thật vẫn thuộc Phần 4.
+
+### Đối chiếu hiện tại
 
 | Nguồn | Trạng thái đối chiếu ngày 30/09/2026 |
 | --- | --- |
 | `src/data/restaurant.ts` và `supabase/seed.sql` | Khớp mã/tầng/capacity của 22 bàn; khớp tên/danh mục/mô tả/giá/featured của 30 món |
-| `scripts/test-database.mjs` | Assertion vẫn 16 bàn/24 món; SELECT menu anon vẫn kỳ vọng 24; test tắt area vẫn dùng `main` không còn trong seed |
-| `supabase/tests/development-smoke.sql` | Kiểm tra tổng số vẫn kỳ vọng 16 bàn/24 món và anon đọc 24 món; cũng cần cập nhật trước chạy lại với seed mới |
-| Supabase development | Lần kiểm chứng có ghi nhận là catalogue cũ; chưa xác minh catalogue hiện tại |
+| `scripts/test-database.mjs` | Đã cập nhật catalogue, mã fixture và area_id; 18 nhóm PASS trên local trống |
+| `supabase/tests/development-smoke.sql` | Đã cập nhật số lượng; PASS local và cloud với catalogue mới |
+| Supabase development | Đã sao lưu và thay seed có xác nhận; khớp 3 tầng/22 bàn/92 chỗ/6 danh mục/30 món |
 | Auth/JWT thật và scheduler | Chưa kiểm chứng / chưa cài như các giới hạn bên dưới |
 
-Suite hiện không tương thích seed mới và sẽ không qua assertion số lượng đầu
-tiên. Chỉ đổi các con số là chưa đủ: phải kiểm tra fixture chọn bàn, capacity,
-mapping area và mục đích từng ca (đặc biệt việc vô hiệu hóa khu vực). Không sửa
-script hoặc smoke SQL trong nhiệm vụ tài liệu này; phải cập nhật và chạy lại trên database local
-trống trước khi công bố kết quả mới. Không tự chạy seed lên cloud để ép khớp.
+Local suite và smoke cloud không chứng nhận Auth/JWT/PostgREST thật. Phần 4 cần
+kiểm thử đăng ký/đăng nhập bằng phiên/JWT thật. Không xóa lịch sử để ép khớp.
 
 ## Chạy bộ kiểm thử local
 
@@ -85,9 +114,10 @@ chạy; chỉ quản trị viên môi trường test mới nên dọn khi không
 không cần framework test/ORM. `pg` cung cấp các kết nối độc lập và query tham số
 mà stack frontend hiện tại chưa có.
 
-## Các ca đã viết ở Phần 2 (fixture hiện cần cập nhật)
+## Các ca đã viết ở Phần 2 (fixture đã cập nhật theo catalogue Phần 3A)
 
-- Áp migration trên database sạch; seed hai lần vẫn đúng 3 khu vực/16 bàn/24 món.
+- Áp migration trên database sạch; seed hai lần đúng 3 tầng/22 bàn/30 món,
+  6 danh mục và sức chứa 32/34/26 chỗ (kỳ vọng đã cập nhật từ catalogue Phần 2).
 - Retry đúng payload trả cùng ID; đổi payload với cùng key bị từ chối.
 - Trùng bàn bị chặn; bắt đầu đúng cuối buffer được chấp nhận.
 - Bắt đầu đúng giờ mở/kết thúc buffer đúng giờ đóng; vượt biên bị chặn.

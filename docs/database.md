@@ -5,8 +5,9 @@
 Migration và seed đã chạy thành công trên Supabase development và PostgreSQL
 local. Bộ 18 nhóm kiểm thử tích hợp local và smoke test quyền trên Supabase đều
 đạt với catalogue Phần 2 cũ (16 bàn/24 món). Seed trong repo thay đổi ở Phần 3A
-sang 22 bàn/30 món; chưa có bằng chứng chạy lại suite hoặc áp dụng seed mới trên
-Supabase. Không coi kết quả cũ là chứng nhận catalogue mới.
+sang 22 bàn/30 món. Fixture đã cập nhật, 18 nhóm test và smoke mới PASS local;
+development đã sao lưu/thay seed có xác nhận, catalogue khớp UI và smoke cloud
+PASS. Không coi local hoặc SQL Editor là chứng nhận tích hợp Auth/JWT thật.
 Chưa cài scheduler, chưa có authentication flow hoặc API ở ứng dụng Next.js;
 chưa kiểm chứng Auth/JWT qua HTTP. Xem [database-testing.md](database-testing.md)
 để biết môi trường, bằng chứng và giới hạn kiểm chứng.

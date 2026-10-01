@@ -16,8 +16,8 @@ Tổng cộng có **22 bàn**, sức chứa từng bàn từ 2 đến 8 người
 
 Đối chiếu ngày 30/09/2026: mã bàn, mapping tầng và capacity trong
 `src/data/restaurant.ts` khớp `supabase/seed.sql`. Tổng **92 chỗ cấu hình**;
-đây không phải 92 chỗ đang trống hoặc có thể đặt ngay. Chưa xác minh lại catalogue
-trên Supabase sau thay đổi seed Phần 3A.
+đây không phải 92 chỗ đang trống hoặc có thể đặt ngay. Supabase development đã
+sao lưu/thay seed có xác nhận và đọc lại khớp các mã/tầng/capacity trên; smoke đạt.
 
 Một booking chỉ gắn một bàn, số khách từ 1 đến `min(capacity, max_guests)`;
 `max_guests` mặc định 8. Không ghép/tách bàn. Khả dụng thực tế còn phụ thuộc

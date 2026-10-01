@@ -6,7 +6,8 @@
 
 Đối chiếu ngày 30/09/2026: 30 mã món duy nhất có tên, danh mục, mô tả, giá và
 featured khớp giữa `src/data/restaurant.ts` và `supabase/seed.sql`. Không dùng
-số ảnh để suy ra số món. Chưa xác minh seed này đã áp dụng lên Supabase.
+số ảnh để suy ra số món. Supabase development đã sao lưu/thay seed có xác nhận;
+đọc lại khớp 30 món/6 danh mục và smoke test catalogue mới đạt.
 
 | Danh mục | Món UI / seed | Có ảnh / thiếu ảnh |
 | --- | ---: | ---: |

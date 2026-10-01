@@ -13,15 +13,17 @@ do $$ begin
     raise exception 'TEST_EXCLUSION_COUNT';
   end if;
   if (select count(*) from public.areas) <> 3
-     or (select count(*) from public.tables) <> 16
-     or (select count(*) from public.menu_items) <> 24 then
+     or (select count(*) from public.tables) <> 22
+     or (select count(*) from public.menu_categories) <> 6
+     or (select count(*) from public.menu_items) <> 30
+     or (select sum(capacity) from public.tables) <> 92 then
     raise exception 'TEST_DEMO_COUNTS';
   end if;
 end $$;
 
 set local role anon;
 do $$ begin
-  if (select count(*) from public.menu_items) <> 24 then raise exception 'TEST_ANON_MENU'; end if;
+  if (select count(*) from public.menu_items) <> 30 then raise exception 'TEST_ANON_MENU'; end if;
   begin
     perform 1 from public.bookings;
     raise exception 'TEST_ANON_BOOKING_LEAK';

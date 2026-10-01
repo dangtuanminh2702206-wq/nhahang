@@ -100,15 +100,28 @@ try {
   const seed = await readFile(new URL('../supabase/seed.sql', import.meta.url), 'utf8');
   await admin.query(seed);
   await admin.query(seed);
-  await check('seed twice preserves 3 areas / 16 tables / 24 items', async () => {
-    for (const [table, expected] of [['areas',3],['tables',16],['menu_items',24]]) {
+  await check('seed twice preserves 3 floors / 22 tables / 30 items and canonical capacities', async () => {
+    for (const [table, expected] of [['areas',3],['tables',22],['menu_categories',6],['menu_items',30]]) {
       assert.equal((await admin.query(`select count(*)::int n from public.${table}`)).rows[0].n, expected);
     }
+    const floors = (await admin.query(`select a.code, count(t.id)::int tables,
+      sum(t.capacity)::int seats from public.areas a join public.tables t on t.area_id=a.id
+      group by a.code order by a.code`)).rows;
+    assert.deepEqual(floors, [
+      {code:'floor-1',tables:8,seats:32},
+      {code:'floor-2',tables:8,seats:34},
+      {code:'floor-3',tables:6,seats:26},
+    ]);
   });
   for (const id of [A,B,C,S,D]) await admin.query('insert into auth.users(id) values($1)', [id]);
   await admin.query("update public.profiles set role='staff' where id=$1", [S]);
   await admin.query("update public.profiles set role='admin' where id=$1", [D]);
-  tables = (await admin.query('select id from public.tables order by code')).rows;
+  // Explicit stable codes keep capacity and area tests independent of catalogue order.
+  const fixtureCodes = ['T1-B01','T1-B02','T1-B03','T1-B04'];
+  tables = (await admin.query(`select id, code, area_id, capacity from public.tables
+    where code=any($1::text[]) order by array_position($1::text[],code)`, [fixtureCodes])).rows;
+  assert.deepEqual(tables.map(t=>t.code),fixtureCodes);
+  assert.deepEqual(tables.map(t=>t.capacity),[2,2,4,4]);
   start = (await admin.query("select ((current_date + 2) + time '12:00') at time zone 'Asia/Ho_Chi_Minh' as t")).rows[0].t;
   const left = await connect(), right = await connect();
   const original = args();
@@ -131,7 +144,7 @@ try {
     await assert.rejects(actor(left,A,c => c.query('select public.confirm_booking($1)',[created.id])),e => e.code==='42501');
     await assert.rejects(actor(left,A,c => c.query('select private.expire_pending()')),e => e.code==='42501');
     await assert.rejects(actor(right,null,c => book(c,args(1)),'anon'),e => e.code==='42501');
-    assert.equal((await actor(right,null,c=>c.query('select id from public.menu_items'),'anon')).rowCount,24);
+    assert.equal((await actor(right,null,c=>c.query('select id from public.menu_items'),'anon')).rowCount,30);
     assert.equal((await actor(right,B,c=>c.query('select id from public.booking_history where booking_id=$1',[created.id]))).rowCount,0);
     assert.equal((await actor(right,B,c=>c.query('select id from public.notifications where recipient_id=$1',[A]))).rowCount,0);
     assert.equal((await actor(left,A,c=>c.query('select * from public.audit_logs'))).rowCount,0);
@@ -204,9 +217,9 @@ try {
     await admin.query("update public.tables set status='out_of_service' where id=$1",[tables[0].id]);
     await assert.rejects(actor(left,A,c=>book(c,args())),/TABLE_UNAVAILABLE/);
     await admin.query("update public.tables set status='available' where id=$1",[tables[0].id]);
-    await admin.query("update public.areas set is_active=false where code='main'");
+    assert.equal((await admin.query('update public.areas set is_active=false where id=$1',[tables[0].area_id])).rowCount,1);
     await assert.rejects(actor(left,A,c=>book(c,args())),/TABLE_UNAVAILABLE/);
-    await admin.query("update public.areas set is_active=true where code='main'");
+    assert.equal((await admin.query('update public.areas set is_active=true where id=$1',[tables[0].area_id])).rowCount,1);
   });
   await clearBookings();
   await check('two independent connections: same table has exactly one winner', async () => {
