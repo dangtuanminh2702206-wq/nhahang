@@ -14,6 +14,7 @@ export type RestaurantTable = {
   note?: string;
   planX: number;
   planY: number;
+  nearbyLandmarks: readonly string[];
 };
 
 export type RestaurantFloor = {
@@ -79,17 +80,18 @@ export const restaurantFloors: readonly RestaurantFloor[] = [
       { label: "Cửa kính", className: "landmark-window" },
       { label: "Quầy đón khách", className: "landmark-reception" },
       { label: "Lối vào", className: "landmark-entrance" },
-      { label: "Cầu thang", className: "landmark-stairs" },
+      { label: "Cầu thang lên T2", className: "landmark-stairs" },
+      { label: "Cụm cây / Vách xanh", className: "landmark-green" },
     ],
     tables: [
-      { code: "T1-B01", capacity: 2, position: "Gần cửa kính", note: "Phù hợp cặp đôi", planX: 18, planY: 23 },
-      { code: "T1-B02", capacity: 2, position: "Gần lễ tân", planX: 42, planY: 28 },
-      { code: "T1-B03", capacity: 4, position: "Khu gia đình", planX: 68, planY: 24 },
-      { code: "T1-B04", capacity: 4, position: "Gần cây xanh", planX: 21, planY: 56 },
-      { code: "T1-B05", capacity: 4, position: "Giữa sảnh", planX: 48, planY: 52 },
-      { code: "T1-B06", capacity: 4, position: "Gần cửa sổ", note: "View thoáng", planX: 74, planY: 53 },
-      { code: "T1-B07", capacity: 6, position: "Khu gia đình lớn", planX: 29, planY: 78 },
-      { code: "T1-B08", capacity: 6, position: "Gần cầu thang", planX: 70, planY: 78 },
+      { code: "T1-B01", capacity: 2, position: "Gần cửa kính", note: "Phù hợp cặp đôi", planX: 18, planY: 22, nearbyLandmarks: ["Cửa kính"] },
+      { code: "T1-B02", capacity: 2, position: "Khu trung tâm gần kính", planX: 43, planY: 27, nearbyLandmarks: ["Cửa kính"] },
+      { code: "T1-B03", capacity: 4, position: "Khu gia đình", planX: 69, planY: 22, nearbyLandmarks: ["Cửa kính"] },
+      { code: "T1-B04", capacity: 4, position: "Gần cây xanh", planX: 21, planY: 50, nearbyLandmarks: ["Cụm cây / Vách xanh"] },
+      { code: "T1-B05", capacity: 4, position: "Giữa sảnh", planX: 49, planY: 47, nearbyLandmarks: [] },
+      { code: "T1-B06", capacity: 4, position: "Gần cầu thang", note: "Không gian thoáng", planX: 75, planY: 48, nearbyLandmarks: ["Cầu thang lên T2"] },
+      { code: "T1-B07", capacity: 6, position: "Khu gia đình lớn", planX: 30, planY: 73, nearbyLandmarks: ["Quầy đón khách"] },
+      { code: "T1-B08", capacity: 6, position: "Gần cầu thang", planX: 71, planY: 73, nearbyLandmarks: ["Cầu thang lên T2"] },
     ],
   },
   {
@@ -104,18 +106,18 @@ export const restaurantFloors: readonly RestaurantFloor[] = [
     planLandmarks: [
       { label: "Cửa kính", className: "landmark-window" },
       { label: "Góc tĩnh", className: "landmark-reception" },
-      { label: "Lối lên", className: "landmark-entrance" },
-      { label: "Cầu thang", className: "landmark-stairs" },
+      { label: "Lõi cầu thang T1 ↕ T3", className: "landmark-stairs" },
+      { label: "Vách / Khu bán riêng tư", className: "landmark-private" },
     ],
     tables: [
-      { code: "T2-B01", capacity: 2, position: "Góc yên tĩnh", planX: 18, planY: 24 },
-      { code: "T2-B02", capacity: 2, position: "Gần cửa sổ", planX: 48, planY: 22 },
-      { code: "T2-B03", capacity: 4, position: "Khu nhóm bạn", planX: 75, planY: 24 },
-      { code: "T2-B04", capacity: 4, position: "Khu nhóm bạn", planX: 20, planY: 53 },
-      { code: "T2-B05", capacity: 4, position: "Giữa tầng", planX: 49, planY: 53 },
-      { code: "T2-B06", capacity: 4, position: "Gần cửa kính", planX: 75, planY: 54 },
-      { code: "T2-B07", capacity: 6, position: "Khu họp mặt nhỏ", planX: 29, planY: 78 },
-      { code: "T2-B08", capacity: 8, position: "Khu nhóm lớn / công ty", planX: 69, planY: 78 },
+      { code: "T2-B01", capacity: 2, position: "Góc yên tĩnh", planX: 20, planY: 75, nearbyLandmarks: ["Góc tĩnh"] },
+      { code: "T2-B02", capacity: 2, position: "Gần cửa kính", planX: 36, planY: 22, nearbyLandmarks: ["Cửa kính"] },
+      { code: "T2-B03", capacity: 4, position: "Khu nhóm bạn", planX: 72, planY: 23, nearbyLandmarks: ["Cửa kính"] },
+      { code: "T2-B04", capacity: 4, position: "Khu nhóm bạn", planX: 23, planY: 48, nearbyLandmarks: [] },
+      { code: "T2-B05", capacity: 4, position: "Giữa tầng", planX: 49, planY: 47, nearbyLandmarks: [] },
+      { code: "T2-B06", capacity: 4, position: "Bán riêng tư", note: "Gần lõi thang", planX: 74, planY: 48, nearbyLandmarks: ["Vách / Khu bán riêng tư", "Lõi cầu thang T1 ↕ T3"] },
+      { code: "T2-B07", capacity: 6, position: "Khu họp mặt nhỏ", planX: 40, planY: 73, nearbyLandmarks: [] },
+      { code: "T2-B08", capacity: 8, position: "Khu nhóm lớn / công ty", planX: 69, planY: 75, nearbyLandmarks: ["Lõi cầu thang T1 ↕ T3"] },
     ],
   },
   {
@@ -130,16 +132,16 @@ export const restaurantFloors: readonly RestaurantFloor[] = [
     planLandmarks: [
       { label: "Ban công", className: "landmark-window" },
       { label: "Vườn rooftop", className: "landmark-reception" },
-      { label: "Lối lên", className: "landmark-entrance" },
-      { label: "Khu VIP", className: "landmark-stairs" },
+      { label: "Khu VIP", className: "landmark-vip" },
+      { label: "Lõi cầu thang", className: "landmark-rooftop-stairs" },
     ],
     tables: [
-      { code: "T3-B01", capacity: 2, position: "Ban công", note: "Phù hợp cặp đôi", planX: 18, planY: 27 },
-      { code: "T3-B02", capacity: 2, position: "Khu rooftop", planX: 48, planY: 25 },
-      { code: "T3-B03", capacity: 4, position: "View thoáng", planX: 76, planY: 27 },
-      { code: "T3-B04", capacity: 4, position: "Khu ngoài trời", planX: 27, planY: 63 },
-      { code: "T3-B05", capacity: 6, position: "Khu rooftop", planX: 57, planY: 62 },
-      { code: "T3-B06", capacity: 8, position: "Khu VIP", note: "Riêng tư nhất", planX: 78, planY: 77 },
+      { code: "T3-B01", capacity: 2, position: "Ban công", note: "Phù hợp cặp đôi", planX: 18, planY: 22, nearbyLandmarks: ["Ban công"] },
+      { code: "T3-B02", capacity: 2, position: "Khu rooftop", planX: 47, planY: 22, nearbyLandmarks: ["Ban công"] },
+      { code: "T3-B03", capacity: 4, position: "View thoáng", planX: 76, planY: 23, nearbyLandmarks: ["Ban công"] },
+      { code: "T3-B04", capacity: 4, position: "Khu ngoài trời", note: "Gần vườn", planX: 27, planY: 53, nearbyLandmarks: ["Vườn rooftop"] },
+      { code: "T3-B05", capacity: 6, position: "Khu rooftop", planX: 58, planY: 52, nearbyLandmarks: [] },
+      { code: "T3-B06", capacity: 8, position: "Khu VIP", note: "Riêng tư nhất", planX: 78, planY: 72, nearbyLandmarks: ["Khu VIP", "Lõi cầu thang"] },
     ],
   },
 ];

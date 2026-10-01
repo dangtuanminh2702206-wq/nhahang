@@ -2,9 +2,9 @@
 
 Không tạo hoặc tải ảnh ở Phase 3A. Danh sách dưới đây giữ brief sản xuất ảnh
 ban đầu cho Phase 3B, không phải danh sách đầy đủ về trạng thái tích hợp hiện tại.
-Đối chiếu ngày 30/09/2026: mapping có 50 path duy nhất, thực tế có 36 WebP
-(16 restaurant + 20 dish); thiếu 10 dish + 4 combo và UI dùng fallback.
-Giao diện Phần 3 đã chốt, chờ bổ sung ảnh; chưa hoàn tất toàn bộ.
+Đối chiếu bộ FINAL ngày 01/10/2026: 50 path duy nhất, thực tế đủ 50 WebP
+(16 restaurant + 30 dish + 4 combo), không canonical placeholder.
+Giao diện Phần 3 đã chốt; trạng thái build/QA ở tài liệu tích hợp, không suy ra hoàn tất chỉ từ số ảnh.
 Trạng thái/path/placement thực tế ở [asset-integration-status.md](asset-integration-status.md);
 mapping thực thi ở `src/data/media.ts`. Brief dưới đây có 11 ảnh món ưu tiên,
 khác 9 món `featured` trong catalogue; cả hai đều không phải tổng 30 món.

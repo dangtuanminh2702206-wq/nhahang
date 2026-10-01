@@ -158,8 +158,9 @@ Phần 3A; development đã sao lưu và thay catalogue có xác nhận, smoke c
   giờ/số khách trong form chỉ minh họa UI, không thay thế chính sách SQL. Contact
   chưa có địa chỉ/điện thoại/email xác nhận nên không có bản đồ. Các route Identity
   được bổ sung ở Phần 4 bên dưới; chưa có trang vận hành.
-- Phần 3 giao diện đã chốt, chờ 10 ảnh món và 4 ảnh combo; chưa hoàn tất toàn bộ.
-  Có 36 file WebP thực tế trên 50 expected paths, không lấy ảnh ngoài pack thay thế.
+- Phần 3 giao diện đã chốt, đủ FINAL 50/50 WebP (16 restaurant/30 dish/4 combo).
+  Spatial spec mới nằm trong restaurantFloors, dùng chung cho FloorPlan/reservation;
+  nearbyLandmarks chỉ chuẩn bị metadata 360, không viewer. Gate cuối xem asset-integration-status.md.
 - GitHub Pages đã xuất bản giao diện được duyệt từ commit `4450a88`, dùng static export,
   basePath `/nhahang`, output `.next-pages`, ảnh gốc không optimize. Chế độ
   build thông thường giữ Next.js server/ảnh tối ưu; Vercel vẫn là hướng vận hành
@@ -178,7 +179,7 @@ booking để ép khớp UI.
 
 - Trước khi vận hành booking: cấu hình scheduler expiration và kiểm thử JWT/Auth
   trên Supabase development khi có authentication flow.
-- Phần 3: design system và các trang công khai đã có; giao diện chốt, ảnh còn pending.
+- Phần 3: design system/public đã chốt, đủ 50 ảnh FINAL và đồng bộ spatial FloorPlan.
 - Phần 4: có implementation authentication, hồ sơ và authorization; một Customer đã kiểm chứng đọc/lưu hồ sơ, reload và logout. Signup mới/các ca JWT còn thiếu xem database-testing.md.
 - Phần 5–8: booking, Customer, Staff và Admin.
 - Phần 9–10: kiểm thử, CI, Vercel và bàn giao.
@@ -232,5 +233,5 @@ database-testing.md; không coi implementation là chứng nhận tích hợp đ
   và booking endpoint để refresh cookie; Guest lookup không bị yêu cầu đăng nhập.
 - Chưa có Supabase local Auth/PostgREST: toàn tuyến JWT/booking và happy-path UI
   còn NOT RUN. Không thêm Auth bypass, không dùng service-role hay mock làm bằng chứng JWT.
-- Không có dashboard/scheduler/cloud migration; Phần 3 vẫn thiếu ảnh và Phần 4 còn
+- Không có dashboard/scheduler/cloud migration; Phần 3 đã đủ ảnh FINAL và Phần 4 còn
   các ca Auth chưa kiểm chứng. Xem database-testing.md trước khi bật nghiệp vụ cloud.

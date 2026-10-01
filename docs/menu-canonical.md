@@ -13,11 +13,11 @@ số ảnh để suy ra số món. Supabase development đã sao lưu/thay seed 
 | --- | ---: | ---: |
 | Khai vị | 5 / 5 | 5 / 0 |
 | Món Việt đặc sắc | 5 / 5 | 5 / 0 |
-| Món chính | 7 / 7 | 5 / 2 |
-| Lẩu & dùng chung | 4 / 4 | 2 / 2 |
-| Tráng miệng | 4 / 4 | 2 / 2 |
-| Đồ uống | 5 / 5 | 1 / 4 |
-| Tổng | 30 / 30 | 20 / 10 |
+| Món chính | 7 / 7 | 7 / 0 |
+| Lẩu & dùng chung | 4 / 4 | 4 / 0 |
+| Tráng miệng | 4 / 4 | 4 / 0 |
+| Đồ uống | 5 / 5 | 5 / 0 |
+| Tổng | 30 / 30 | 30 / 0 |
 
 Tất cả 30 món có `available=true` trong data public; seed đặt `is_available`
 và `is_active` true. Đây là trạng thái demo, không phải tồn kho thời gian thực.
@@ -105,6 +105,7 @@ Combo là nội dung recommendation theo số khách, không tạo order/cart/ch
 Chi tiết đầy đủ của từng combo nằm trong data module public, đúng theo đặc tả Phase 3A.
 
 4 combo là dữ liệu public riêng trong `menuCombos`, không có bản ghi combo trong
-seed/schema hiện tại và không cộng vào 30 `menu_items`. Cả 4 ảnh combo còn thiếu;
+seed/schema hiện tại và không cộng vào 30 `menu_items`. Bộ FINAL ngày 01/10/2026
+đã tích hợp đủ 30 ảnh món và 4 ảnh combo, không thay tên/giá/category/code/khẩu phần;
 xem [asset-integration-status.md](asset-integration-status.md). Thành phần combo
 là mô tả gợi ý (có tên rút gọn và số phần), không phải FK hoặc định lượng order.

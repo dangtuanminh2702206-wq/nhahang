@@ -2,7 +2,7 @@
 
 Website quản lý và đặt bàn trực tuyến cho một nhà hàng, được phát triển trong
 đồ án môn Kỹ thuật phần mềm ứng dụng. Phiên bản hiện tại có nền tảng database và
-giao diện public đã chốt; ảnh còn thiếu và các module nghiệp vụ sẽ được triển
+giao diện public đã chốt, đủ bộ ảnh FINAL; các module nghiệp vụ sẽ được triển
 khai theo từng giai đoạn.
 
 ## Phạm vi sản phẩm
@@ -101,12 +101,13 @@ hoặc scheduler. Kiểm thử Auth/JWT qua API sẽ thực hiện khi tích h�
 - [Kiểm thử database và giới hạn kiểm chứng](docs/database-testing.md)
 
 Phần 3A có Home, Spaces, ba trang tầng, FloorPlan tương tác và Menu public.
-Phần 3B.1 đã tích hợp bộ ảnh AI accepted partial: 16 ảnh nhà hàng và 20 ảnh món.
-10 ảnh món cùng 4 combo final còn pending và dùng fallback. Xem
-[trạng thái tích hợp và path cần bổ sung](docs/asset-integration-status.md).
-Sau khi copy ảnh accepted mới vào đúng path, build/deploy lại để cập nhật trang tĩnh.
+Phần 3 đã tích hợp bộ `moc-vi-ai-assets-FINAL.zip`: 16 ảnh nhà hàng, 30 ảnh món
+và 4 combo (50/50), giữ nguyên bytes/path. FloorPlan dùng spatial spec mới trong
+data chung: 22 bàn/92 chỗ, không suy vị trí từ isometric. Xem
+[trạng thái tích hợp và kết quả nghiệm thu](docs/asset-integration-status.md).
+Build/deploy lại để cập nhật trang tĩnh; task local này chưa commit/push/deploy.
 
-**Phần 3: giao diện đã chốt, chờ bổ sung ảnh; chưa hoàn tất toàn bộ.** GitHub
+**Phần 3 hoàn tất local: 50/50 asset, FloorPlan, responsive và hai chế độ build đạt.** GitHub
 Pages là bản demo tĩnh, không phải bản vận hành Next.js/Supabase.
 
 Ngày 01/10/2026, giao diện editorial đã duyệt từ bản preview được áp dụng làm
@@ -127,7 +128,7 @@ mapping media và file trong `public/images/`:
 | Tầng / bàn / sức chứa cấu hình | 3 tầng / 22 bàn / 92 chỗ (32 + 34 + 26) |
 | Thực đơn | 6 danh mục / 30 món, 9 món nổi bật; tất cả `available=true` ở UI |
 | Combo | 4 gợi ý cho 2/4/6/8 khách; không phải món seed hoặc chức năng đặt món |
-| Ảnh | 36/50 expected assets; thiếu 10 ảnh món và 4 ảnh combo |
+| Ảnh | 50/50 FINAL assets: 16 restaurant + 30 dish + 4 combo; không canonical placeholder |
 | Trang public | 8 trang: Home, Menu, Spaces, 3 trang tầng, Contact và Đặt bàn mô phỏng |
 
 Chi tiết: [không gian và sức chứa](docs/restaurant-world.md),
@@ -183,7 +184,7 @@ URL tùy ý. Không có Staff/Admin test account hoặc workflow tự cấp quy�
 `pnpm test:identity:smoke` kiểm tra HTTP local, CSRF, callback và cache headers;
 **không** đăng ký user hoặc chứng nhận JWT. Auth/RLS thật cần config và quyền
 thử development riêng. Xem trạng thái ở `docs/database-testing.md`.
-Pages vẫn mô phỏng; ảnh pending không chặn Auth nhưng Phần 3 chưa hoàn tất.
+Pages vẫn mô phỏng; trạng thái nghiệm thu Phần 3 xem tài liệu asset integration.
 
 ## Phần 5 · nền tảng local, chưa kích hoạt cloud
 

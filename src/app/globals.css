@@ -164,6 +164,10 @@ figcaption { margin-top: .75rem; color: var(--muted-foreground); font-size: .875
 .landmark-reception { bottom: 6%; left: 4%; width: 24%; height: 3.6rem; }
 .landmark-entrance { bottom: 0; left: 38%; width: 24%; height: 2.6rem; }
 .landmark-stairs { top: 19%; right: 0; width: 2.8rem; height: 55%; writing-mode: vertical-rl; }
+.landmark-green { top: 36%; left: 0; width: 2.8rem; height: 28%; writing-mode: vertical-rl; }
+.landmark-private { top: 36%; right: 8%; width: 2.1rem; height: 28%; writing-mode: vertical-rl; }
+.landmark-vip { top: 40%; right: 0; width: 2.8rem; height: 43%; writing-mode: vertical-rl; }
+.landmark-rooftop-stairs { bottom: 0; right: 4%; width: 22%; height: 2.6rem; }
 .table-node { position: absolute; z-index: 1; display: grid; width: 5.9rem; min-height: 4rem; place-items: center; transform: translate(-50%, -50%); border: 1px solid #8a9b86; border-radius: 50%; background: #e4eadc; color: var(--foreground); line-height: 1.2; transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease; }
 .table-node:hover { border-color: var(--primary); background: #d5e1cf; }
 .table-node-selected { border: 2px solid var(--primary); background: #c9dac1; box-shadow: 0 0 0 4px rgb(57 88 63 / 13%); }
