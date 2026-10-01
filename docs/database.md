@@ -8,8 +8,8 @@ local. Bộ 18 nhóm kiểm thử tích hợp local và smoke test quyền trên
 sang 22 bàn/30 món. Fixture đã cập nhật, 18 nhóm test và smoke mới PASS local;
 development đã sao lưu/thay seed có xác nhận, catalogue khớp UI và smoke cloud
 PASS. Không coi local hoặc SQL Editor là chứng nhận tích hợp Auth/JWT thật.
-Chưa cài scheduler, chưa có authentication flow hoặc API ở ứng dụng Next.js;
-chưa kiểm chứng Auth/JWT qua HTTP. Xem [database-testing.md](database-testing.md)
+Chưa cài scheduler hoặc API booking trong Next.js. Phần 4 có implementation
+Identity/Auth nhưng chưa kiểm chứng Auth/JWT thật qua HTTP. Xem [database-testing.md](database-testing.md)
 để biết môi trường, bằng chứng và giới hạn kiểm chứng.
 
 SQL là nguồn thực thi chính sách duy nhất. `restaurant_settings` lưu các giá trị

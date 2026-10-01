@@ -8,9 +8,12 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test:db": "node scripts/test-database.mjs"
+    "test:db": "node scripts/test-database.mjs",
+    "test:identity:smoke": "node scripts/test-identity-smoke.mjs"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.117.2",
     "next": "16.3.6",
     "react": "19.2.8",
     "react-dom": "19.2.8"

@@ -1,5 +1,50 @@
 # Kiểm thử Phần 2
 
+## Identity Phần 4 · trạng thái kiểm chứng
+
+Implementation email/password, signup Customer + email confirmation, session,
+callback, profile và server authorization đã có. Không đổi database foundation.
+
+| Kiểm tra Auth/JWT thật | Trạng thái |
+| --- | --- |
+| Signup Customer, trigger profile, metadata giả admin/staff | BLOCKED — cần email sở hữu/tài khoản test development được duyệt |
+| Confirmation email, login/logout, persistence/refresh | BLOCKED — chưa có tài khoản đã xác nhận và phiên Auth thật |
+| Profile read/update, cấm sửa role/is_active, cross-user | BLOCKED — cần JWT thật của Customer A/B |
+| Inactive account | NOT RUN — chưa được phép thay trạng thái account cloud |
+| Staff/Admin JWT | NOT RUN — chưa có trusted test account được duyệt |
+
+Ngày 01/10/2026, operator đã cấu hình `.env.local` (được Git ignore). Kiểm tra
+chỉ đọc `/auth/v1/settings` xác nhận email provider bật, signup được phép và
+email auto-confirm tắt. Không sửa cấu hình cloud hoặc tạo tài khoản test.
+Kiểm tra này không chứng minh callback allowlist, email delivery hoặc JWT/RLS.
+
+| Kiểm tra implementation local · 01/10/2026 | Kết quả |
+| --- | --- |
+| Typecheck, lint | PASS |
+| Server build có `.env.local`, Pages build cùng cấu hình | PASS |
+| HTTP public/Identity, CSRF, JSON-only, callback cố định, session no-store | PASS |
+| Guest `/profile` redirect `/login` | PASS trên bản server cấu hình thật |
+| Pages artifact | PASS — 442 local href/src hợp lệ; không chứa URL/key development, form Identity hoặc session endpoint |
+| Login/signup và guest profile responsive 320/704/1024/1600px | PASS — không tràn ngang, label hiện hữu |
+| Keyboard focus, console login, thông báo lỗi form | PASS — lỗi form chỉ thử với dịch vụ loopback QA, không phải Auth thật |
+| Loading/disabled | Đã review implementation; NOT RUN quan sát runtime trạng thái pending bằng phiên Auth thật |
+
+Build lần đầu trong sandbox bị `spawn EPERM` khi tạo tiến trình TypeScript;
+chạy lại với quyền thực thi được duyệt đã đạt. Không bỏ qua TypeScript/build.
+
+`pnpm test:identity:smoke` chỉ kiểm tra HTTP local: public/Identity routes, CSRF,
+JSON-only mutation, callback không open redirect và session no-store. Phiên QA
+UI nếu dùng URL/key giả chỉ trỏ loopback không chứng minh signup/login/JWT.
+Không chạy fixture SQL hoặc tạo user cloud trong nhiệm vụ Identity khi chưa có
+config/quyền. Kết quả database Phần 2 dưới đây là bằng chứng đã ghi nhận trước,
+không được dùng để gán PASS cho integration Auth Phần 4.
+
+Checklist chạy thật khi đủ điều kiện: hai Customer test được duyệt; signup metadata
+role giả; xác nhận thư trong cùng browser PKCE; login/reload/refresh/logout; profile
+A/B qua JWT; thử cập nhật role/is_active bị grants chặn. Inactive và Staff/Admin
+chỉ chạy sau khi operator duyệt account/thao tác cụ thể. Không dùng service-role
+cho request người dùng, không nâng quyền/reset/seed để tạo kết quả PASS.
+
 ## Kết quả lịch sử Phần 2 · 30/09/2026 (trước đổi catalogue Phần 3A)
 
 Các PASS bên dưới là bằng chứng đã ghi nhận cho catalogue cũ 3 khu vực/16 bàn/

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { siteConfig } from "@/config/site";
+import { AccountControl } from "@/components/account-control";
 
 const navigation = [
   { href: "/", label: "Trang chủ" },
@@ -26,6 +27,7 @@ export function SiteHeader() {
           {navigation.map((item) => <Link key={item.href} href={item.href} aria-current={isCurrent(item.href) ? "page" : undefined} className={isCurrent(item.href) ? "is-current" : undefined}>{item.label}</Link>)}
         </nav>
         <Link className="button button-primary header-booking" href="/reservation" aria-current={pathname === "/reservation" ? "page" : undefined}>Đặt bàn ↗</Link>
+        <AccountControl />
         {/* Native disclosure can be opened before React hydrates. Keep its browser-owned state. */}
         <details className="mobile-nav" suppressHydrationWarning>
           <summary aria-label="Mở điều hướng">Menu</summary>

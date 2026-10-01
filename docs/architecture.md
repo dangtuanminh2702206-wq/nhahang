@@ -139,7 +139,7 @@ trong [database.md](database.md). Migration/seed đã chạy trên Supabase deve
 18 nhóm kiểm thử PostgreSQL local và smoke test quyền trên Supabase đã đạt ở
 catalogue Phần 2 cũ. Fixture hiện đã cập nhật và 18 nhóm test local đạt với seed
 Phần 3A; development đã sao lưu và thay catalogue có xác nhận, smoke cloud đạt.
-Ứng dụng Next.js chưa kết nối database; Auth/JWT qua API chưa được kiểm thử.
+Ứng dụng có lớp Identity kết nối khi có cấu hình server; Auth/JWT thật chưa được kiểm thử.
 
 ## Dành cho các giai đoạn sau
 
@@ -156,11 +156,11 @@ Phần 3A; development đã sao lưu và thay catalogue có xác nhận, smoke c
   form mô phỏng phía client, đồng bộ lựa chọn FloorPlan với select nhưng không gọi
   API, kiểm tra availability, lưu thông tin khách hoặc tạo booking. Các lựa chọn
   giờ/số khách trong form chỉ minh họa UI, không thay thế chính sách SQL. Contact
-  chưa có địa chỉ/điện thoại/email xác nhận nên không có bản đồ. Chưa có route
-  đăng nhập hay trang vận hành; không thay đổi phạm vi Phần 4.
+  chưa có địa chỉ/điện thoại/email xác nhận nên không có bản đồ. Các route Identity
+  được bổ sung ở Phần 4 bên dưới; chưa có trang vận hành.
 - Phần 3 giao diện đã chốt, chờ 10 ảnh món và 4 ảnh combo; chưa hoàn tất toàn bộ.
   Có 36 file WebP thực tế trên 50 expected paths, không lấy ảnh ngoài pack thay thế.
-- GitHub Pages đã xuất bản demo public từ commit `7402752`, dùng static export,
+- GitHub Pages đã xuất bản giao diện được duyệt từ commit `4450a88`, dùng static export,
   basePath `/nhahang`, output `.next-pages`, ảnh gốc không optimize. Chế độ
   build thông thường giữ Next.js server/ảnh tối ưu; Vercel vẫn là hướng vận hành
   Auth/booking. Pages không thực thi Server Actions hay API ứng dụng.
@@ -179,6 +179,35 @@ booking để ép khớp UI.
 - Trước khi vận hành booking: cấu hình scheduler expiration và kiểm thử JWT/Auth
   trên Supabase development khi có authentication flow.
 - Phần 3: design system và các trang công khai đã có; giao diện chốt, ảnh còn pending.
-- Phần 4: authentication, hồ sơ và authorization; chưa triển khai.
+- Phần 4: có implementation authentication, hồ sơ và authorization; kiểm chứng Auth/JWT còn BLOCKED.
 - Phần 5–8: booking, Customer, Staff và Admin.
 - Phần 9–10: kiểm thử, CI, Vercel và bàn giao.
+
+## Identity implementation · 01/10/2026
+
+- `src/lib/supabase/config.ts`: public publishable key hoặc legacy anon fallback,
+  từ chối secret/service-role, tắt hoàn toàn khi static demo.
+- `server.ts`: request-scoped cookie client; `origin.ts`: origin cấu hình để kiểm
+  tra CSRF và redirect, tránh hostname loopback bị Proxy chuẩn hóa.
+- `src/proxy.server.ts`: refresh cookies/JWT claims; response private/no-store.
+  Default function export cần thiết với extension tùy chọn và Turbopack hiện tại.
+- `src/lib/identity.ts`: getCurrentUser/getCurrentProfile, requireAuthenticatedUser,
+  requireActiveUser/requireRole. React cache chỉ memoize trong request; không cache
+  profile dùng chung giữa người dùng. User được Auth xác minh và đã confirm email;
+  role/is_active đọc database. RLS khiến profile inactive không đọc được: fail closed.
+- `/auth/session/route.server.ts`: GET chỉ trả trạng thái phiên; POST JSON cùng
+  origin cho login/signup/logout/profile. Không trả token, email hoặc profile ID
+  qua status endpoint; update whitelist full_name/phone, lọc id bằng auth user.
+- `/auth/confirm/route.server.ts`: PKCE/code hoặc OTP token_hash signup/email;
+  redirect cố định /profile hoặc /login, không tin query next.
+- `/login`, `/signup`, `/profile` ưu tiên Server Components; IdentityForm và
+  AccountControl xử lý tương tác. Không thêm browser SDK client khi chưa cần.
+- `pageExtensions` server: server.ts/tsx/ts; demo: demo.tsx/tsx/ts. Server handler
+  và Proxy không được discovery trong export. Callback demo có page.demo.tsx;
+  Identity pages demo không gọi cookies/Auth/connection hoặc nhận mật khẩu.
+
+Không đổi migration/seed/grants/RLS; không cấp role hoặc deactivate tài khoản.
+Chưa làm booking/availability/dashboard/scheduler. Quên mật khẩu và Staff/Admin
+test account ngoài phạm vi hiện tại. Public URL/key đã cấu hình local; kiểm chứng
+cloud còn cần tài khoản xác nhận và quyền kiểm thử, xem
+database-testing.md; không coi implementation là chứng nhận tích hợp đã hoàn tất.
