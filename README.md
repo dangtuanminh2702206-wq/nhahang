@@ -137,9 +137,14 @@ Chi tiết: [không gian và sức chứa](docs/restaurant-world.md),
 chỉ một bàn, tối đa 8 khách và không vượt sức chứa bàn.
 
 Phần 4 đã có implementation Auth/phiên, hồ sơ và authorization; kiểm chứng
-Auth/JWT thật đã kiểm chứng một phần với một Customer: server đọc/lưu hồ sơ,
-reload duy trì phiên và logout chặn lại profile đạt. Signup mới còn bị giới hạn
-email; callback, refresh khi hết hạn và các ca quyền/cross-user chưa kiểm chứng.
+Auth/JWT thật đã kiểm chứng một phần với hai Customer: server đọc/lưu hồ sơ,
+reload duy trì phiên và logout chặn lại profile đạt. Customer thứ hai đã login
+thành công sau lần signup bị giới hạn email trước đó. Runner đã kiểm chứng JWT
+A/B thật: grants role/is_active, cách ly đọc/cập nhật hai chiều, cập nhật chính
+mình và refresh chủ động đạt. Callback email thật, metadata signup giả, cookie
+hết hạn, inactive và Staff/Admin JWT chưa chạy. Có runner tương tác
+`node scripts/test-identity-live.mjs` hoặc thêm `--browser` cho QA loopback riêng;
+xem `docs/database-testing.md`. Chưa tuyên bố toàn bộ integration Phần 4 hoàn tất.
 Không coi build hoặc smoke HTTP là chứng nhận đăng nhập/RLS thật.
 
 ## Identity / Auth · Phần 4
