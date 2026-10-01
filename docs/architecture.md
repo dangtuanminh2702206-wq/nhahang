@@ -50,6 +50,8 @@ src/
 │   ├── layout.tsx
 │   ├── page.tsx
 │   ├── menu/page.tsx
+│   ├── contact/page.tsx
+│   ├── reservation/page.tsx
 │   └── spaces/
 │       ├── page.tsx
 │       └── [slug]/page.tsx
@@ -58,6 +60,8 @@ src/
 │   ├── floor-plan.tsx
 │   ├── media-placeholder.tsx
 │   ├── menu-browser.tsx
+│   ├── reservation-preview.tsx
+│   ├── space-stories.tsx
 │   ├── site-footer.tsx
 │   └── site-header.tsx
 ├── config/
@@ -133,39 +137,44 @@ sung ảnh đúng expected path, cần build/deploy lại các trang tĩnh.
 Chi tiết ERD, data dictionary, ranh giới thời gian và phần chưa triển khai nằm
 trong [database.md](database.md). Migration/seed đã chạy trên Supabase development;
 18 nhóm kiểm thử PostgreSQL local và smoke test quyền trên Supabase đã đạt ở
-catalogue Phần 2 cũ, chưa kiểm thử lại với seed Phần 3A hiện tại.
+catalogue Phần 2 cũ. Fixture hiện đã cập nhật và 18 nhóm test local đạt với seed
+Phần 3A; development đã sao lưu và thay catalogue có xác nhận, smoke cloud đạt.
 Ứng dụng Next.js chưa kết nối database; Auth/JWT qua API chưa được kiểm thử.
 
 ## Dành cho các giai đoạn sau
 
-### Baseline trước Phần 4 · 30/09/2026
+### Baseline trước Phần 4 · cập nhật giao diện 01/10/2026
 
 - UI và seed repo khớp 3 area/tầng, 22 bàn, 92 chỗ cấu hình, 6 danh mục/30 món.
   4 combo chỉ thuộc data public, không phải thực thể database. Chi tiết ở
   [restaurant-world.md](restaurant-world.md) và [menu-canonical.md](menu-canonical.md).
-- 6 trang public: `/`, `/menu`, `/spaces`, `/spaces/floor-1`,
-  `/spaces/floor-2`, `/spaces/floor-3`. Chọn bàn chỉ xem thông tin vị trí;
+- 8 trang public: `/`, `/menu`, `/spaces`, `/spaces/floor-1`,
+  `/spaces/floor-2`, `/spaces/floor-3`, `/contact`, `/reservation`. Chọn bàn chỉ xem thông tin vị trí;
   `neutral/selected` không chứng minh khả dụng thực tế. Menu có 7 tab
-  (Combo + 6 danh mục). CTA `/#booking` dẫn tới lời giới thiệu giai đoạn sau,
-  chưa có form tạo booking, route đăng nhập hay trang vận hành.
+  (Combo + 6 danh mục). Giao diện editorial đã duyệt là mặc định; CSS nằm trong
+  `globals.css`, không có hai template song song. CTA đặt bàn dẫn tới `/reservation`:
+  form mô phỏng phía client, đồng bộ lựa chọn FloorPlan với select nhưng không gọi
+  API, kiểm tra availability, lưu thông tin khách hoặc tạo booking. Các lựa chọn
+  giờ/số khách trong form chỉ minh họa UI, không thay thế chính sách SQL. Contact
+  chưa có địa chỉ/điện thoại/email xác nhận nên không có bản đồ. Chưa có route
+  đăng nhập hay trang vận hành; không thay đổi phạm vi Phần 4.
 - Phần 3 giao diện đã chốt, chờ 10 ảnh món và 4 ảnh combo; chưa hoàn tất toàn bộ.
   Có 36 file WebP thực tế trên 50 expected paths, không lấy ảnh ngoài pack thay thế.
 - GitHub Pages đã xuất bản demo public từ commit `7402752`, dùng static export,
   basePath `/nhahang`, output `.next-pages`, ảnh gốc không optimize. Chế độ
   build thông thường giữ Next.js server/ảnh tối ưu; Vercel vẫn là hướng vận hành
   Auth/booking. Pages không thực thi Server Actions hay API ứng dụng.
-- Kết quả 18 nhóm test database thuộc catalogue Phần 2 cũ. Fixture hiện còn
-  16 bàn/24 món và area `main`; smoke SQL cũng kỳ vọng số lượng cũ.
-  Chưa kiểm thử lại với seed Phần 3A, chưa xác minh
-  catalogue cloud hiện tại. Xem [database-testing.md](database-testing.md).
+- Fixture và smoke SQL đã cập nhật; 18 nhóm test và smoke local đạt với catalogue
+  mới. Development đã sao lưu/thay seed có xác nhận, catalogue khớp UI và smoke
+  cloud đạt; không tạo booking/profile thử. Xem [database-testing.md](database-testing.md).
 - Phần 4 chỉ tích hợp Auth/phiên, hồ sơ và authorization server-side. Guest là
   người chưa đăng nhập, không phải giá trị `profiles.role`; đăng ký mặc định
   Customer, không nhận role Staff/Admin từ metadata người dùng. Có role Admin
   không đồng nghĩa đã có API quản trị danh mục hoặc cấp quyền.
 
-Ảnh pending không chặn Phần 4. Trước kiểm thử tích hợp cần xác minh development
-schema/catalogue, xử lý fixture cũ trong nhiệm vụ code riêng và kiểm chứng
-Auth/JWT qua API thật; không chạy seed trên dữ liệu có booking để ép khớp UI.
+Ảnh pending không chặn Phần 4. Catalogue development đã đối chiếu sau cập nhật;
+Phần 4 cần kiểm chứng Auth/JWT qua API thật. Không chạy seed trên dữ liệu có
+booking để ép khớp UI.
 
 - Trước khi vận hành booking: cấu hình scheduler expiration và kiểm thử JWT/Auth
   trên Supabase development khi có authentication flow.

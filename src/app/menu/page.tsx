@@ -11,7 +11,7 @@ export default function MenuPage() {
   };
   return (
     <>
-      <section className="page-hero"><div className="site-container narrow-copy"><p className="eyebrow">Catalogue mô phỏng</p><h1>Thực đơn cho những bữa ăn quây quần.</h1><p className="lead">30 món và 4 combo dưới đây là catalogue chuẩn của thế giới giả định Mộc Vị. Giá và nội dung chỉ phục vụ cho đồ án.</p></div></section>
+      <section className="page-hero"><div className="site-container"><p className="eyebrow">Từ bếp Mộc Vị</p><h1>Vị quen.<br /><em>Ăn cùng nhau.</em></h1><p className="lead">30 món Việt và 4 combo gợi ý. Từ một món khai vị nhẹ đến những món dùng chung cho cả bàn.</p><p className="small-note">Catalogue mô phỏng cho đồ án · Giá tham khảo · Ảnh còn thiếu được ghi rõ.</p></div></section>
       <div className="section menu-page"><div className="site-container"><MenuBrowser media={media} /></div></div>
     </>
   );

@@ -26,8 +26,20 @@ export function TableNode({ table, state, isSelected, onSelect }: TableNodeProps
   );
 }
 
-export function FloorPlan({ floor, tableState = "neutral" }: { floor: RestaurantFloor; tableState?: TableVisualState }) {
-  const [selectedTable, setSelectedTable] = useState<RestaurantTable>(floor.tables[0]);
+type FloorPlanProps = {
+  floor: RestaurantFloor;
+  tableState?: TableVisualState;
+  selectedCode?: string;
+  onTableSelect?: (table: RestaurantTable) => void;
+};
+
+export function FloorPlan({ floor, tableState = "neutral", selectedCode, onTableSelect }: FloorPlanProps) {
+  const [localSelection, setLocalSelection] = useState<RestaurantTable>(floor.tables[0]);
+  const selectedTable = floor.tables.find((table) => table.code === (selectedCode ?? localSelection.code)) ?? floor.tables[0];
+  function selectTable(table: RestaurantTable) {
+    setLocalSelection(table);
+    onTableSelect?.(table);
+  }
   return (
     <section className="floor-plan-section" aria-labelledby="floor-plan-heading">
       <div className="floor-plan-heading">
@@ -40,7 +52,7 @@ export function FloorPlan({ floor, tableState = "neutral" }: { floor: Restaurant
       <div className="floor-plan-scroll" tabIndex={0} aria-label={`Sơ đồ tầng ${floor.level}, cuộn ngang nếu cần`}>
         <div className="floor-plan-canvas">
           {floor.planLandmarks.map((landmark) => <span key={landmark.label} className={`plan-landmark ${landmark.className}`}>{landmark.label}</span>)}
-          {floor.tables.map((table) => <TableNode key={table.code} table={table} state={tableState} isSelected={selectedTable.code === table.code} onSelect={setSelectedTable} />)}
+          {floor.tables.map((table) => <TableNode key={table.code} table={table} state={tableState} isSelected={selectedTable.code === table.code} onSelect={selectTable} />)}
         </div>
       </div>
       <aside className="selected-table" aria-live="polite">

@@ -1,20 +1,4 @@
 import Link from "next/link";
-import { siteConfig } from "@/config/site";
-
 export function SiteFooter() {
-  return (
-    <footer className="site-footer">
-      <div className="site-container footer-grid">
-        <div>
-          <p className="wordmark"><span aria-hidden="true" className="wordmark-mark">M</span><span>{siteConfig.name}</span></p>
-          <p className="footer-note">Bối cảnh giả định cho đồ án Kỹ thuật phần mềm ứng dụng.</p>
-        </div>
-        <nav aria-label="Điều hướng chân trang" className="footer-nav">
-          <Link href="/spaces">Không gian</Link>
-          <Link href="/menu">Thực đơn</Link>
-          <Link href="/#booking">Đặt bàn</Link>
-        </nav>
-      </div>
-    </footer>
-  );
+  return <footer className="site-footer"><div className="site-container"><div className="footer-grid"><div><Link className="footer-brand" href="/">Mộc Vị</Link><p className="footer-note">Ẩm thực Việt đương đại.<br />Một bàn ăn, nhiều câu chuyện.</p></div><nav className="footer-nav" aria-label="Điều hướng chân trang"><Link href="/menu">Thực đơn</Link><Link href="/spaces">Không gian</Link><Link href="/reservation">Đặt bàn</Link><Link href="/contact">Liên hệ</Link></nav><div><p className="eyebrow">Giờ mở cửa mô phỏng</p><p>10:00–22:00 · Mỗi ngày</p></div></div><div className="footer-bottom"><p>Mộc Vị Restaurant · Đồ án Kỹ thuật phần mềm ứng dụng</p><p>Preview độc lập · Ảnh minh họa AI · Không nhận đặt bàn thật</p></div></div></footer>;
 }

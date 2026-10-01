@@ -22,7 +22,7 @@ type RootLayoutProps = Readonly<{
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="vi">
+    <html lang="vi" data-scroll-behavior="smooth">
       <body>
         <a className="skip-link" href="#main-content">Bỏ qua điều hướng</a>
         <SiteHeader />

@@ -90,9 +90,11 @@ booking, hết hạn pending, seed demo và bộ kiểm thử tích hợp. Lint,
 build đã qua. Migration/seed đã chạy trên Supabase development và PostgreSQL
 local; **18 nhóm kiểm thử database local và smoke test quyền Supabase đã đạt ở
 catalogue Phần 2 (16 bàn/24 món)**. Seed trong repo đã đổi sang 22 bàn/30 món ở
-Phần 3A; chưa có bằng chứng kiểm thử lại hoặc áp dụng seed mới lên cloud. Script
-test còn tham chiếu catalogue cũ; xem giới hạn trong tài liệu kiểm thử.
-Chưa triển khai authentication flow, API ứng dụng, giao diện booking/vận hành
+Phần 3A. Bộ fixture đã cập nhật và **18 nhóm kiểm thử local đã đạt với seed mới**;
+smoke SQL mới PASS local và Supabase development. Catalogue cloud đã được sao lưu
+và thay seed có xác nhận, khớp 3 tầng/22 bàn/92 chỗ/6 danh mục/30 món.
+Kiểm thử SET LOCAL ROLE không thay thế Auth/JWT thật; xem giới hạn kiểm chứng.
+Chưa triển khai authentication flow, API ứng dụng, booking thật hoặc vận hành
 hoặc scheduler. Kiểm thử Auth/JWT qua API sẽ thực hiện khi tích hợp authentication.
 
 - [ERD, data dictionary, policy, quyền và migration/seed](docs/database.md)
@@ -107,6 +109,14 @@ Sau khi copy ảnh accepted mới vào đúng path, build/deploy lại để c�
 **Phần 3: giao diện đã chốt, chờ bổ sung ảnh; chưa hoàn tất toàn bộ.** GitHub
 Pages là bản demo tĩnh, không phải bản vận hành Next.js/Supabase.
 
+Ngày 01/10/2026, giao diện editorial đã duyệt từ bản preview được áp dụng làm
+giao diện mặc định trong repo chính; không có chế độ chuyển giữa UI cũ/mới.
+Contact và `/reservation` bổ sung phần thông tin chưa cung cấp và form mô phỏng.
+Form không gửi/lưu thông tin khách, không kiểm tra bàn trống và không tạo booking;
+chỉ nhập dữ liệu giả khi thử. GitHub Pages cập nhật giao diện qua workflow
+`Publish public demo to GitHub Pages` khi push lên nhánh `codex/restaurant-booking-platform`;
+chỉ coi bản công khai đã cập nhật sau khi workflow deploy thành công.
+
 ## Catalogue hiện tại và chuẩn bị Phần 4
 
 Đối chiếu ngày 30/09/2026 trên `src/data/restaurant.ts`, `supabase/seed.sql`,
@@ -118,7 +128,7 @@ mapping media và file trong `public/images/`:
 | Thực đơn | 6 danh mục / 30 món, 9 món nổi bật; tất cả `available=true` ở UI |
 | Combo | 4 gợi ý cho 2/4/6/8 khách; không phải món seed hoặc chức năng đặt món |
 | Ảnh | 36/50 expected assets; thiếu 10 ảnh món và 4 ảnh combo |
-| Trang public | 6 trang: Home, Menu, Spaces và 3 trang tầng |
+| Trang public | 8 trang: Home, Menu, Spaces, 3 trang tầng, Contact và Đặt bàn mô phỏng |
 
 Chi tiết: [không gian và sức chứa](docs/restaurant-world.md),
 [menu và giá](docs/menu-canonical.md),
@@ -127,6 +137,6 @@ Chi tiết: [không gian và sức chứa](docs/restaurant-world.md),
 chỉ một bàn, tối đa 8 khách và không vượt sức chứa bàn.
 
 Phần 4 chưa triển khai: Supabase Auth, phiên đăng nhập, hồ sơ và authorization.
-Có thể bắt đầu khi ảnh còn pending. Trước khi kiểm thử tích hợp, phải xác minh
-catalogue thực tế của development, xử lý lệch fixture test trong nhiệm vụ code
-riêng và kiểm chứng Auth/JWT thật. Không tự chạy lại seed trên dữ liệu có booking.
+Có thể bắt đầu khi ảnh còn pending. Fixture local đã xử lý; catalogue development
+đã khớp và smoke cloud đạt. Kiểm chứng Auth/JWT thật trong Phần 4. Không tự chạy
+lại seed trên dữ liệu có booking.

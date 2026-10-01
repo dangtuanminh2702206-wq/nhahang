@@ -48,7 +48,7 @@ export function MenuBrowser({ media }: MenuBrowserProps) {
         <div className="combo-grid" id="menu-panel" role="tabpanel" aria-labelledby={`menu-tab-${activeTab}`} tabIndex={0}>
           {menuCombos.map((combo) => (
             <article className="combo-card" key={combo.code}>
-              <AssetImage asset={media.combos[combo.code]} kind="combo" label={combo.name} sizes="(max-width: 704px) calc(100vw - 34px), (max-width: 1024px) 42vw, 220px" />
+              <AssetImage asset={media.combos[combo.code]} kind="combo" label={combo.name} sizes="(max-width: 704px) calc(100vw - 40px), 45vw" />
               <div className="combo-content">
                 <p className="meta-line">{combo.code} · Gợi ý {combo.guestCount} người</p>
                 <h2>{combo.name}</h2>
@@ -63,7 +63,7 @@ export function MenuBrowser({ media }: MenuBrowserProps) {
         <div className="menu-grid" id="menu-panel" role="tabpanel" aria-labelledby={`menu-tab-${activeTab}`} tabIndex={0}>
           {visibleItems.map((item) => (
             <article className="menu-card" key={item.code}>
-              <AssetImage asset={media.dishes[item.code]} kind="dish" label={item.name} sizes="(max-width: 704px) calc(100vw - 58px), (max-width: 1024px) 44vw, 372px" />
+              <AssetImage asset={media.dishes[item.code]} kind="dish" label={item.name} sizes="(max-width: 704px) 88px, 144px" />
               <div className="menu-card-copy">
                 <p className="meta-line">{item.code} · {getCategoryLabel(item.category)}</p>
                 <h2>{item.name}</h2>
