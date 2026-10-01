@@ -18,7 +18,7 @@ callback, profile và server authorization đã có. Không đổi database foun
 | Profile read/update của chính Customer | PASS — lưu payload hiện tại; đổi full_name tạm, reload thấy giá trị mới, khôi phục tên gốc và reload xác minh; phone giữ nguyên |
 | Cấm sửa role/is_active qua JWT thật | PASS — cả hai Customer gửi ghi no-op vào từng cột qua JWT; PostgREST trả 42501; không nâng quyền/khóa tài khoản |
 | Cross-user | PASS — hai Customer khác ID đã xác minh bằng Auth; A/B đọc nhau trả 0 dòng, cập nhật nhau trả 0 dòng; đọc lại bằng JWT chủ hồ sơ thấy dữ liệu không đổi |
-| Inactive account | NOT RUN — chưa được phép thay trạng thái account cloud |
+| Inactive account | BLOCKED — operator đã duyệt tạm inactive Customer thứ hai rồi khôi phục; Dashboard project/SQL Editor chưa tải ổn định để đọc đúng hồ sơ |
 | Staff/Admin JWT | NOT RUN — chưa có trusted test account được duyệt |
 
 Ngày 01/10/2026, operator đã cấu hình `.env.local` (được Git ignore). Kiểm tra
@@ -109,6 +109,17 @@ typecheck, contract mock, HTTP Identity smoke, server build, Pages build và
 API availability/bookings export hoặc URL Supabase trong browser chunks.
 Không chạy lại responsive toàn bộ vì không thay UI ứng dụng; kết quả UI ở bảng
 trên là kiểm chứng đã ghi nhận trước. QA form chỉ phục vụ kiểm thử loopback.
+
+Lần tiếp tục ngày 01/10/2026: operator duyệt thử inactive Customer thứ hai và
+khôi phục active ngay, không duyệt nâng Staff/Admin. Dashboard ban đầu báo
+session expired; mở lại sign-in vào được organization nhưng project/SQL Editor
+tiếp tục treo/timeout, chưa đọc được hồ sơ đích. Không chạy UPDATE, không thay
+is_active/role và không cần thao tác khôi phục. Không coi lỗi UI quản trị là lỗi
+Auth ứng dụng hay bằng chứng database/region outage. Status báo API Gateway
+degraded/Eastern US latency, Dashboard/Auth Operational; chưa đủ bằng chứng quy
+nguyên nhân project UI vào incident đó. Contract mock và HTTP Identity smoke
+chạy lại PASS. Cần mở được project/SQL Editor bằng phiên quản trị hợp lệ trước
+khi thử inactive thật.
 
 ## Kết quả lịch sử Phần 2 · 30/09/2026 (trước đổi catalogue Phần 3A)
 
