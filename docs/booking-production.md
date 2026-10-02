@@ -38,15 +38,26 @@ production application/database. This supersedes the earlier local-only limit.
   320/704/1024/1600px without horizontal overflow.
 - Local HTTP smoke: PASS with mutations disabled, CSRF/origin enforcement and
   availability validation. Normal build, Pages build, typecheck and lint: PASS.
-- Two-Customer race/isolation runner is prepared but not PASS yet: the local
-  QA form still has not received the second Customer credential, so no pair
-  result is claimed. No credential is inferred or printed.
+- Two-Customer live runner: PASS on 2026-10-02 through production HTTP and real
+  Customer JWTs. Both trusted profiles were active and distinct. Concurrent
+  same-table requests returned exactly one pending booking and one safe 409.
+- Bidirectional booking/history/notification read isolation: PASS. Ownership
+  and website source matched the verified caller; direct RPC rejected a foreign
+  customer ID and phone/walk_in source forgery. Guest could not read bookings.
+- Retry returned the same booking ID without duplicate history or notifications;
+  the held table was excluded from subsequent public availability. PASS.
+- Pair runner returned COMPLETE; two labelled pending test bookings were
+  retained. Test sessions logged out; credentials were not saved or printed.
+- Local QA form transport: PASS for fresh forms, opaque embedded-browser Origin
+  with valid CSRF, stale-token rejection and foreign-website Origin rejection.
+  This compatibility change affects only the loopback harness, not application
+  API origin enforcement.
 - Database integration test script was not run because no test database URL is
   configured; production live checks above used the approved Supabase project.
 
-Comprehensive integration acceptance is PARTIAL until the two-Customer race /
-cross-customer isolation result is captured. Historic mock/SQL tests are not
-live JWT evidence.
+Phase 5 is PASS within the agreed Customer booking scope, combining the live
+production results above and the existing SQL/handler/UI/build checks. Staff
+operations, scheduler, cancellation and notification delivery remain later phases.
 
 Secrets, cookies, passwords, backup folders and 3D artifacts must not be committed.
 Earlier Auth/3D worktree changes are outside this deployment commit.

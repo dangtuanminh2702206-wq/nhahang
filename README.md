@@ -206,7 +206,8 @@ App hỗ trợ callback PKCE
 `code` (mở email trong trình duyệt đã signup) và token_hash/type signup hoặc email
 nếu operator đã cấu hình SSR email template. Không tự thay provider/template,
 Site URL hoặc redirect allowlist. Liên kết lỗi/hết hạn về login, không nhận next
-URL tùy ý. Không có Staff/Admin test account hoặc workflow tự cấp quyền.
+URL tùy ý. Staff/Admin test đã được operator cấp quyền và kiểm chứng; ứng dụng
+không có workflow tự cấp quyền.
 
 `pnpm test:identity:smoke` kiểm tra HTTP local, CSRF, callback và cache headers;
 **không** đăng ký user hoặc chứng nhận JWT. Auth/RLS thật cần config và quyền
@@ -231,6 +232,11 @@ Pages vẫn mô phỏng; trạng thái nghiệm thu Phần 3 xem tài liệu ass
   `BOOKING_TEST_BASE_URL=http://127.0.0.1:3002` để kiểm tra HTTP cờ tắt/CSRF/input.
   `pnpm test:db` chạy SQL trên database mới `mocvi_test_*`, áp tất cả migration theo thứ tự.
 
-Xem [kết quả và giới hạn kiểm thử](docs/database-testing.md). Chưa chứng nhận
-Phần 4/5 tích hợp hoàn tất chỉ dựa trên bằng chứng thực tế, không chỉ build.
-Xem [nghiệm thu booking production](docs/booking-production.md) để biết các gate còn lại.
+Phần 4 và Phần 5 PASS trong phạm vi Identity/Auth và Customer booking đã thống nhất.
+Gate hai Customer thật trên Production đã COMPLETE ngày 02/10/2026: một pending/
+một 409 khi tranh bàn, cách ly booking/history/notification, retry không tạo trùng
+và chặn giả mạo customer/source. Hai booking test được giữ lại; phiên test đã logout.
+Callback email được chứng minh local; JWT expiry và booking được chứng minh Production.
+Workflow Staff/Admin, scheduler, cancellation và notification delivery thuộc các phần sau.
+Xem [kết quả và giới hạn kiểm thử](docs/database-testing.md) và
+[nghiệm thu booking production](docs/booking-production.md).

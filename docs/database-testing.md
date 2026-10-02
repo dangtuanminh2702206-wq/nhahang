@@ -6,9 +6,13 @@
   callback email và metadata giả trên local, JWT hết hạn tự nhiên qua Proxy
   Production ở session 16686, A/B, inactive, Staff/Admin và các hồi quy. Các
   mục lịch sử `PARTIAL`, `RUNNING` bên dưới không phải trạng thái hiện tại.
-- **Phần 5 — PARTIAL.** Các ca Customer/Staff/Admin, availability, booking,
-  transaction, idempotency, RLS, audit, UI, build và deployment đã PASS. Gate
-  hai Customer tranh cùng bàn và cách ly dữ liệu vẫn chưa có kết quả runner.
+- **Phần 5 — PASS trong phạm vi Customer booking đã thống nhất.** Các ca
+  Customer/Staff/Admin, availability, booking, transaction, idempotency, RLS,
+  audit, UI, build và deployment đã PASS. Runner hai Customer thật trên Production
+  ngày 02/10/2026 trả COMPLETE: đúng một pending/một 409 khi tranh bàn, cách ly
+  đọc booking/history/notification hai chiều, retry không tạo trùng, chặn giả mạo
+  customer/source và Guest không đọc booking. Hai booking test được giữ lại;
+  phiên test đã logout. Chi tiết ở [booking-production.md](booking-production.md).
 - Callback email được chứng minh ở local; không mở rộng kết luận đó thành
   callback Production. Reset password, dashboard và workflow Staff/Admin nằm
   ngoài phạm vi nghiệm thu này.
