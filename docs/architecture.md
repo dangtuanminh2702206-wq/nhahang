@@ -253,3 +253,16 @@ database-testing.md; không coi implementation là chứng nhận tích hợp đ
 - UI giữ editorial design đã duyệt, không tạo dashboard/card grid; có loading,
   empty/error, focus/error feedback và link “Đặt bàn của tôi”. GitHub Pages chỉ
   export placeholder tĩnh, không thực thi Auth/booking.
+
+## Staff operations · Phần 7 · 02/10/2026
+
+Khu vực `/staff` dùng Server Component để đọc dữ liệu qua Supabase RLS và Client
+Component tối thiểu cho các nút thao tác. Mọi thay đổi booking/bàn gọi RPC
+`staff_update_booking`, `staff_move_booking` hoặc `staff_mark_table_ready`; route
+kiểm tra same-origin, JSON, role Staff/Admin active và chỉ trả DTO tối thiểu.
+
+Migration `202610030001_staff_operations.sql` giữ trạng thái booking và trạng thái
+vật lý bàn trong cùng transaction, ghi history/notification/audit bằng helper hiện
+có. Phone/walk-in tái sử dụng `create_booking` với source vận hành; không liên kết
+khách vãng lai vào Customer chỉ bằng số điện thoại/email. Production migration và
+scheduler vẫn cần operator có quyền database để nghiệm thu riêng.

@@ -624,3 +624,22 @@ history hiển thị tiếng Việt và console không có error trong lượt Q
 Notification QA đã đọc giữ trạng thái sau reload. Các gate boundary/race/rollback
 được chứng minh bằng SQL fixture, không gán thành live JWT race trên production.
 Staff/Admin dashboard, scheduler, email/SMS, payment và reset password ngoài phạm vi.
+
+## Phần 7 · Staff operations · 02/10/2026
+
+| Nhóm | Kết quả / giới hạn |
+| --- | --- |
+| Staff migration | PASS local — `202610030001_staff_operations.sql` áp dụng trên database `mocvi_test_*` sạch; grants chỉ cho authenticated, RPC tự kiểm tra Staff/Admin active |
+| Booking transitions | PASS local — confirm, reject có lý do, Staff cancel có lý do, check-in ghi `actual_guest_count`/`checked_in_at`, no-show theo database clock, complete ghi `completed_at` và chuyển bàn sang cleaning |
+| Table operations | PASS local — cleaning → available qua RPC riêng; đổi bàn atomic, kiểm tra sức chứa/xung đột và ghi history/audit |
+| Staff create | PASS contract/local SQL — phone/walk-in confirmed ngay, không gắn customer giả; website/Customer không được dùng source vận hành |
+| Authorization | PASS — Customer bị từ chối ở RPC/route contract; active role kiểm tra lại trong từng thao tác; inactive fail closed theo identity layer |
+| API/UI | PASS contract/build — same-origin JSON, Content-Type, UUID/reason validation, `/staff`, chi tiết booking, bảng trạng thái bàn và form phone/walk-in |
+| Regression | PASS — 38 nhóm SQL trên PostgreSQL 18.4; Staff route contract, typecheck, lint, normal build và Pages build |
+| Production migration | NOT RUN — chưa có phiên SQL Editor/database owner trong workspace; không áp migration hoặc claim production PASS |
+| Production scheduler | NOT RUN — pg_cron/job chưa được xác minh hoặc tạo trên Supabase production |
+
+Phần 7 hiện là **PARTIAL theo tiêu chí production**: implementation và local
+integration đã đạt, còn thiếu áp dụng migration, cấu hình pg_cron mỗi phút và
+kiểm thử Staff bằng JWT thật trên `unhybmmbgumyhzaftlli`. Không dùng publishable
+key để thực hiện DDL và không tự reset/seed production.

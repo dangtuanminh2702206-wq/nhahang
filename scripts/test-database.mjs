@@ -424,6 +424,31 @@ try {
     await assert.rejects(actor(left,A,c=>c.query("update public.booking_history set reason='fake' where booking_id=$1",[b.id])),e=>e.code==='42501');
   });
   await clearBookings();
+  await check('Staff operations transition booking and physical table atomically', async () => {
+    const request = [...args(2), null, '', 'phone', null];
+    const created = (await actor(left, S, c => c.query('select * from public.create_booking($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)', request))).rows[0];
+    await admin.query("update public.bookings set starts_at=clock_timestamp()-interval '1 minute', ends_at=clock_timestamp()+interval '119 minutes', blocked_until=clock_timestamp()+interval '134 minutes' where id=$1", [created.id]);
+    const checkedIn = (await actor(right, S, c => c.query('select * from public.staff_update_booking($1,$2,$3,$4)', [created.id, 'check_in', null, 3]))).rows[0];
+    assert.equal(checkedIn.status, 'checked_in'); assert.equal(checkedIn.guest_count, 3);
+    const completed = (await actor(right, S, c => c.query('select * from public.staff_update_booking($1,$2,$3,$4)', [created.id, 'complete', null, null]))).rows[0];
+    assert.equal(completed.status, 'completed');
+    assert.equal((await admin.query('select status from public.tables where id=$1', [tables[2].id])).rows[0].status, 'cleaning');
+    const ready = (await actor(right, S, c => c.query('select * from public.staff_mark_table_ready($1)', [tables[2].id]))).rows[0];
+    assert.equal(ready.status, 'available');
+  });
+  await clearBookings();
+  await check('Staff rejection, cancellation reason and role denial are enforced', async () => {
+    const rejected = (await actor(left, A, c => book(c, args(0)))).rows[0];
+    await assert.rejects(actor(right, S, c => c.query('select * from public.staff_update_booking($1,$2,$3,$4)', [rejected.id, 'reject', null, null])), /REASON_REQUIRED/);
+    const rejection = (await actor(right, S, c => c.query('select * from public.staff_update_booking($1,$2,$3,$4)', [rejected.id, 'reject', 'Bàn cần kiểm tra lại', null]))).rows[0];
+    assert.equal(rejection.status, 'rejected');
+    const cancellable = (await actor(left, A, c => book(c, args(1)))).rows[0];
+    await assert.rejects(actor(right, A, c => c.query('select * from public.staff_update_booking($1,$2,$3,$4)', [cancellable.id, 'cancel', 'Giả Staff', null])), /STAFF_REQUIRED/);
+    const cancelled = (await actor(right, S, c => c.query('select * from public.staff_update_booking($1,$2,$3,$4)', [cancellable.id, 'cancel', 'Khách đổi kế hoạch', null]))).rows[0];
+    assert.equal(cancelled.status, 'cancelled');
+    assert.equal((await admin.query("select source,reason from public.booking_history where booking_id=$1 order by created_at desc limit 1", [cancellable.id])).rows[0].source, 'staff');
+  });
+  await clearBookings();
   await check('locked customer denied; existing booking preserved', async () => {
     const b=(await actor(left,A,c=>book(c,args()))).rows[0];
     await admin.query('update public.profiles set is_active=false where id=$1',[A]);

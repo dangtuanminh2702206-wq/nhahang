@@ -264,3 +264,21 @@ bản `36f8288`; list/detail/cancellation/history/notification được kiểm c
   Live UI cancellation/read_at đã PASS với booking QA được xác định rõ.
   Fixture PostgreSQL sạch đạt 35 nhóm, gồm boundary 60 phút, retry, concurrent
   cancel/confirm/expire, ownership và rollback; xem bằng chứng trong tài liệu kiểm thử.
+
+## Phần 7 · Staff operations · 02/10/2026
+
+Implementation đã hoàn thành ở nhánh hiện tại trên local: migration
+`202610030001_staff_operations.sql`, API same-origin cho Staff/Admin, khu vực
+`/staff`, chi tiết booking, tạo booking phone/walk-in, xác nhận/từ chối/hủy,
+check-in, no-show, hoàn tất phục vụ, đổi bàn và cleaning → available.
+
+- Database fixture sạch đạt 38 nhóm; riêng 2 nhóm Staff kiểm tra chuyển trạng thái,
+  actual guest count, occupied/cleaning/available, lý do bắt buộc, event/audit và
+  chặn Customer.
+- Contract route Staff, typecheck, lint, normal build và Pages build đạt.
+- GitHub Pages chỉ xuất placeholder Staff; dữ liệu booking và thao tác Staff chỉ
+  chạy trên Next.js server/Vercel.
+- Migration production và scheduler production **chưa được nghiệm thu trong lượt
+  này** vì workspace chỉ có publishable Supabase key, không có phiên SQL Editor
+  hoặc quyền database owner. Không coi Phần 7 PASS production khi hai gate này
+  chưa có bằng chứng.
