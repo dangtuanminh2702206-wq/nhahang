@@ -1,6 +1,131 @@
 # Kiểm thử Phần 2
 
+## Trạng thái hiện tại
+
+- **Phần 4 — PASS trong phạm vi Identity/Auth đã thống nhất.** Bằng chứng gồm
+  callback email và metadata giả trên local, JWT hết hạn tự nhiên qua Proxy
+  Production ở session 16686, A/B, inactive, Staff/Admin và các hồi quy. Các
+  mục lịch sử `PARTIAL`, `RUNNING` bên dưới không phải trạng thái hiện tại.
+- **Phần 5 — PARTIAL.** Các ca Customer/Staff/Admin, availability, booking,
+  transaction, idempotency, RLS, audit, UI, build và deployment đã PASS. Gate
+  hai Customer tranh cùng bàn và cách ly dữ liệu vẫn chưa có kết quả runner.
+- Callback email được chứng minh ở local; không mở rộng kết luận đó thành
+  callback Production. Reset password, dashboard và workflow Staff/Admin nằm
+  ngoài phạm vi nghiệm thu này.
+
 ## Identity Phần 4 · trạng thái kiểm chứng
+
+### Nghiệm thu tiếp tục · 02/10/2026, 10:27 Asia/Saigon
+
+- Preflight SELECT đúng alias QA đã duyệt: Auth user = 0, profile = 0. Một
+  signup mới được chấp nhận sau khi operator tự nhập mật khẩu; không resend,
+  không đổi SMTP/confirmation/expiry/RLS hoặc tạo alias thay thế.
+- **Callback email end-to-end: PASS local**. Observer loopback giữ PKCE verifier
+  trong RAM; operator cung cấp link từ thư trực tiếp vào công cụ, không qua chat.
+  Supabase verify redirect về callback ứng dụng local; callback thật trả 307
+  `/profile`, Auth cookies HttpOnly/SameSite=Lax, no-store/no-referrer. Auth xác
+  minh đúng user mới confirmed; `/profile` và `/auth/session` chấp nhận phiên
+  callback mà không đăng nhập bằng mật khẩu; logout test-session trở lại Guest.
+- **Signup metadata staff giả: PASS**. Request Auth thật gửi `role=staff` và
+  `is_active=false`; sau confirmation, JWT chính QA đọc trusted profile trả
+  `role=customer`, `is_active=true`. Không cấp Staff hoặc đổi trạng thái user.
+- **JWT hết hạn tự nhiên: RUNNING, chưa PASS**. Tiến trình cũ không còn truy
+  cập được, không suy ra PASS. Runner mới đã đăng nhập đúng Staff test được
+  duyệt; Auth xác minh confirmed, trusted profile Staff active. Auto-refresh
+  tắt; cookie/JWT chỉ trong RAM, giữ nguyên đến expiry. Mốc kiểm tra thực tế
+  sau expiry: **11:29:46 ngày 02/10/2026 Asia/Saigon**, qua Proxy Production.
+  Đã cập nhật lượt theo dõi một lần vào 11:30; chỉ kết quả thật sau expiry mới
+  được dùng chốt nghiệm thu, không coi việc bắt đầu/chờ là bằng chứng PASS.
+- Hồi quy hiện tại: typecheck, lint, identity contract và HTTP smoke local PASS.
+  Normal build PASS sau khi chạy ngoài giới hạn sandbox: lần đầu compiled nhưng
+  worker TypeScript bị `spawn EPERM`; lần chạy lại kết thúc exit 0.
+- Không đổi runtime ứng dụng; không commit/push/deploy. Harness ở ngoài repo;
+  không ghi email, ID, password, confirmation link, token hoặc cookie vào tài liệu.
+
+Phần 4 còn PARTIAL **chỉ do gate expired-JWT Proxy refresh chưa có kết quả**.
+Callback ở trên được chứng minh local, không gán PASS callback Production.
+Các trạng thái email BLOCKED và Staff/Admin NOT RUN bên dưới là lịch sử, không
+thay thế bằng chứng mới hoặc được dùng để phủ nhận kết quả hiện tại.
+
+### Tiếp tục nghiệm thu · 02/10/2026
+
+- Typecheck, lint, normal build, identity contract và HTTP identity smoke: PASS
+  khi chạy lại. Kiểm tra guest/CSRF/callback cố định trên Production: PASS;
+  các ca này không thay thế kiểm thử Auth/JWT thật.
+- Signup alias QA đã duyệt bị `over_email_send_rate_limit`; SELECT đúng alias
+  sau lỗi xác nhận không có Auth user hoặc profile mới. Không retry/resend.
+  Operator yêu cầu dừng phần email; callback email end-to-end và metadata
+  staff giả chưa được chứng minh, không gán PASS.
+- Kiểm thử JWT Staff có chữ ký thật đang chờ hết hạn tự nhiên để kiểm tra
+  Proxy refresh trên Production, dự kiến 00:54:38 ngày 02/10 theo Asia/Saigon.
+  Chưa có kết quả: không coi việc khởi chạy là PASS. Không rút ngắn expiry,
+  không sửa token và không dùng refresh chủ động thay thế ca này.
+- Đã dừng harness email loopback; tiến trình JWT riêng vẫn chạy. Công cụ tạm
+  nằm ngoài repo; không đưa credential/token hoặc công cụ đó lên Git.
+- Không đổi runtime, Auth config, RLS hoặc booking; không commit/push/deploy.
+
+Phần 4 vẫn PARTIAL. Kiểm tra kết quả JWT một lần sau mốc hết hạn không tự
+khởi động lại phần email đã được operator yêu cầu dừng.
+
+### Staff/Admin JWT thật · 01/10/2026
+
+Operator đã đăng ký/xác nhận hai tài khoản test chuyên dụng, sau đó duyệt
+riêng việc cấp Staff/Admin trên Supabase hiện tại. Đã SELECT đối chiếu đúng
+ID/email, confirmed và Customer active trước khi đổi role. Giao dịch UPDATE
+chỉ chấp nhận đúng hai tài khoản đã duyệt còn là Customer active, kiểm tra
+row count = 2; không đổi RLS, grants, schema, tài khoản khác hoặc booking.
+Không ghi email, ID, mật khẩu hoặc JWT của tài khoản test vào repo.
+
+| Kiểm tra thực tế | Kết quả |
+| --- | --- |
+| Staff/Admin đăng nhập trên Vercel, profile server đọc role tin cậy | PASS — UI hiển thị staff/admin; không lấy role từ metadata |
+| Auth getUser, confirmed email, profile active qua JWT thật | PASS cho cả hai tài khoản |
+| JWT Staff/Admin sửa cột role/is_active | PASS — ghi no-op bị từ chối 42501 |
+| Staff đọc hồ sơ Admin test có ID đã biết | PASS — 0 dòng |
+| Admin đọc hồ sơ Staff test có ID đã biết | PASS — 1 dòng, không truy vấn danh sách hồ sơ người dùng |
+| Admin cập nhật hồ sơ Staff test | PASS — 0 dòng theo RLS hiện có |
+| Đăng xuất các phiên SDK dùng kiểm thử | PASS — local scope |
+
+Đây là bằng chứng bổ sung cho gate Staff/Admin JWT, không thay thế gate
+callback email end-to-end, signup metadata staff giả và JWT hết hạn tự nhiên
+qua Proxy. Các mục còn thiếu ở những baseline lịch sử dưới đây giữ nguyên
+để đối chiếu; mục Staff/Admin NOT RUN lịch sử đã được bổ sung bằng kết quả này.
+Phần 4 vẫn PARTIAL, không bật booking hoặc tạo dashboard vận hành.
+
+### Kiểm tra sau khi chuyển sang Vercel · 01/10/2026 · trước cấp role test
+
+Production: `https://moc-vi-restaurant.vercel.app`, source branch
+`codex/restaurant-booking-platform`, commit runtime `fd8ef0e`.
+
+- Typecheck, lint và `test-identity-contract.mjs`: PASS khi chạy lại.
+- Normal production build: PASS sau chạy lại ngoài sandbox; lần đầu bị
+  `spawn EPERM` ở bước tạo tiến trình TypeScript, không phải lỗi TypeScript.
+- `test:identity:smoke`: PASS trên local 3002, gồm cookie sai định dạng,
+  CSRF, JSON-only, callback cố định và guest no-store.
+- HTTP Production: PASS từ chối origin ngoài và form POST (403), callback
+  không chấp nhận `next` ngoài domain, guest session có no-store và không
+  authenticated. Đây là kiểm tra không có phiên, không phải nghiệm thu JWT thật.
+- Site URL và exact callback HTTPS đã cấu hình trên Supabase; callback local
+  vẫn giữ. Cấu hình allowlist không chứng minh email callback end-to-end.
+- Chưa có hai tài khoản test được cấp trusted Staff/Admin. Không nâng quyền
+  các Customer hiện có hay các alias dùng kiểm thử metadata giả.
+
+Chuẩn bị nghiệm thu còn lại:
+
+1. Operator đăng ký hai tài khoản chuyên dụng và xác nhận email trong cùng
+   trình duyệt dùng đăng ký; tự nhập/giữ mật khẩu, không đưa vào Git hoặc log.
+2. Xác minh đúng Auth user và profile Customer của từng tài khoản trước khi
+   đề nghị operator cấp riêng role Staff/Admin cho đúng hai user test.
+   Không đổi grant/RLS, không lấy user metadata làm nguồn quyền.
+3. Chạy kiểm tra role bằng JWT thật. Alias signup metadata giả `staff` phải
+   được kiểm thử riêng và vẫn giữ Customer, không dùng nó làm Staff test.
+4. Quan sát callback email thực tế; kiểm tra JWT hết hạn tự nhiên qua Proxy,
+   cookie refresh và phiên sau refresh. SDK refresh chủ động hay JWT sửa
+   payload không thay thế ca JWT thật hết hạn.
+
+Phần 4 vẫn PARTIAL cho tới khi các gate integration còn thiếu được chứng minh.
+Không bật booking, không tắt email confirmation hoặc rút ngắn expiry cloud để
+đổi lấy kết quả kiểm thử.
 
 ### Tiếp tục nghiệm thu · sau commit Phần 3 `4709528`
 
@@ -396,6 +521,28 @@ owner. Fixture từ chối roles có SUPERUSER/BYPASSRLS.
 Các thao tác cancel/check-in/complete/no-show/đổi bàn chưa được triển khai nên
 chưa có kiểm thử mutation tương ứng. Giai đoạn sau phải bổ sung vào cùng cơ chế
 khóa, authorization và transaction history; không cập nhật bảng trực tiếp từ UI.
+
+## Nghiệm thu Phần 4 · 02/10/2026
+
+Runner JWT hết hạn tự nhiên (session 16686) trả `COMPLETE: expired-JWT
+Production gate PASS`. Auto-refresh tắt; JWT/cookie giữ nguyên đến expiry,
+sau đó gửi Production `/profile`. Các bằng chứng thực tế:
+
+- Profile Staff renders; Proxy trả Auth cookie HttpOnly/Secure/Lax và no-store.
+- Auth xác minh JWT mới: cùng user, expiry muộn hơn, trusted Staff active.
+- Request Production tiếp theo nhận phiên mới, response private no-store.
+- Logout phiên test đạt; không đổi cookie trình duyệt của người dùng.
+
+Kết hợp callback email end-to-end local và metadata staff giả đã PASS trong
+session 88238: QA confirmed, trusted Customer active, callback HTTP 307 tới
+`/profile`, cookie HttpOnly/Lax, downstream session và logout. Đây là bằng
+chứng callback **local**, không gán callback Production PASS.
+
+Phần 4 PASS trong phạm vi Identity/Auth đã thống nhất, cùng các ca A/B,
+inactive, Staff/Admin và hồi quy đã ghi nhận. Reset password/dashboard/booking
+ngoài phạm vi nghiệm thu này. Các mục PARTIAL trước đó giữ làm lịch sử.
+Lượt kiểm tra chỉ đọc runner/cập nhật tài liệu; không tạo phiên Auth mới,
+không signup/resend, không sửa runtime/RLS/quyền, không commit/push/deploy.
 
 ## Phần 5 · kiểm chứng local · 01/10/2026
 

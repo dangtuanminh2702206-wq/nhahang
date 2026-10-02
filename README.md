@@ -147,10 +147,37 @@ chặn; đã khôi phục active và truy cập hồ sơ lại được. Signup 
 admin giả tạo Customer active đúng. Phiên QA mới sau xác nhận đã được Auth xác minh
 đúng Customer active; chưa quan sát trực tiếp request callback nên không coi phiên
 đăng nhập là bằng chứng độc lập cho callback. Ca staff bị giới hạn gửi email.
-Cookie lỗi bị từ chối; refresh cookie hết hạn và Staff/Admin JWT chưa chứng nhận. Có runner tương tác
+Cookie lỗi bị từ chối. Hai tài khoản test chuyên dụng đã được operator duyệt
+cấp Staff/Admin: login/profile trên Vercel, JWT thật và RLS đọc/cập nhật hồ sơ
+đã kiểm chứng; cả hai không được sửa role/is_active. Refresh cookie JWT hết hạn
+vẫn chưa chứng nhận. Có runner tương tác
 `node scripts/test-identity-live.mjs` hoặc thêm `--browser` cho QA loopback riêng;
 xem `docs/database-testing.md`. Chưa tuyên bố toàn bộ integration Phần 4 hoàn tất.
 Không coi build hoặc smoke HTTP là chứng nhận đăng nhập/RLS thật.
+
+Cập nhật 02/10/2026: hồi quy typecheck/lint/build/identity smoke đạt. Signup
+QA bị giới hạn email, không tạo user/profile mới; operator đã yêu cầu dừng
+phần email. Kiểm thử JWT hết hạn tự nhiên đang chạy, chưa có kết quả.
+Phần 4 vẫn PARTIAL; xem trạng thái nghiệm thu trong tài liệu kiểm thử.
+
+Cập nhật 02/10/2026, 10:27 Asia/Saigon: callback xác nhận email thật qua ứng dụng
+local và signup metadata staff giả đã PASS với một Customer QA mới. Auth xác
+minh user confirmed; trusted profile vẫn Customer active, phiên callback đọc
+hồ sơ được và logout trở lại Guest. Hồi quy typecheck/lint/contract/HTTP smoke
+và normal build PASS. Gate còn lại là JWT hết hạn tự nhiên qua Proxy Production:
+runner mới đã xác minh Staff test và đang chờ đến 11:29:46 ngày 02/10 giờ Việt Nam;
+đã hẹn kiểm tra kết quả một lần lúc 11:30. Kết quả phiên cũ không truy cập được.
+Phần 4 vẫn PARTIAL cho tới khi gate này có bằng chứng; không gán callback local
+thành callback Production, không đổi runtime hoặc tự deploy.
+
+Nghiệm thu 02/10/2026: runner JWT hết hạn tự nhiên đã COMPLETE/PASS. Cookie
+giữ nguyên đến hết hạn được gửi tới Production `/profile`; Proxy trả cookie
+HttpOnly/Secure/Lax và no-store, Auth xác minh cùng user Staff active với JWT
+mới có expiry muộn hơn. Request tiếp theo nhận phiên mới và logout đạt.
+Phần 4 PASS trong phạm vi Identity/Auth đã thống nhất, kết hợp bằng chứng
+callback email/metadata staff trên local và JWT refresh trên Production;
+không chứng nhận callback email Production. Các đoạn PARTIAL phía trên là
+lịch sử trước nghiệm thu. Không sửa runtime, commit, push hoặc deploy lượt này.
 
 ## Identity / Auth · Phần 4
 
