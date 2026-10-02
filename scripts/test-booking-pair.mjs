@@ -11,7 +11,9 @@ const project = 'https://unhybmmbgumyhzaftlli.supabase.co';
 const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 assert(key && !key.startsWith('sb_secret_'));
 if (!key.startsWith('sb_publishable_')) assert.equal(JSON.parse(Buffer.from(key.split('.')[1], 'base64url')).role, 'anon');
-const port = 3010;
+const portArgument = process.argv.find(value => value.startsWith('--port='));
+const port = portArgument ? Number(portArgument.slice(7)) : 3010;
+assert(Number.isInteger(port) && port >= 1024 && port <= 65535, 'Valid loopback QA port required');
 const origin = `http://127.0.0.1:${port}`;
 const csrf = randomBytes(24).toString('hex');
 let busy = false;
@@ -100,13 +102,18 @@ async function run(logins) {
 const server=createServer(async(req,res)=>{
   const reply=(status,type,body)=>{res.writeHead(status,{'content-type':type,'cache-control':'no-store','content-security-policy':"default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'",'referrer-policy':'no-referrer'});res.end(body);};
   if(req.method==='GET'&&req.url==='/status') return reply(200,'application/json',JSON.stringify({busy,results}));
-  if(req.method==='GET'&&req.url==='/') return reply(200,'text/html; charset=utf-8',`<!doctype html><html lang="vi"><meta charset="utf-8"><title>Booking pair QA</title><h1>Kiểm thử hai Customer — production</h1><p>Tài khoản hiện có. Mật khẩu/JWT không lưu vào file hoặc log. Tạo tối đa hai booking test pending, không xóa dữ liệu.</p><form method="post" action="/run" autocomplete="off"><input type="hidden" name="csrf" value="${csrf}">${[1,2].map(index=>`<fieldset><legend>Customer ${index}</legend><label>Email <input name="email${index}" type="email" required></label><label>Mật khẩu <input name="password${index}" type="password" required autocomplete="off"></label></fieldset>`).join('')}<button>Chạy kiểm thử hai Customer</button></form><p>Kết quả: <a href="/status">Xem trạng thái</a></p></html>`);
-  if(req.method!=='POST'||req.url!=='/run'||req.headers.origin!==origin) return reply(403,'text/plain','Denied');
+  if(req.method==='GET'&&(req.url==='/'||req.url==='/run')) return reply(200,'text/html; charset=utf-8',`<!doctype html><html lang="vi"><meta charset="utf-8"><title>Booking pair QA</title><h1>Kiểm thử hai Customer — production</h1><p>Tài khoản hiện có. Mật khẩu/JWT không lưu vào file hoặc log. Tạo tối đa hai booking test pending, không xóa dữ liệu.</p><form method="post" action="/run" autocomplete="off"><input type="hidden" name="csrf" value="${csrf}">${[1,2].map(index=>`<fieldset><legend>Customer ${index}</legend><label>Email <input name="email${index}" type="email" required></label><label>Mật khẩu <input name="password${index}" type="password" required autocomplete="off"></label></fieldset>`).join('')}<button>Chạy kiểm thử hai Customer</button></form><p>Kết quả: <a href="/status">Xem trạng thái</a></p></html>`);
+  // Some loopback browser form navigations omit Origin; the random CSRF field
+  // still protects this local harness while a supplied cross-origin value fails.
+  if(req.method!=='POST'||req.url!=='/run') return reply(405,'text/plain; charset=utf-8','Phương thức không hợp lệ. Mở lại trang / để nhập form mới.');
+  if(req.headers.host!==`127.0.0.1:${port}`) return reply(403,'text/plain; charset=utf-8','QA_HOST_DENIED: mở form bằng URL loopback được runner cung cấp.');
+  if(req.headers.origin && req.headers.origin!==origin) return reply(403,'text/plain; charset=utf-8','QA_ORIGIN_DENIED: request đến từ origin khác. Mở form trực tiếp trong trình duyệt.');
+  if(!req.headers['content-type']?.startsWith('application/x-www-form-urlencoded')) return reply(415,'text/plain; charset=utf-8','QA_CONTENT_TYPE_DENIED: cần gửi bằng form trên trang QA.');
   if(busy) return reply(409,'text/plain','Test already running');
   let body='';
   for await(const chunk of req) { body+=chunk; if(body.length>4096) return reply(413,'text/plain','Too large'); }
   const fields=new URLSearchParams(body); body='';
-  if(fields.get('csrf')!==csrf) return reply(403,'text/plain','Denied');
+  if(fields.get('csrf')!==csrf) return reply(403,'text/plain; charset=utf-8','QA_CSRF_STALE: form thuộc phiên runner cũ. Mở lại trang /, nhập hai tài khoản và gửi form mới.');
   const logins=[1,2].map(index=>({email:fields.get(`email${index}`)?.trim(),password:fields.get(`password${index}`)}));
   if(logins.some(login=>!login.email||!login.password||login.password.length<8)) return reply(400,'text/plain','Two existing accounts required');
   busy=true;
