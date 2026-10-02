@@ -7,6 +7,7 @@ export function AccountControl() {
   const pathname = usePathname();
   const router = useRouter();
   const [authenticated, setAuthenticated] = useState(false);
+  const [customer, setCustomer] = useState(false);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
   const demo = process.env.NEXT_PUBLIC_STATIC_DEMO === "true";
@@ -15,7 +16,7 @@ export function AccountControl() {
     const controller = new AbortController();
     fetch("/auth/session", { cache: "no-store", signal: controller.signal })
       .then(response => response.ok ? response.json() : null)
-      .then((data: { authenticated?: boolean } | null) => setAuthenticated(!!data?.authenticated))
+      .then((data: { authenticated?: boolean; active?: boolean; role?: string } | null) => { setAuthenticated(!!data?.authenticated); setCustomer(!!data?.active && data.role === "customer"); })
       .catch(() => { /* Navigation stays usable if session lookup fails. */ });
     return () => controller.abort();
   }, [pathname, demo]);
@@ -31,5 +32,5 @@ export function AccountControl() {
       setPending(false);
     } catch { setMessage("Chưa thể đăng xuất. Vui lòng thử lại."); setPending(false); }
   }
-  return <div className="account-control">{authenticated ? <><Link href="/my-bookings">Đặt bàn của tôi</Link><Link href="/profile">Hồ sơ</Link><button type="button" disabled={pending} onClick={logout}>{pending ? "Đang thoát…" : "Đăng xuất"}</button></> : <Link href="/login">Đăng nhập</Link>}{message && <p role="alert">{message}</p>}</div>;
+  return <div className="account-control">{authenticated ? <>{customer && <Link href="/my-bookings">Đặt bàn của tôi</Link>}<Link href="/profile">Hồ sơ</Link><button type="button" disabled={pending} onClick={logout}>{pending ? "Đang thoát…" : "Đăng xuất"}</button></> : <Link href="/login">Đăng nhập</Link>}{message && <p role="alert">{message}</p>}</div>;
 }

@@ -12,8 +12,9 @@ export function CancelBookingButton({ bookingId, disabled = false }: { bookingId
     setPending(true); setMessage("");
     try {
       const response = await fetch(`/api/bookings/${bookingId}/cancel`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
-      const result = await response.json() as { message?: string };
+      const result = await response.json() as { message?: string; booking?: { reason?: string } };
       if (!response.ok) { setMessage(result.message || "Chưa thể hủy đặt bàn."); return; }
+      if (result.booking?.reason === "pending_expired") setMessage("Yêu cầu đã hết hạn chờ xác nhận và được hệ thống đóng.");
       router.refresh();
     } catch { setMessage("Không thể kết nối. Hãy mở lại trang để kiểm tra trạng thái."); }
     finally { setPending(false); }

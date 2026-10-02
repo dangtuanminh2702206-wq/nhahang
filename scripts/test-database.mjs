@@ -318,6 +318,112 @@ try {
     assert.equal((await actor(right,B,c=>c.query('select id from public.bookings where customer_id=$1',[A]))).rowCount,0);
   });
   await clearBookings();
+  function cancel(client, id) { return client.query('select * from public.cancel_booking($1)', [id]); }
+  async function eventCounts(id) {
+    return (await admin.query(`select
+      (select count(*)::int from public.booking_history where booking_id=$1) history,
+      (select count(*)::int from public.notifications n join public.booking_history h on h.id=n.history_id where h.booking_id=$1) notifications,
+      (select count(*)::int from public.audit_logs where entity_id=$1) audit`, [id])).rows[0];
+  }
+  await check('customer cancellation exact SQL boundary uses the production predicate', async () => {
+    const rows=(await admin.query(`select
+      private.cancellation_window_open('2030-01-01 11:00Z','2030-01-01 10:00Z',60) exact,
+      private.cancellation_window_open('2030-01-01 10:59:59.999999Z','2030-01-01 10:00Z',60) below,
+      private.cancellation_window_open('2030-01-01 11:00:00.000001Z','2030-01-01 10:00Z',60) above`)).rows[0];
+    assert.deepEqual(rows,{exact:true,below:false,above:true});
+  });
+  await check('pending and confirmed cancellation releases availability; retry has one event', async () => {
+    for (const confirmed of [false,true]) {
+      await clearBookings();
+      const b=(await actor(left,A,c=>book(c,args()))).rows[0];
+      if (confirmed) await actor(right,S,c=>c.query('select * from public.confirm_booking($1)',[b.id]));
+      assert(!(await availability()).rows.some(t=>t.table_id===tables[0].id));
+      const before=await eventCounts(b.id);
+      const result=(await actor(left,A,c=>cancel(c,b.id))).rows[0];
+      assert.equal(result.status,'cancelled'); assert.equal(result.cancellation_source,'customer');
+      assert.equal(result.reason,'customer_cancelled');
+      await actor(left,A,c=>cancel(c,b.id));
+      assert.deepEqual(await eventCounts(b.id),Object.fromEntries(Object.entries(before).map(([k,v])=>[k,v+1])));
+      assert((await availability()).rows.some(t=>t.table_id===tables[0].id));
+    }
+  });
+  await clearBookings();
+  await check('cancellation rejects foreign owner, Guest, Staff, Admin and inactive Customer', async () => {
+    const b=(await actor(left,A,c=>book(c,args()))).rows[0];
+    await assert.rejects(actor(right,B,c=>cancel(c,b.id)),/BOOKING_NOT_FOUND/);
+    await assert.rejects(actor(right,B,c=>cancel(c,randomUUID())),/BOOKING_NOT_FOUND/);
+    await assert.rejects(actor(right,null,c=>cancel(c,b.id),'anon'),e=>e.code==='42501');
+    for (const id of [S,D]) await assert.rejects(actor(right,id,c=>cancel(c,b.id)),/CUSTOMER_REQUIRED/);
+    await admin.query('update public.profiles set is_active=false where id=$1',[A]);
+    await assert.rejects(actor(left,A,c=>cancel(c,b.id)),/AUTH_REQUIRED/);
+    await admin.query('update public.profiles set is_active=true where id=$1',[A]);
+    assert.equal((await admin.query('select status from public.bookings where id=$1',[b.id])).rows[0].status,'pending');
+  });
+  await clearBookings();
+  await check('RPC rejects below 60 minutes and terminal states without side effects', async () => {
+    const b=(await actor(left,A,c=>book(c,args()))).rows[0];
+    await admin.query("update public.bookings set starts_at=clock_timestamp()+interval '59 minutes', ends_at=clock_timestamp()+interval '179 minutes', blocked_until=clock_timestamp()+interval '194 minutes' where id=$1",[b.id]);
+    await assert.rejects(actor(left,A,c=>cancel(c,b.id)),/CANCELLATION_WINDOW/);
+    for (const status of ['checked_in','completed','rejected','no_show']) {
+      await admin.query("update public.bookings set status=$2, actual_guest_count=2, checked_in_at=clock_timestamp(), completed_at=clock_timestamp(), reason='TEST ONLY' where id=$1",[b.id,status]);
+      await assert.rejects(actor(left,A,c=>cancel(c,b.id)),/INVALID_TRANSITION/);
+    }
+    assert.deepEqual(await eventCounts(b.id),{history:1,notifications:1,audit:1});
+  });
+  await clearBookings();
+  await check('expired pending cancellation returns system expiration once', async () => {
+    const b=(await actor(left,A,c=>book(c,args()))).rows[0];
+    await admin.query("update public.bookings set expires_at=clock_timestamp()-interval '1 second' where id=$1",[b.id]);
+    const result=(await actor(left,A,c=>cancel(c,b.id))).rows[0];
+    assert.equal(result.reason,'pending_expired'); assert.equal(result.cancellation_source,'system');
+    await actor(left,A,c=>cancel(c,b.id));
+    assert.deepEqual(await eventCounts(b.id),{history:2,notifications:2,audit:2});
+  });
+  await clearBookings();
+  await check('two real connections cancel simultaneously with exactly one transition', async () => {
+    const b=(await actor(left,A,c=>book(c,args()))).rows[0];
+    const results=await compete(left,right,()=>actor(left,A,c=>cancel(c,b.id)),()=>actor(right,A,c=>cancel(c,b.id)));
+    assert(results.every(r=>r.status==='fulfilled' && r.value.rows[0].status==='cancelled'));
+    assert.deepEqual(await eventCounts(b.id),{history:2,notifications:2,audit:2});
+  });
+  await clearBookings();
+  await check('cancel versus confirm race preserves terminal state and event consistency', async () => {
+    const b=(await actor(left,A,c=>book(c,args()))).rows[0];
+    const results=await compete(left,right,()=>actor(left,A,c=>cancel(c,b.id)),()=>actor(right,S,c=>c.query('select * from public.confirm_booking($1)',[b.id])));
+    assert.equal(results[0].status,'fulfilled');
+    if (results[1].status==='rejected') assert.match(results[1].reason.message,/INVALID_TRANSITION/);
+    assert.equal((await admin.query('select status from public.bookings where id=$1',[b.id])).rows[0].status,'cancelled');
+    const count=results[1].status==='fulfilled'?3:2;
+    assert.deepEqual(await eventCounts(b.id),{history:count,notifications:count,audit:count});
+  });
+  await clearBookings();
+  await check('cancel versus system expiration race records exactly one system transition', async () => {
+    const b=(await actor(left,A,c=>book(c,args()))).rows[0];
+    await admin.query("update public.bookings set expires_at=clock_timestamp()-interval '1 second' where id=$1",[b.id]);
+    const results=await compete(left,right,()=>actor(left,A,c=>cancel(c,b.id)),()=>right.query('select private.expire_pending()'));
+    assert(results.every(r=>r.status==='fulfilled'));
+    assert.equal((await admin.query('select reason from public.bookings where id=$1',[b.id])).rows[0].reason,'pending_expired');
+    assert.deepEqual(await eventCounts(b.id),{history:2,notifications:2,audit:2});
+  });
+  await clearBookings();
+  await check('cancellation event failure rolls back status and every side effect', async () => {
+    const b=(await actor(left,A,c=>book(c,args()))).rows[0];
+    await admin.query("create function private.test_fail() returns trigger language plpgsql as $$ begin raise exception 'TEST_CANCEL_EVENT_FAILURE'; end $$; create trigger test_event_failure before insert on public.booking_history for each row execute function private.test_fail()");
+    await assert.rejects(actor(left,A,c=>cancel(c,b.id)),/TEST_CANCEL_EVENT_FAILURE/);
+    assert.equal((await admin.query('select status from public.bookings where id=$1',[b.id])).rows[0].status,'pending');
+    assert.deepEqual(await eventCounts(b.id),{history:1,notifications:1,audit:1});
+    await admin.query('drop trigger test_event_failure on public.booking_history; drop function private.test_fail()');
+  });
+  await clearBookings();
+  await check('notification read_at is owner-only; content and history remain protected', async () => {
+    const b=(await actor(left,A,c=>book(c,args()))).rows[0];
+    const n=(await admin.query('select id from public.notifications where recipient_id=$1',[A])).rows[0];
+    assert.equal((await actor(right,B,c=>c.query('update public.notifications set read_at=clock_timestamp() where id=$1',[n.id]))).rowCount,0);
+    assert.equal((await actor(left,A,c=>c.query('update public.notifications set read_at=clock_timestamp() where id=$1',[n.id]))).rowCount,1);
+    await assert.rejects(actor(left,A,c=>c.query('update public.notifications set recipient_id=$1 where id=$2',[B,n.id])),e=>e.code==='42501');
+    await assert.rejects(actor(left,A,c=>c.query("update public.booking_history set reason='fake' where booking_id=$1",[b.id])),e=>e.code==='42501');
+  });
+  await clearBookings();
   await check('locked customer denied; existing booking preserved', async () => {
     const b=(await actor(left,A,c=>book(c,args()))).rows[0];
     await admin.query('update public.profiles set is_active=false where id=$1',[A]);

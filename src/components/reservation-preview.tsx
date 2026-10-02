@@ -18,6 +18,7 @@ export function ReservationPreview({ demo = true, mutationsEnabled = false }: { 
   const [failed, setFailed] = useState(false);
   const [needsLogin, setNeedsLogin] = useState(false);
   const [created, setCreated] = useState(false);
+  const [createdBookingId, setCreatedBookingId] = useState<string | null>(null);
   const requestKey = useRef<string | null>(null);
   const busy = useRef(false);
   const revision = useRef(0);
@@ -30,6 +31,7 @@ export function ReservationPreview({ demo = true, mutationsEnabled = false }: { 
     setAvailable(null);
     setMessage("");
     setCreated(false);
+    setCreatedBookingId(null);
     requestKey.current = null;
   }
   function notify(text: string, error = false) {
@@ -67,6 +69,7 @@ export function ReservationPreview({ demo = true, mutationsEnabled = false }: { 
         notify(result.message || "Chưa xác nhận kết quả. Thử lại cùng thông tin.", true); return;
       }
       setCreated(true);
+      setCreatedBookingId(result.booking.id);
       notify(result.booking.status === "pending" ? `Đã tạo yêu cầu chờ xác nhận. Hạn chờ: ${new Date(result.booking.expiresAt).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}. Chưa phải xác nhận của nhà hàng.` : result.booking.status === "cancelled" ? "Yêu cầu trước đã hủy hoặc hết hạn. Không có đặt bàn mới được tạo từ lần retry này." : "Yêu cầu trước đã được xử lý. Không tạo thêm booking từ lần retry này.");
     } catch { notify("Chưa xác nhận kết quả. Hãy thử lại cùng thông tin; mã retry được giữ trong phiên trang.", true); }
     finally { busy.current = false; setPending(false); }
@@ -84,7 +87,7 @@ export function ReservationPreview({ demo = true, mutationsEnabled = false }: { 
         <label htmlFor="preview-time">Giờ<select id="preview-time" value={time} onChange={(event) => setTime(event.target.value)}>{["10:00", "12:00", "14:00", "16:00", "18:00", "19:00", "20:00"].map((item) => <option key={item}>{item}</option>)}</select></label>
         <label htmlFor="preview-guests">Số khách<select id="preview-guests" value={guests} onChange={(event) => setGuests(event.target.value)}>{[1,2,3,4,5,6,7,8].map((item) => <option key={item} value={item}>{item} người</option>)}</select></label>
       </div><p className="small-note">{demo ? "Khung giờ và lựa chọn số khách chỉ để đánh giá UI, không phải chính sách đặt bàn đã triển khai." : "Giờ nhà hàng: Việt Nam (UTC+7). Chính sách và lịch phục vụ được kiểm tra lại bởi database."}</p>{!demo && <button type="button" className="button button-secondary" onClick={() => void findTables()} disabled={pending}>{pending ? "Đang xử lý…" : "Kiểm tra bàn"}</button>}</fieldset>
-      {!demo && <div ref={summaryRef} tabIndex={-1} role={failed ? "alert" : "status"} className={message ? "preview-confirmation" : ""}>{message && <p>{message}</p>}{failed && !date && message && <a href="#preview-date">Chọn ngày đặt bàn</a>}{needsLogin && <Link href="/login">Đăng nhập rồi kiểm tra bàn lại</Link>}</div>}
+      {!demo && <div ref={summaryRef} tabIndex={-1} role={failed ? "alert" : "status"} className={message ? "preview-confirmation" : ""}>{message && <p>{message}</p>}{created && createdBookingId && <Link className="text-link" href={`/my-bookings/${createdBookingId}`}>Xem chi tiết đặt bàn</Link>}{failed && !date && message && <a href="#preview-date">Chọn ngày đặt bàn</a>}{needsLogin && <Link href="/login">Đăng nhập rồi kiểm tra bàn lại</Link>}</div>}
       <fieldset disabled={pending}><legend><span>02</span> Không gian & bàn</legend><div className="form-grid form-grid-two"><label htmlFor="preview-floor">Tầng<select id="preview-floor" value={floorSlug} onChange={(event) => { const next = restaurantFloors.find((item) => item.slug === event.target.value)!; setFloorSlug(next.slug); setTableCode(next.tables[0].code); }}>{restaurantFloors.map((item) => <option key={item.slug} value={item.slug}>Tầng {item.level} · {item.name}</option>)}</select></label><label htmlFor="preview-table">Bàn đang xem<select id="preview-table" value={tableCode} onChange={(event) => setTableCode(event.target.value)}>{floor.tables.map((table) => <option key={table.code} value={table.code} disabled={available !== null && !available.some(item => item.table_code === table.code)}>{table.code} · {table.capacity} chỗ · {table.position}{available !== null && !available.some(item => item.table_code === table.code) ? " · không khả dụng" : ""}</option>)}</select></label></div>
         <FloorPlan key={floor.slug} floor={floor} selectedCode={tableCode} availableCodes={available?.map(table => table.table_code)} onTableSelect={(table) => { setTableCode(table.code); setConfirmed(false); setCreated(false); requestKey.current = null; }} />
       </fieldset>

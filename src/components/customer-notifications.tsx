@@ -6,9 +6,11 @@ import type { CustomerNotification } from "@/lib/customer-bookings";
 
 function notificationText(item: CustomerNotification) {
   if (item.to_status === "cancelled" && item.source === "customer") return "Đặt bàn của bạn đã được hủy.";
+  if (item.reason === "pending_expired") return "Yêu cầu đã hết hạn chờ nhà hàng xác nhận.";
+  if (item.to_status === "cancelled") return "Đặt bàn đã được hủy.";
   if (item.to_status === "confirmed") return "Đặt bàn của bạn đã được nhà hàng xác nhận.";
   if (item.to_status === "pending") return "Yêu cầu đặt bàn của bạn đã được tiếp nhận.";
-  return `Trạng thái đặt bàn: ${item.to_status}.`;
+  return ({ checked_in: "Nhà hàng đã đón khách.", completed: "Cuộc hẹn đã hoàn tất.", rejected: "Nhà hàng chưa thể nhận yêu cầu đặt bàn.", no_show: "Đặt bàn được ghi nhận vắng mặt." } as Record<string, string>)[item.to_status] ?? "Đặt bàn có cập nhật mới.";
 }
 
 export function CustomerNotifications({ initialItems }: { initialItems: CustomerNotification[] }) {

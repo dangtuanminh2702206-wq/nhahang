@@ -14,6 +14,9 @@ export async function POST(
   if (request.headers.get("origin") !== getApplicationOrigin(request)) {
     return NextResponse.json({ message: "Yêu cầu không hợp lệ." }, { status: 403, headers });
   }
+  if (!request.headers.get("content-type")?.startsWith("application/json")) {
+    return NextResponse.json({ message: "Yêu cầu không hợp lệ." }, { status: 415, headers });
+  }
   if (!bookingMutationsEnabled()) {
     return NextResponse.json({ message: "Chức năng hủy đặt bàn chưa được bật cho môi trường này." }, { status: 503, headers });
   }

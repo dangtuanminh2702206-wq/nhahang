@@ -33,6 +33,7 @@ const modules = {
 const cancelRoute = await load("src/app/api/bookings/[id]/cancel/route.server.ts", modules, env);
 function request(requestOrigin = origin) { return { headers: new Headers({ origin: requestOrigin, "content-type": "application/json" }) }; }
 assert.equal((await cancelRoute.POST(request("https://attacker.invalid"), { params: Promise.resolve({ id: bookingId }) })).status, 403);
+assert.equal((await cancelRoute.POST({ headers: new Headers({ origin, "content-type": "text/plain" }) }, { params: Promise.resolve({ id: bookingId }) })).status, 415);
 assert.equal((await cancelRoute.POST(request(), { params: Promise.resolve({ id: "bad" }) })).status, 400);
 for (const status of [401, 403, 503]) { denied = status; assert.equal((await cancelRoute.POST(request(), { params: Promise.resolve({ id: bookingId }) })).status, status); }
 denied = 0;
@@ -61,3 +62,7 @@ assert(migration.includes("perform private.record_booking_event"));
 assert(migration.includes("b.customer_id = auth.uid()"));
 assert(migration.includes("grant execute on function public.cancel_booking(uuid) to authenticated"));
 console.log("PASS migration contract: inclusive database cancellation boundary, lock, atomic event recording, Customer-only history RLS and grant.");
+const expiryMigration = await readFile(new URL("../supabase/migrations/202610020002_customer_cancellation_expiry.sql", import.meta.url), "utf8");
+assert(expiryMigration.includes("v_result.expires_at <= v_now"));
+assert(expiryMigration.includes("private.cancellation_window_open(v_result.starts_at, v_now, v_policy.cancellation_minutes)"));
+console.log("PASS expiry migration contract; exact boundary and races are validated by test:db, not this source check.");

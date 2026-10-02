@@ -31,7 +31,7 @@ export async function GET() {
   try {
     const user = await getCurrentUser();
     const profile = user ? await getCurrentProfile() : null;
-    return reply({ configured: true, authenticated: !!user, active: !!profile?.is_active });
+    return reply({ configured: true, authenticated: !!user, active: !!profile?.is_active, role: profile?.is_active ? profile.role : null });
   } catch { return reply({ message: "Chưa thể xác minh phiên đăng nhập. Vui lòng thử lại." }, 503); }
 }
 

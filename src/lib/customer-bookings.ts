@@ -59,6 +59,7 @@ export async function getCustomerBookings(supabase: SupabaseClient, customerId: 
 }
 
 export async function getCustomerBooking(supabase: SupabaseClient, customerId: string, id: string): Promise<CustomerBookingView | null> {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) return null;
   const { data, error } = await supabase.from("bookings").select(bookingFields).eq("id", id).eq("customer_id", customerId).maybeSingle();
   if (error) throw new Error("CUSTOMER_BOOKING_UNAVAILABLE");
   if (!data) return null;
