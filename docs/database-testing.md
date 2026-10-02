@@ -662,3 +662,37 @@ key để thực hiện DDL và không tự reset/seed production.
 Nguồn SQL scheduler có kiểm tra job trùng và không sửa job khác:
 [`phase7-scheduler.sql`](../supabase/operations/phase7-scheduler.sql).
 Không coi contract/mock/local SQL là JWT production PASS. Kết luận hiện tại: **PARTIAL**.
+
+### Phần 7 — bằng chứng bổ sung và điểm dừng kiểm thử production
+
+- Database loopback sạch `mocvi_test_staff_final_20261002`: **52 nhóm PASS**.
+  Move/create race giữ một destination hold, giữ bàn cũ khi move thất bại;
+  Staff wrapper confirm/expire chỉ ghi một system transition.
+- Walk-in local dùng giờ phục vụ/duration fixture riêng, khôi phục finally;
+  confirmed ngay, customer_id null, retry cùng request không trùng event và
+  thời điểm đến trong tương lai bị chặn. Không gán đây là JWT production PASS.
+- Production deployment `431facd` Ready đã được đối chiếu domain và commit.
+- Staff JWT/UI tạo phone QA `7d09de91-7e8a-4e97-b9e0-3335d8166c5d` thành công;
+  confirmed, T1-B03, 2 khách đặt, không gắn Customer. UI đổi sang T1-B04 đã
+  thành công; history ghi T1-B03 → T1-B04, lý do và khách đồng ý. Chưa check-in;
+  không tạo occupied/cleaning bằng ca này, booking vẫn confirmed ở lần đọc cuối.
+- Scheduler QA `c31e7847-d79d-4243-8865-d6255c9b3c82`, pending website,
+  expires_at hiển thị 22:40:24 ngày 02/10 Asia/Ho_Chi_Minh. Không sửa thời hạn
+  hay policy. SQL chỉ đọc kết quả bị timeout trước khi đọc được status/count;
+  chưa xác minh cancelled/pending_expired hoặc chống event trùng sau cron.
+- Trình duyệt nhúng kẹt ở hộp thoại native đổi bàn; operator đóng hộp thoại,
+  rồi UI đã chứng minh move thành công. Đổi sang xác nhận trong form với khóa
+  input, focus Quay lại, Escape. Source contract PASS không thay thế browser QA.
+- Còn phải kiểm chứng trên production: confirm/reject/cancel, walk-in,
+  check-in/complete/ready, no-show, scheduler tự nhiên, Admin operations và
+  responsive 320/704/1024/1600. Sau giờ phục vụ không đổi policy để ép walk-in.
+
+Giữ **PARTIAL**, bảo toàn history/audit QA và mọi dữ liệu ngoài QA. Khi browser
+hoạt động lại, đọc kết quả trước khi lặp mutation; không tạo request mới cho
+thao tác đã thành công. Không gọi SQL local fixture là JWT production.
+
+Bản sửa xác nhận trong form: typecheck, lint, Staff/booking/Customer contracts,
+Pages build (Staff không chứa QA, menu dùng /nhahang/images), normal build và
+HTTP Identity/public/Guest Staff APIs PASS. Guest page dùng streamed redirect
+Next.js tới /login, không trả dữ liệu booking; không đòi HTTP 307 khi redirect
+đã được stream bằng meta refresh. Responsive/live confirmation chưa nghiệm thu.

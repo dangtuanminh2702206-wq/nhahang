@@ -52,3 +52,8 @@ console.log("PASS Staff create route: only phone/walk-in source, role authorizat
 const migration = await readFile(new URL("../supabase/migrations/202610030001_staff_operations.sql", import.meta.url), "utf8");
 for (const marker of ["staff_update_booking", "staff_move_booking", "staff_mark_table_ready", "actual_guest_count", "checked_in_at", "completed_at", "STAFF_REQUIRED", "REASON_REQUIRED", "grant execute on function public.staff_update_booking"]) assert(migration.includes(marker), marker);
 console.log("PASS Staff migration contract: state transitions, physical table state, audit/event path and grants.");
+
+const panel = await readFile(new URL("../src/components/staff-action-panel.tsx", import.meta.url), "utf8");
+assert(!panel.includes('window.confirm'));
+for (const marker of ['setConfirmation(action)', 'run(confirmation, true)', 'cancelButton.current?.focus()', 'event.key === "Escape"', 'disabled={!!pending || !!confirmation}', 'role="group"', 'role="alert"']) assert(panel.includes(marker), marker);
+console.log("PASS Staff confirmation source contract: explicit approval, locked inputs, cancel focus and Escape; browser interaction still requires live QA.");

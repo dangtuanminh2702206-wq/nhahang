@@ -304,3 +304,23 @@ check-in, no-show, hoàn tất phục vụ, đổi bàn và cleaning → availab
 - Staff test đã đăng nhập domain thật và hồ sơ hiển thị trusted role Staff.
   Phần 7 vẫn **PARTIAL** cho tới khi đủ chu trình JWT/UI production, booking
   QA hết hạn tự nhiên, responsive và deployment cuối được nghiệm thu.
+
+### Phần 7 — kiểm tra production và giới hạn tiếp tục (02/10/2026)
+
+- Deployment `431facd` đã Ready trên `moc-vi-restaurant.vercel.app`, đúng nhánh
+  `codex/restaurant-booking-platform`.
+- Staff JWT/UI thật đã tạo booking điện thoại có nhãn PHASE7 QA, confirmed ngay,
+  khách vãng lai không gắn Customer; đổi bàn T1-B03 → T1-B04 thành công, giữ
+  lịch/số khách và history ghi lý do cùng khách đồng ý.
+- SQL local sạch mở rộng đạt **52 nhóm**: thêm move/create race, Staff wrapper
+  confirm/expire race và walk-in/retry. Fixture walk-in đổi giờ/duration **chỉ ở
+  database loopback test**, khôi phục trong finally; không sửa policy production.
+- Đã thay xác nhận `window.confirm` bằng bước xác nhận trong form Staff để
+  tránh trình duyệt nhúng bị kẹt; khóa dữ liệu khi xác nhận, có Quay lại/Escape.
+  Skill ui-ux-pro-max hướng dẫn giữ bước xác nhận cho thao tác có hậu quả.
+- Booking QA scheduler được tạo với thời hạn tự nhiên 22:40:24 Asia/Ho_Chi_Minh
+  ngày 02/10. Kết nối điều khiển Supabase bị timeout khi đọc kết quả: **chưa
+  nghiệm thu hết hạn end-to-end**, không suy ra PASS từ job chạy succeeded.
+- Phần 7 vẫn **PARTIAL**: còn chu trình JWT/UI production confirm/reject/cancel,
+  walk-in/check-in/complete/ready/no-show, scheduler và responsive đầy đủ.
+  Không sửa policy/giờ production hoặc ép trạng thái bàn để lấy PASS.

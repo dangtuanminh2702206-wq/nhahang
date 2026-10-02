@@ -564,6 +564,52 @@ try {
     assert.equal((await eventCounts(b.id)).history,2);
   });
 
+  await clearBookings();
+  await check('Staff move versus new booking preserves one destination hold atomically', async () => {
+    const b = await phone();
+    const results = await compete(left, right,
+      () => staffOp(left, S, 'move', b.id, { table: tables[3].id, reason: 'PHASE7 QA', consent: true }),
+      () => actor(right, B, c => book(c, args(3))));
+    assert.equal(results.filter(r => r.status === 'fulfilled').length, 1);
+    assert.equal((await admin.query("select count(*)::int n from public.bookings where table_id=$1 and status in ('pending','confirmed')", [tables[3].id])).rows[0].n, 1);
+    const original = (await admin.query('select table_id from public.bookings where id=$1', [b.id])).rows[0];
+    assert.equal(original.table_id, results[0].status === 'fulfilled' ? tables[3].id : tables[2].id);
+    assert.equal((await eventCounts(b.id)).history, results[0].status === 'fulfilled' ? 2 : 1);
+  });
+  await clearBookings();
+  await check('Staff receipt confirmation versus expiration records one system transition', async () => {
+    const b = (await actor(left, A, c => book(c, args()))).rows[0];
+    await admin.query("update public.bookings set expires_at=clock_timestamp()-interval '1 second' where id=$1", [b.id]);
+    const results = await compete(left, right,
+      () => staffOp(left, S, 'confirm', b.id),
+      () => right.query('select private.expire_pending()'));
+    assert.equal(results[1].status, 'fulfilled');
+    const row = (await admin.query('select status,reason from public.bookings where id=$1', [b.id])).rows[0];
+    assert.deepEqual(row, { status: 'cancelled', reason: 'pending_expired' });
+    assert.deepEqual(await eventCounts(b.id), { history: 2, notifications: 2, audit: 2 });
+  });
+  await clearBookings();
+  await check('Walk-in current-time policy, retry and anonymous contact are enforced locally', async () => {
+    // Short local-only service duration keeps this fixture independent of test time.
+    const policy = (await admin.query('select duration_minutes,buffer_minutes from public.restaurant_settings where id')).rows[0];
+    const hours = (await admin.query('select weekday,opens_at,closes_at from public.business_hours')).rows;
+    try {
+      await admin.query('update public.restaurant_settings set duration_minutes=1,buffer_minutes=0 where id');
+      await admin.query("update public.business_hours set opens_at='00:00',closes_at='23:59'");
+      const now = (await admin.query("select clock_timestamp()-interval '1 second' t")).rows[0].t;
+      const values = [...args(2, now), null, 'PHASE7 QA', 'walk_in', null];
+      const invoke = () => actor(left, S, c => c.query('select * from public.create_booking($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)', values));
+      const b = (await invoke()).rows[0];
+      assert.equal(b.status, 'confirmed'); assert.equal(b.source, 'walk_in'); assert.equal(b.customer_id, null);
+      assert.equal((await invoke()).rows[0].id, b.id);
+      assert.deepEqual(await eventCounts(b.id), { history: 1, notifications: 0, audit: 1 });
+      await assert.rejects(actor(right, S, c => c.query('select * from public.create_booking($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)', [...args(3, new Date(now.getTime()+120000)), null, '', 'walk_in', null])), /INVALID_WALK_IN_TIME/);
+    } finally {
+      await admin.query('update public.restaurant_settings set duration_minutes=$1,buffer_minutes=$2 where id', [policy.duration_minutes,policy.buffer_minutes]);
+      for (const h of hours) await admin.query('update public.business_hours set opens_at=$1,closes_at=$2 where weekday=$3', [h.opens_at,h.closes_at,h.weekday]);
+    }
+  });
+  await clearBookings();
   await check('locked customer denied; existing booking preserved', async () => {
     const b=(await actor(left,A,c=>book(c,args()))).rows[0];
     await admin.query('update public.profiles set is_active=false where id=$1',[A]);
