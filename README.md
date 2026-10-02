@@ -237,6 +237,24 @@ Gate hai Customer thật trên Production đã COMPLETE ngày 02/10/2026: một 
 một 409 khi tranh bàn, cách ly booking/history/notification, retry không tạo trùng
 và chặn giả mạo customer/source. Hai booking test được giữ lại; phiên test đã logout.
 Callback email được chứng minh local; JWT expiry và booking được chứng minh Production.
-Workflow Staff/Admin, scheduler, cancellation và notification delivery thuộc các phần sau.
+Workflow Staff/Admin và scheduler vẫn thuộc các phần sau. Phần 6 bổ sung quản lý
+đặt bàn cá nhân cho Customer: danh sách/chi tiết, hủy theo mốc database 60 phút,
+history và thông báo nội bộ; không gửi email/SMS.
 Xem [kết quả và giới hạn kiểm thử](docs/database-testing.md) và
 [nghiệm thu booking production](docs/booking-production.md).
+
+## Phần 6 · Customer booking management
+
+- `/my-bookings`: Customer active xem các booking của chính mình, trạng thái, bàn,
+  thời gian và thông báo nội bộ; Guest/Staff/Admin không được dùng màn hình này.
+- `/my-bookings/[id]`: chi tiết, lịch sử trạng thái và nút hủy khi còn đủ thời gian.
+  Truy cập booking của Customer khác trả về trang không tìm thấy, không tiết lộ dữ liệu.
+- `POST /api/bookings/[id]/cancel`: same-origin, Customer-only, gọi RPC
+  `cancel_booking`; không cho cập nhật trực tiếp booking.
+- `PATCH /api/notifications/[id]`: chỉ cập nhật `read_at` của notification thuộc
+  chính Customer. Thông báo là bản ghi trong site, chưa gửi email/SMS.
+- Migration `202610020001_customer_booking_management.sql` đã áp dụng trên
+  Supabase production sau khi review; hủy là atomic, concurrency-safe, retry
+  không tạo history/notification/audit trùng và đúng mốc **>= 60 phút**.
+- Contract/unit tests Phần 6, typecheck, lint, normal build và Pages build đã đạt;
+  live UI cancellation/race boundary cần ghi nhận riêng sau deploy.

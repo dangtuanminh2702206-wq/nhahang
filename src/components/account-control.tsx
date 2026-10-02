@@ -31,5 +31,5 @@ export function AccountControl() {
       setPending(false);
     } catch { setMessage("Chưa thể đăng xuất. Vui lòng thử lại."); setPending(false); }
   }
-  return <div className="account-control">{authenticated ? <><Link href="/profile">Hồ sơ</Link><button type="button" disabled={pending} onClick={logout}>{pending ? "Đang thoát…" : "Đăng xuất"}</button></> : <Link href="/login">Đăng nhập</Link>}{message && <p role="alert">{message}</p>}</div>;
+  return <div className="account-control">{authenticated ? <><Link href="/my-bookings">Đặt bàn của tôi</Link><Link href="/profile">Hồ sơ</Link><button type="button" disabled={pending} onClick={logout}>{pending ? "Đang thoát…" : "Đăng xuất"}</button></> : <Link href="/login">Đăng nhập</Link>}{message && <p role="alert">{message}</p>}</div>;
 }

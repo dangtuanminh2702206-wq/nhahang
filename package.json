@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test:db": "node scripts/test-database.mjs",
     "test:booking": "node scripts/test-booking.mjs",
+    "test:customer-booking": "node scripts/test-customer-booking.mjs",
     "test:identity:smoke": "node scripts/test-identity-smoke.mjs"
   },
   "dependencies": {

@@ -79,7 +79,7 @@ PK/UNIQUE tự có B-tree index; index bổ sung liệt kê riêng bên dưới.
 | restaurant_settings | min_notice_minutes | integer / N | 60, >= 0 |
 | restaurant_settings | max_advance_days | integer / N | 30, > 0; một ngày = 24 giờ |
 | restaurant_settings | pending_minutes | integer / N | 30, > 0, <= min_notice_minutes |
-| restaurant_settings | cancellation_minutes | integer / N | 60, >= 0; thao tác hủy chưa triển khai |
+| restaurant_settings | cancellation_minutes | integer / N | 60, >= 0; `cancel_booking` dùng làm policy authoritative |
 | restaurant_settings | early_checkin_minutes | integer / N | 15, >= 0; thao tác check-in chưa triển khai |
 | restaurant_settings | no_show_minutes | integer / N | 15, >= 0; thao tác no-show chưa triển khai |
 | restaurant_settings | max_active_bookings | integer / N | 3, > 0 |
@@ -240,7 +240,7 @@ bị lọc như foundation. Không thay policy/rule của RPC đã deploy.
 | Mới → confirmed | Staff/Admin qua phone/walk_in | Đã có create_booking |
 | pending → confirmed | Staff/Admin, chưa hết hạn, bàn/khu vực hoạt động | Đã có confirm_booking |
 | pending → cancelled | expires_at <= now, source=system, reason=pending_expired | Đã có expire_pending |
-| pending/confirmed → cancelled | Customer chủ booking khi start − now >= 60 phút; Staff theo quyền, có lý do | Chưa có mutation |
+| pending/confirmed → cancelled | Customer chủ booking khi start − now >= 60 phút; Staff theo quyền, có lý do | Customer `cancel_booking` đã có; Staff chưa có |
 | pending → rejected | Staff từ chối, bắt buộc lý do | Chưa có mutation |
 | confirmed → checked_in | Từ start − 15 phút, bàn sẵn sàng, không xung đột; lưu số khách thực | Chưa có mutation |
 | confirmed → no_show | now > start + 15 phút, chưa check-in; Staff xác nhận | Chưa có mutation |

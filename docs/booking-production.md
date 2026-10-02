@@ -57,7 +57,26 @@ production application/database. This supersedes the earlier local-only limit.
 
 Phase 5 is PASS within the agreed Customer booking scope, combining the live
 production results above and the existing SQL/handler/UI/build checks. Staff
-operations, scheduler, cancellation and notification delivery remain later phases.
+operations and scheduler remain later phases.
 
 Secrets, cookies, passwords, backup folders and 3D artifacts must not be committed.
 Earlier Auth/3D worktree changes are outside this deployment commit.
+
+## Phase 6 implementation status — 2026-10-02
+
+- Migration `202610020001_customer_booking_management.sql` was applied in the
+  same production project after review. SQL Editor returned success with no rows.
+- Customer cancellation is database-authoritative: only the booking owner with
+  an active Customer profile can cancel pending/confirmed bookings; exactly 60
+  minutes is allowed, the write is locked, and history/notification/audit are
+  recorded atomically. Repeating a cancelled request is a no-op.
+- Customer UI/API is implemented at `/my-bookings`, `/my-bookings/[id]`,
+  `POST /api/bookings/[id]/cancel` and `PATCH /api/notifications/[id]`.
+  Staff/Admin operational screens, scheduler, email/SMS and payment remain out
+  of scope.
+- Customer-only ownership, same-origin, route projection and migration contract
+  tests PASS. Normal build, Pages build and static artifact checks PASS.
+- Live production UI cancellation, exact-boundary and concurrent race evidence
+  is still pending deployment of this commit; until then Phase 6 is PARTIAL.
+
+Secrets, cookies, passwords, backup folders and 3D artifacts must not be committed.

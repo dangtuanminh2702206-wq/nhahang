@@ -235,3 +235,21 @@ database-testing.md; không coi implementation là chứng nhận tích hợp đ
   còn NOT RUN. Không thêm Auth bypass, không dùng service-role hay mock làm bằng chứng JWT.
 - Không có dashboard/scheduler/cloud migration; Phần 3 đã đủ ảnh FINAL và Phần 4 còn
   các ca Auth chưa kiểm chứng. Xem database-testing.md trước khi bật nghiệp vụ cloud.
+
+## Customer booking management · Phần 6 · 02/10/2026
+
+- Customer active có các route server-rendered `/my-bookings` và
+  `/my-bookings/[id]`; truy vấn dùng request-scoped Supabase client/RLS, không
+  dùng service-role hoặc client-side booking query.
+- `POST /api/bookings/[id]/cancel` chỉ gọi RPC `public.cancel_booking(uuid)`;
+  RPC lấy `auth.uid()`, kiểm tra profile Customer active + ownership, dùng cùng
+  advisory lock/row lock với các mutation booking và chấp nhận đúng mốc 60 phút.
+- Hủy ghi `booking_history`, notification nội bộ và `audit_logs` trong cùng
+  transaction. Retry trạng thái cancelled là no-op; các trạng thái khác ngoài
+  pending/confirmed bị từ chối.
+- Policy `history_read` đã được siết để Customer chỉ đọc history của booking
+  mình; Staff/Admin giữ quyền đọc vận hành hiện có. Notification `read_at` chỉ
+  cập nhật qua route same-origin và recipient hiện tại.
+- UI giữ editorial design đã duyệt, không tạo dashboard/card grid; có loading,
+  empty/error, focus/error feedback và link “Đặt bàn của tôi”. GitHub Pages chỉ
+  export placeholder tĩnh, không thực thi Auth/booking.

@@ -43,9 +43,19 @@ export function bookingError(error: { code?: string; message?: string }) {
     TABLE_UNAVAILABLE: "Bàn này không nhận đặt chỗ. Hãy kiểm tra bàn lại.",
     CUSTOMER_BOOKING_LIMIT: "Bạn đã đạt giới hạn đặt bàn đang hoạt động.",
     IDEMPOTENCY_PAYLOAD_MISMATCH: "Lần thử lại không khớp yêu cầu trước. Vui lòng kiểm tra lựa chọn.",
+    BOOKING_NOT_FOUND: "Không tìm thấy đặt bàn hoặc bạn không có quyền truy cập.",
+    CANCELLATION_WINDOW: "Chỉ có thể hủy trước giờ dùng bàn ít nhất 60 phút.",
+    INVALID_TRANSITION: "Đặt bàn này không còn ở trạng thái có thể hủy.",
+    CUSTOMER_REQUIRED: "Chỉ tài khoản Customer mới có thể hủy đặt bàn của mình.",
     INVALID_INPUT: "Thông tin đặt bàn không hợp lệ.",
   };
-  if (error.message && messages[error.message]) return { status: error.message === "IDEMPOTENCY_PAYLOAD_MISMATCH" ? 409 : 422, message: messages[error.message] };
+  if (error.message && messages[error.message]) {
+    const status = error.message === "BOOKING_NOT_FOUND" ? 404
+      : ["INVALID_TRANSITION", "CANCELLATION_WINDOW"].includes(error.message) ? 409
+        : error.message === "CUSTOMER_REQUIRED" ? 403
+          : error.message === "IDEMPOTENCY_PAYLOAD_MISMATCH" ? 409 : 422;
+    return { status, message: messages[error.message] };
+  }
   if (error.code === "42501") return { status: 403, message: "Tài khoản không có quyền thực hiện yêu cầu này." };
   return { status: 503, message: "Dịch vụ đặt bàn chưa sẵn sàng. Không có xác nhận giữ bàn; nếu vừa gửi yêu cầu, hãy thử lại với cùng thông tin." };
 }

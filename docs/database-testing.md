@@ -580,3 +580,23 @@ không trống/non-loopback và không xóa database sau test.
 Chạy `pnpm test:booking`; tùy chọn `BOOKING_TEST_BASE_URL=http://127.0.0.1:3002`
 để thêm HTTP cờ tắt, `BOOKING_CHECK_PAGES=true` để kiểm tra artifact `.next-pages`
 sau export. Chỉ bật các tùy chọn khi đúng môi trường, không dùng URL cloud.
+
+## Phần 6 · Customer booking management · 02/10/2026
+
+| Nhóm | Kết quả / giới hạn |
+| --- | --- |
+| Migration production | PASS — `202610020001_customer_booking_management.sql` áp dụng thành công trên `unhybmmbgumyhzaftlli`; không seed/reset catalogue |
+| `cancel_booking` contract | PASS — Customer active + ownership, pending/confirmed, mốc database `>= 60 phút`, lock, `customer_cancelled`, retry cancelled no-op |
+| Atomic side effects | PASS theo migration contract — booking/history/notification/audit dùng cùng transaction; không cấp UPDATE trực tiếp booking |
+| History RLS | PASS theo migration contract — Customer chỉ đọc history booking của mình; Staff/Admin giữ khả năng đọc vận hành |
+| Cancel route | PASS mock/contract — same-origin, Customer-only, UUID validation, safe projection và lỗi window/ownership/transition |
+| Notification route | PASS mock/contract — chỉ cập nhật `read_at` với recipient hiện tại, no-store, same-origin |
+| Customer UI | PASS build/static review — `/my-bookings`, `/my-bookings/[id]`, loading/empty/error, detail/history/cancel/notification; giữ editorial UI, không dashboard |
+| Typecheck/lint/build | PASS — typecheck, lint, normal Next build và Pages build; Pages loại API/Auth, giữ route preview tĩnh |
+| Database integration | NOT RUN — `TEST_DATABASE_URL` không được cấu hình trong lượt này; cần chạy fixture PostgreSQL sạch để chứng minh boundary/race bằng DB thực |
+| Live Customer cancellation | NOT RUN — commit cần deploy trước; không tự hủy booking production hiện có khi chưa có booking test được xác định rõ |
+
+Phần 6 hiện **PARTIAL** cho tới khi có bằng chứng live Customer hủy thành công,
+retry/concurrency và boundary 60 phút trên database production hoặc development
+cô lập. Không suy diễn từ contract/mock thành PASS integration. Staff/Admin
+dashboard, scheduler, email/SMS, payment và reset password vẫn ngoài phạm vi.
