@@ -256,5 +256,6 @@ Xem [kết quả và giới hạn kiểm thử](docs/database-testing.md) và
 - Migration `202610020001_customer_booking_management.sql` đã áp dụng trên
   Supabase production sau khi review; hủy là atomic, concurrency-safe, retry
   không tạo history/notification/audit trùng và đúng mốc **>= 60 phút**.
-- Contract/unit tests Phần 6, typecheck, lint, normal build và Pages build đã đạt;
-  live UI cancellation/race boundary cần ghi nhận riêng sau deploy.
+- Contract/unit tests Phần 6, typecheck, lint, normal build và Pages build đã đạt.
+  Live UI cancellation đã PASS với booking QA được xác định rõ; race/boundary
+  trực tiếp và fixture PostgreSQL sạch vẫn cần ghi nhận riêng.

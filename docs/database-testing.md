@@ -594,9 +594,9 @@ sau export. Chỉ bật các tùy chọn khi đúng môi trường, không dùng
 | Customer UI | PASS build/static review — `/my-bookings`, `/my-bookings/[id]`, loading/empty/error, detail/history/cancel/notification; giữ editorial UI, không dashboard |
 | Typecheck/lint/build | PASS — typecheck, lint, normal Next build và Pages build; Pages loại API/Auth, giữ route preview tĩnh |
 | Database integration | NOT RUN — `TEST_DATABASE_URL` không được cấu hình trong lượt này; cần chạy fixture PostgreSQL sạch để chứng minh boundary/race bằng DB thực |
-| Live Customer cancellation | NOT RUN — commit cần deploy trước; không tự hủy booking production hiện có khi chưa có booking test được xác định rõ |
+| Live Customer cancellation | PASS — booking QA `Phase 5 pair QA` đã chuyển sang `cancelled` trên Production; detail history ghi `customer_cancelled` do Customer và `/my-bookings` hiển thị thông báo hủy |
 
-Phần 6 hiện **PARTIAL** cho tới khi có bằng chứng live Customer hủy thành công,
-retry/concurrency và boundary 60 phút trên database production hoặc development
-cô lập. Không suy diễn từ contract/mock thành PASS integration. Staff/Admin
+Phần 6 hiện **PARTIAL**: ca hủy Customer đủ điều kiện đã PASS trên Production,
+nhưng retry/concurrency và boundary 60 phút chưa có bằng chứng live hoặc fixture
+PostgreSQL trong lượt này. Không suy diễn từ contract/mock thành PASS integration. Staff/Admin
 dashboard, scheduler, email/SMS, payment và reset password vẫn ngoài phạm vi.

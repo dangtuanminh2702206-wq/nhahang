@@ -16,7 +16,8 @@ production application/database. This supersedes the earlier local-only limit.
   transactional RPC. Browser cannot choose role/customer/source. No service key.
 - Lookup is not a hold; creation is pending, not restaurant confirmation.
 - Pages remains a static demo without booking APIs.
-- Staff workflow, scheduler, cancellation and notifications are later phases.
+- Staff workflow, scheduler, email/SMS and payment are later phases; Customer
+  cancellation and in-site notifications are covered in Phase 6 below.
 
 ## Evidence
 
@@ -76,7 +77,12 @@ Earlier Auth/3D worktree changes are outside this deployment commit.
   of scope.
 - Customer-only ownership, same-origin, route projection and migration contract
   tests PASS. Normal build, Pages build and static artifact checks PASS.
-- Live production UI cancellation, exact-boundary and concurrent race evidence
-  is still pending deployment of this commit; until then Phase 6 is PARTIAL.
+- Live production UI cancellation: PASS on 2026-10-02 with the explicitly
+  identified QA booking `Phase 5 pair QA`. The detail page showed `Đã hủy`,
+  history recorded `customer_cancelled` by the Customer, and the Customer
+  notification `Đặt bàn của bạn đã được hủy.` appeared in `/my-bookings`.
+- Exact-boundary and concurrent-race evidence was not rerun through the live UI;
+  the migration contract covers those rules, but this Phase 6 record remains
+  PARTIAL until database integration/fixture evidence is added.
 
 Secrets, cookies, passwords, backup folders and 3D artifacts must not be committed.
