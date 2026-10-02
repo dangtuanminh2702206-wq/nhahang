@@ -29,7 +29,7 @@ export function IdentityForm({ mode, profile }: { mode: "login" | "signup" | "pr
     } catch { setFailed(true); setMessage("Không thể kết nối. Vui lòng thử lại."); }
     finally { setPending(false); requestAnimationFrame(() => messageRef.current?.focus()); }
   }
-  return <form className="identity-form" onSubmit={submit} aria-busy={pending}>
+  return <form className="identity-form" method="post" action="/auth/session" onSubmit={submit} aria-busy={pending}>
     <p ref={messageRef} tabIndex={-1} role={failed ? "alert" : "status"} className="identity-message">{message}</p>
     <fieldset disabled={pending}>
       <legend className="sr-only">{mode === "profile" ? "Chỉnh sửa hồ sơ" : "Thông tin tài khoản"}</legend>

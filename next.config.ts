@@ -4,6 +4,7 @@ const isPagesPreview = process.env.GITHUB_PAGES === "true";
 const basePath = isPagesPreview ? "/nhahang" : "";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["127.0.0.1", "[::1]"],
   // Server-only endpoints/proxy are excluded from the static public demo.
   pageExtensions: isPagesPreview ? ["demo.tsx", "tsx", "ts"] : ["server.ts", "tsx", "ts"],
   ...(isPagesPreview

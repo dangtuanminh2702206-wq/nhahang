@@ -23,7 +23,33 @@ for (const url of [undefined,'https://project.supabase.co','http://127.0.0.1.evi
   assert.equal(booking.bookingMutationsEnabled(),false);
 }
 configured={url:'http://127.0.0.1:54321',key:'public-test'};
-assert.equal(booking.bookingMutationsEnabled(),true);
+assert.equal(booking.bookingMutationsEnabled(),false,'Missing loopback application URL must fail closed');
+const isolated = await load('src/lib/booking.ts',{'server-only':{},'@/lib/supabase/config':{getSupabaseConfig:()=>configured}},{
+  BOOKING_LOCAL_MUTATIONS_ENABLED:'true',
+  NEXT_PUBLIC_SITE_URL:'http://127.0.0.1:3002',
+  BOOKING_ALLOWED_SUPABASE_PROJECT_REF:'ojnkruytzhfqathvlexh',
+});
+assert.equal(isolated.bookingMutationsEnabled(),true);
+configured={url:'https://ojnkruytzhfqathvlexh.supabase.co',key:'public-test'};
+assert.equal(isolated.bookingMutationsEnabled(),true);
+configured={url:'https://unhybmmbgumyhzaftlli.supabase.co',key:'public-test'};
+assert.equal(isolated.bookingMutationsEnabled(),false);
+configured={url:'https://ojnkruytzhfqathvlexh.supabase.co',key:'public-test'};
+const production = await load('src/lib/booking.ts',{'server-only':{},'@/lib/supabase/config':{getSupabaseConfig:()=>configured}},{
+  BOOKING_LOCAL_MUTATIONS_ENABLED:'true',
+  NEXT_PUBLIC_SITE_URL:'https://moc-vi-restaurant.vercel.app',
+  BOOKING_ALLOWED_SUPABASE_PROJECT_REF:'ojnkruytzhfqathvlexh',
+});
+assert.equal(production.bookingMutationsEnabled(),false);
+configured={url:'https://unhybmmbgumyhzaftlli.supabase.co',key:'public-test'};
+const approvedProductionEnv={BOOKING_MUTATIONS_ENABLED:'true',NEXT_PUBLIC_SITE_URL:'https://moc-vi-restaurant.vercel.app',BOOKING_ALLOWED_SUPABASE_PROJECT_REF:'unhybmmbgumyhzaftlli'};
+const gateModules={'server-only':{},'@/lib/supabase/config':{getSupabaseConfig:()=>configured}};
+assert.equal((await load('src/lib/booking.ts',gateModules,approvedProductionEnv)).bookingMutationsEnabled(),true);
+for (const override of [{BOOKING_MUTATIONS_ENABLED:'false'},{NEXT_PUBLIC_SITE_URL:'http://moc-vi-restaurant.vercel.app'},{NEXT_PUBLIC_SITE_URL:'https://attacker.invalid'},{BOOKING_ALLOWED_SUPABASE_PROJECT_REF:'ojnkruytzhfqathvlexh'}]) {
+  assert.equal((await load('src/lib/booking.ts',gateModules,{...approvedProductionEnv,...override})).bookingMutationsEnabled(),false);
+}
+configured={url:'https://ojnkruytzhfqathvlexh.supabase.co',key:'public-test'};
+assert.equal((await load('src/lib/booking.ts',gateModules,approvedProductionEnv)).bookingMutationsEnabled(),false);
 const off = await load('src/lib/booking.ts',{'server-only':{},'@/lib/supabase/config':{getSupabaseConfig:()=>configured}},{});
 assert.equal(off.bookingMutationsEnabled(),false);
 assert.equal(booking.bookingError({code:'23P01'}).status,409);

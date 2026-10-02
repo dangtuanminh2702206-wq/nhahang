@@ -186,18 +186,18 @@ URL tùy ý. Không có Staff/Admin test account hoặc workflow tự cấp quy�
 thử development riêng. Xem trạng thái ở `docs/database-testing.md`.
 Pages vẫn mô phỏng; trạng thái nghiệm thu Phần 3 xem tài liệu asset integration.
 
-## Phần 5 · nền tảng local, chưa kích hoạt cloud
+## Phần 5 · triển khai production được operator duyệt
 
 - `GET /api/availability`: gọi RPC `find_available_tables`, chỉ trả ID/mã bàn,
   mã tầng và sức chứa, không trả thông tin booking/khách hàng.
 - `POST /api/bookings`: Customer active, cùng origin, gọi `create_booking` bằng
   phiên người dùng; không nhận role/user ID/source từ client, không dùng service-role.
-- `BOOKING_LOCAL_MUTATIONS_ENABLED=false` mặc định. Khi bật còn bắt buộc URL
-  Supabase loopback; cloud vẫn bị từ chối. Cần Supabase Auth/PostgREST local cô lập
-  để kiểm thử toàn tuyến; PostgreSQL fixture không thay thế môi trường đó.
-- Migration mới `supabase/migrations/202610010001_availability.sql` chỉ đã test local,
-  **chưa áp cloud**. Với config development hiện tại, tìm bàn báo dịch vụ chưa sẵn
-  sàng, không giả định bàn trống; tạo booking và ô liên hệ bị khóa.
+- Production được bật riêng bằng `BOOKING_MUTATIONS_ENABLED=true`, đúng origin
+  `https://moc-vi-restaurant.vercel.app` và project ref `unhybmmbgumyhzaftlli`.
+  Local vẫn dùng `BOOKING_LOCAL_MUTATIONS_ENABLED` với project development cô lập.
+- Migration `202610010001_availability.sql` đã áp production ngày 02/10/2026,
+  theo quyền operator; không seed/reset, không đổi Auth/role hay dữ liệu catalogue.
+  Trước migration: 0 booking, 8 hồ sơ, 22 bàn/92 chỗ; RPC tạo booking đã tồn tại.
 - Form/FloorPlan giữ thiết kế và catalogue hiện tại, có loading/error/empty/retry,
   key retry chỉ ở bộ nhớ trang. GitHub Pages vẫn không gọi Auth/booking API.
 - `pnpm test:booking`: validation/cờ/handler **mock**; thêm
@@ -205,4 +205,5 @@ Pages vẫn mô phỏng; trạng thái nghiệm thu Phần 3 xem tài liệu ass
   `pnpm test:db` chạy SQL trên database mới `mocvi_test_*`, áp tất cả migration theo thứ tự.
 
 Xem [kết quả và giới hạn kiểm thử](docs/database-testing.md). Chưa chứng nhận
-Phần 4/5 tích hợp hoàn tất; không tự bật cloud hoặc chạy migration cloud.
+Phần 4/5 tích hợp hoàn tất chỉ dựa trên bằng chứng thực tế, không chỉ build.
+Xem [nghiệm thu booking production](docs/booking-production.md) để biết các gate còn lại.

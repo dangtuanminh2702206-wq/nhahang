@@ -3,9 +3,34 @@ import { getSupabaseConfig } from "@/lib/supabase/config";
 
 export function bookingMutationsEnabled() {
   const config = getSupabaseConfig();
-  if (process.env.BOOKING_LOCAL_MUTATIONS_ENABLED !== "true" || !config) return false;
-  // Phase 5 cannot enable a cloud mutation even if someone accidentally sets the flag.
-  return ["localhost", "127.0.0.1", "[::1]"].includes(new URL(config.url).hostname);
+  if (!config) return false;
+  const applicationUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (!applicationUrl) return false;
+  let applicationHost: string;
+  let supabaseHost: string;
+  try {
+    applicationHost = new URL(applicationUrl).hostname;
+    supabaseHost = new URL(config.url).hostname;
+  } catch {
+    return false;
+  }
+  const isLocal = ["localhost", "127.0.0.1", "[::1]"].includes(applicationHost);
+  if (!isLocal) {
+    // Production is explicitly opted in and pinned to the approved site/project.
+    return process.env.BOOKING_MUTATIONS_ENABLED === "true"
+      && new URL(applicationUrl).origin === "https://moc-vi-restaurant.vercel.app"
+      && process.env.BOOKING_ALLOWED_SUPABASE_PROJECT_REF === "unhybmmbgumyhzaftlli"
+      && new URL(config.url).origin === "https://unhybmmbgumyhzaftlli.supabase.co";
+  }
+  if (process.env.BOOKING_LOCAL_MUTATIONS_ENABLED !== "true") return false;
+
+  // Cloud mutations are allowed only for the explicitly isolated Phase 5 project.
+  // Production/current projects remain fail-closed even if the flag is misconfigured.
+  if (["localhost", "127.0.0.1", "[::1]"].includes(supabaseHost)) return true;
+  const phase5ProjectRef = "ojnkruytzhfqathvlexh";
+  return process.env.BOOKING_ALLOWED_SUPABASE_PROJECT_REF === phase5ProjectRef
+    && supabaseHost === `${phase5ProjectRef}.supabase.co`
+    && process.env.VERCEL !== "1";
 }
 
 export function bookingError(error: { code?: string; message?: string }) {
