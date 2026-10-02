@@ -643,3 +643,22 @@ Phần 7 hiện là **PARTIAL theo tiêu chí production**: implementation và l
 integration đã đạt, còn thiếu áp dụng migration, cấu hình pg_cron mỗi phút và
 kiểm thử Staff bằng JWT thật trên `unhybmmbgumyhzaftlli`. Không dùng publishable
 key để thực hiện DDL và không tự reset/seed production.
+
+### Phần 7 — cập nhật bằng chứng 02/10/2026 (thay thế trạng thái NOT RUN phía trên)
+
+| Gate | Bằng chứng hiện tại |
+| --- | --- |
+| SQL local sạch | 49 nhóm PASS trên PostgreSQL 18.4; không dùng Supabase làm fixture |
+| Staff hardening | Giữ reserved guest count; actual riêng; check-in chặn checked_in khác dù table status stale/interval cũ; không tự đặt late-checkin deadline |
+| Retry | Receipt private actor/request; replay giữ kết quả gốc, payload khác bị chặn; event/notification/audit không trùng |
+| Transaction | Event failure rollback booking, table state và receipt; race check-in/no-show, cancel/check-in chỉ một winner |
+| Move | Consent bắt buộc ngay RPC; giữ lịch và khách; history ghi bàn cũ/mới; cùng request không trùng event |
+| Production DDL | Staff 001/002/003 đã áp nguyên tử qua SQL Editor project được duyệt, không seed/reset/cấp role |
+| Grants production | authenticated EXECUTE wrapper=true; anon=false; authenticated direct staff_update=false |
+| Scheduler production | Jobid 1, `mocvi-expire-pending`, mỗi phút, active; `cron.job_run_details` succeeded 14:42/14:43/14:44 UTC |
+| Scheduler end-to-end | Chưa nghiệm thu booking QA chờ đủ pending_minutes rồi tự hết hạn; không đổi policy/clock |
+| Staff JWT production | Login thành công, profile role Staff; chu trình thao tác sau rollout còn cần kiểm chứng |
+
+Nguồn SQL scheduler có kiểm tra job trùng và không sửa job khác:
+[`phase7-scheduler.sql`](../supabase/operations/phase7-scheduler.sql).
+Không coi contract/mock/local SQL là JWT production PASS. Kết luận hiện tại: **PARTIAL**.

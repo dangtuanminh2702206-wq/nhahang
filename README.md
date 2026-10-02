@@ -267,7 +267,7 @@ bản `36f8288`; list/detail/cancellation/history/notification được kiểm c
 
 ## Phần 7 · Staff operations · 02/10/2026
 
-Implementation đã hoàn thành ở nhánh hiện tại trên local: migration
+Implementation ban đầu đã được bổ sung ở nhánh hiện tại trên local: migration
 `202610030001_staff_operations.sql`, API same-origin cho Staff/Admin, khu vực
 `/staff`, chi tiết booking, tạo booking phone/walk-in, xác nhận/từ chối/hủy,
 check-in, no-show, hoàn tất phục vụ, đổi bàn và cleaning → available.
@@ -282,3 +282,25 @@ check-in, no-show, hoàn tất phục vụ, đổi bàn và cleaning → availab
   này** vì workspace chỉ có publishable Supabase key, không có phiên SQL Editor
   hoặc quyền database owner. Không coi Phần 7 PASS production khi hai gate này
   chưa có bằng chứng.
+
+### Cập nhật Phần 7 — hardening và triển khai database (02/10/2026)
+
+- Đã bổ sung tìm kiếm mã/tên/điện thoại, lọc tầng, phân trang 25 booking,
+  FloorPlan theo tầng/trạng thái vật lý, cảnh báo quá giờ, loading/error/refresh.
+- Check-in giữ nguyên số khách đặt; số khách thực tế lưu riêng. Đổi bàn cần khách
+  đồng ý; hủy/từ chối/đổi bàn có xác nhận trước thao tác.
+- `staff_operation` là RPC Staff duy nhất cho các chuyển trạng thái/dọn bàn;
+  receipt private theo actor/request bảo vệ retry kể cả sau thay đổi trạng thái.
+  Create phone/walk-in giữ nguyên idempotency key khi thử lại và có environment gate.
+- SQL local sạch đạt **49 nhóm**, gồm regression Customer và các ca Staff:
+  retry, consent, late check-in, no-show/cancel races, overstay, event rollback,
+  Guest/Customer/inactive denial và Admin authorization.
+- Đã áp migration Staff `202610030001`–`202610030003` trên
+  `unhybmmbgumyhzaftlli` qua SQL Editor được operator duyệt; không seed/reset.
+  Guest không có EXECUTE wrapper; authenticated không gọi trực tiếp các hàm nội bộ.
+- Đã cài `pg_cron`, đúng một job `mocvi-expire-pending`, mỗi phút, active;
+  nhật ký production có `succeeded` tại 14:42/14:43/14:44 UTC ngày 02/10.
+  **Chưa coi đây là bằng chứng booking QA hết hạn tự nhiên.**
+- Staff test đã đăng nhập domain thật và hồ sơ hiển thị trusted role Staff.
+  Phần 7 vẫn **PARTIAL** cho tới khi đủ chu trình JWT/UI production, booking
+  QA hết hạn tự nhiên, responsive và deployment cuối được nghiệm thu.

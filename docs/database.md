@@ -355,6 +355,23 @@ trước khi sử dụng hold. Không đặt private schema vào exposed schemas
 
 ## Tham chiếu kỹ thuật
 
+### Staff operations — implementation hiện tại (02/10/2026)
+
+Migration Staff 001/002/003 đã áp lên production được duyệt. RPC client
+`staff_operation` xác minh trusted active Staff/Admin trong transaction chung,
+ghi receipt ở private schema theo actor/request; retry giữ nguyên kết quả và
+payload khác bị từ chối. Các hàm staff_update/move/ready là nội bộ, không còn
+EXECUTE cho authenticated. Không mở UPDATE booking/table trực tiếp.
+
+`actual_guest_count` không thay `guest_count`. Đổi bàn cần consent, lịch không
+trùng và catalogue hoạt động. Check-in kiểm tra khách đang phục vụ kể cả quá
+giờ dự kiến; complete → cleaning và ready là hai thao tác riêng.
+
+Production đã bật job `mocvi-expire-pending` mỗi phút bằng script owner opt-in
+[`phase7-scheduler.sql`](../supabase/operations/phase7-scheduler.sql).
+Job succeeded được xác minh, nhưng nghiệm thu QA hết hạn tự nhiên và Staff UI/JWT
+được theo dõi riêng ở [`database-testing.md`](database-testing.md).
+
 - [PostgreSQL: range và exclusion constraint](https://www.postgresql.org/docs/current/rangetypes.html).
 - [PostgreSQL: Row Security](https://www.postgresql.org/docs/current/ddl-rowsecurity.html).
 - [Supabase: database functions và search_path](https://supabase.com/docs/guides/database/functions).

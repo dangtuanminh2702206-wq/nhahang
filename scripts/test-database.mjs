@@ -428,27 +428,142 @@ try {
     const request = [...args(2), null, '', 'phone', null];
     const created = (await actor(left, S, c => c.query('select * from public.create_booking($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)', request))).rows[0];
     await admin.query("update public.bookings set starts_at=clock_timestamp()-interval '1 minute', ends_at=clock_timestamp()+interval '119 minutes', blocked_until=clock_timestamp()+interval '134 minutes' where id=$1", [created.id]);
-    const checkedIn = (await actor(right, S, c => c.query('select * from public.staff_update_booking($1,$2,$3,$4)', [created.id, 'check_in', null, 3]))).rows[0];
-    assert.equal(checkedIn.status, 'checked_in'); assert.equal(checkedIn.guest_count, 3);
-    const completed = (await actor(right, S, c => c.query('select * from public.staff_update_booking($1,$2,$3,$4)', [created.id, 'complete', null, null]))).rows[0];
+    const checkedIn = (await actor(right, S, c => c.query('with op as materialized (select public.staff_operation(gen_random_uuid(),$2,$1,null,$3,$4) result) select b.* from op cross join lateral jsonb_populate_record(null::public.bookings,op.result) b', [created.id, 'check_in', null, 3]))).rows[0];
+    assert.equal(checkedIn.status, 'checked_in'); assert.equal(checkedIn.guest_count, 2); assert.equal(checkedIn.actual_guest_count, 3);
+    const completed = (await actor(right, S, c => c.query('with op as materialized (select public.staff_operation(gen_random_uuid(),$2,$1,null,$3,$4) result) select b.* from op cross join lateral jsonb_populate_record(null::public.bookings,op.result) b', [created.id, 'complete', null, null]))).rows[0];
     assert.equal(completed.status, 'completed');
     assert.equal((await admin.query('select status from public.tables where id=$1', [tables[2].id])).rows[0].status, 'cleaning');
-    const ready = (await actor(right, S, c => c.query('select * from public.staff_mark_table_ready($1)', [tables[2].id]))).rows[0];
+    const ready = (await actor(right, S, c => c.query("with op as materialized (select public.staff_operation(gen_random_uuid(),'ready',null,$1) result) select t.* from op cross join lateral jsonb_populate_record(null::public.tables,op.result) t", [tables[2].id]))).rows[0];
     assert.equal(ready.status, 'available');
   });
   await clearBookings();
   await check('Staff rejection, cancellation reason and role denial are enforced', async () => {
     const rejected = (await actor(left, A, c => book(c, args(0)))).rows[0];
-    await assert.rejects(actor(right, S, c => c.query('select * from public.staff_update_booking($1,$2,$3,$4)', [rejected.id, 'reject', null, null])), /REASON_REQUIRED/);
-    const rejection = (await actor(right, S, c => c.query('select * from public.staff_update_booking($1,$2,$3,$4)', [rejected.id, 'reject', 'Bàn cần kiểm tra lại', null]))).rows[0];
+    await assert.rejects(actor(right, S, c => c.query('with op as materialized (select public.staff_operation(gen_random_uuid(),$2,$1,null,$3,$4) result) select b.* from op cross join lateral jsonb_populate_record(null::public.bookings,op.result) b', [rejected.id, 'reject', null, null])), /REASON_REQUIRED/);
+    const rejection = (await actor(right, S, c => c.query('with op as materialized (select public.staff_operation(gen_random_uuid(),$2,$1,null,$3,$4) result) select b.* from op cross join lateral jsonb_populate_record(null::public.bookings,op.result) b', [rejected.id, 'reject', 'Bàn cần kiểm tra lại', null]))).rows[0];
     assert.equal(rejection.status, 'rejected');
     const cancellable = (await actor(left, A, c => book(c, args(1)))).rows[0];
-    await assert.rejects(actor(right, A, c => c.query('select * from public.staff_update_booking($1,$2,$3,$4)', [cancellable.id, 'cancel', 'Giả Staff', null])), /STAFF_REQUIRED/);
-    const cancelled = (await actor(right, S, c => c.query('select * from public.staff_update_booking($1,$2,$3,$4)', [cancellable.id, 'cancel', 'Khách đổi kế hoạch', null]))).rows[0];
+    await assert.rejects(actor(right, A, c => c.query('with op as materialized (select public.staff_operation(gen_random_uuid(),$2,$1,null,$3,$4) result) select b.* from op cross join lateral jsonb_populate_record(null::public.bookings,op.result) b', [cancellable.id, 'cancel', 'Giả Staff', null])), /STAFF_REQUIRED/);
+    const cancelled = (await actor(right, S, c => c.query('with op as materialized (select public.staff_operation(gen_random_uuid(),$2,$1,null,$3,$4) result) select b.* from op cross join lateral jsonb_populate_record(null::public.bookings,op.result) b', [cancellable.id, 'cancel', 'Khách đổi kế hoạch', null]))).rows[0];
     assert.equal(cancelled.status, 'cancelled');
     assert.equal((await admin.query("select source,reason from public.booking_history where booking_id=$1 order by created_at desc limit 1", [cancellable.id])).rows[0].source, 'staff');
   });
   await clearBookings();
+
+  // These fixtures run only inside the guarded empty loopback database.
+  async function staffOp(client, actorId, action, bookingId, options = {}) {
+    return (await actor(client, actorId, c => c.query(
+      'select public.staff_operation($1,$2,$3,$4,$5,$6,$7) result',
+      [options.key ?? randomUUID(), action, bookingId, options.table ?? null, options.reason ?? null, options.actual ?? null, options.consent ?? false]
+    ))).rows[0].result;
+  }
+  async function phone(table = 2) {
+    return (await actor(left,S,c=>c.query('select * from public.create_booking($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',[...args(table),null,'PHASE7 QA','phone',null]))).rows[0];
+  }
+  async function shift(id, minutes) {
+    await admin.query("update public.bookings set starts_at=clock_timestamp()+make_interval(mins=>$2), ends_at=clock_timestamp()+make_interval(mins=>$2+120), blocked_until=clock_timestamp()+make_interval(mins=>$2+135) where id=$1",[id,minutes]);
+  }
+  await clearBookings();
+  await check('Staff receipts preserve retries and deny changed payload without duplicate events', async () => {
+    const b=(await actor(left,A,c=>book(c,args(2)))).rows[0], key=randomUUID();
+    const confirmed=await staffOp(right,S,'confirm',b.id,{key});
+    assert.equal(confirmed.status,'confirmed');
+    const before=await eventCounts(b.id);
+    assert.deepEqual(await staffOp(right,S,'confirm',b.id,{key}),confirmed);
+    assert.deepEqual(await eventCounts(b.id),before);
+    await assert.rejects(staffOp(right,S,'cancel',b.id,{key,reason:'Changed request'}),/IDEMPOTENCY_PAYLOAD_MISMATCH/);
+    await staffOp(right,S,'cancel',b.id,{reason:'PHASE7 QA'});
+    assert.deepEqual(await staffOp(right,S,'confirm',b.id,{key}),confirmed);
+    assert.equal((await admin.query('select status from public.bookings where id=$1',[b.id])).rows[0].status,'cancelled');
+  });
+  await clearBookings();
+  await check('Staff check-in boundaries, capacity and late arrival use policy without altering reserved count', async () => {
+    const b=await phone();
+    await shift(b.id,16);
+    await assert.rejects(staffOp(right,S,'check_in',b.id),/CHECKIN_TOO_EARLY/);
+    await shift(b.id,14);
+    await assert.rejects(staffOp(right,S,'check_in',b.id,{actual:5}),/INVALID_CAPACITY/);
+    await shift(b.id,-16);
+    const row=await staffOp(right,S,'check_in',b.id,{actual:3});
+    assert.equal(row.guest_count,2); assert.equal(row.actual_guest_count,3);
+    await assert.rejects(staffOp(right,S,'cancel',b.id,{reason:'Not allowed'}),/INVALID_TRANSITION/);
+    await staffOp(right,S,'complete',b.id);
+    await staffOp(right,S,'ready',null,{table:tables[2].id});
+  });
+  await clearBookings();
+  await check('Staff movement requires consent, preserves schedule and records one receipt', async () => {
+    const b=await phone(), key=randomUUID();
+    await assert.rejects(staffOp(right,S,'move',b.id,{table:tables[3].id,reason:'PHASE7 QA'}),/GUEST_CONSENT_REQUIRED/);
+    const moved=await staffOp(right,S,'move',b.id,{key,table:tables[3].id,reason:'PHASE7 QA',consent:true});
+    assert.equal(moved.table_id,tables[3].id); assert.equal(Date.parse(moved.starts_at),Date.parse(b.starts_at));
+    const before=await eventCounts(b.id);
+    await staffOp(right,S,'move',b.id,{key,table:tables[3].id,reason:'PHASE7 QA',consent:true});
+    assert.deepEqual(await eventCounts(b.id),before);
+    assert((await admin.query('select reason from public.booking_history where booking_id=$1 order by created_at desc limit 1',[b.id])).rows[0].reason.includes('Khách đồng ý'));
+  });
+  await clearBookings();
+  await check('Staff no-show boundary and concurrent check-in/no-show have one terminal winner', async () => {
+    const b=await phone(); await shift(b.id,-14);
+    await assert.rejects(staffOp(right,S,'no_show',b.id,{reason:'PHASE7 QA'}),/NO_SHOW_TOO_EARLY/);
+    await shift(b.id,-16);
+    const results=await compete(left,right,()=>staffOp(left,S,'check_in',b.id),()=>staffOp(right,D,'no_show',b.id,{reason:'PHASE7 QA'}));
+    assert.equal(results.filter(r=>r.status==='fulfilled').length,1);
+    const current=(await admin.query('select status from public.bookings where id=$1',[b.id])).rows[0].status;
+    assert(['checked_in','no_show'].includes(current));
+    assert.equal((await eventCounts(b.id)).history,2);
+    if(current==='checked_in') { await staffOp(right,S,'complete',b.id); await staffOp(right,S,'ready',null,{table:tables[2].id}); }
+  });
+  await clearBookings();
+  await check('Concurrent Staff cancel/check-in has one winner and consistent physical state', async () => {
+    const b=await phone(); await shift(b.id,0);
+    const results=await compete(left,right,()=>staffOp(left,S,'check_in',b.id),()=>staffOp(right,D,'cancel',b.id,{reason:'PHASE7 QA'}));
+    assert.equal(results.filter(r=>r.status==='fulfilled').length,1);
+    const row=(await admin.query('select status from public.bookings where id=$1',[b.id])).rows[0];
+    assert.equal((await eventCounts(b.id)).history,2);
+    if(row.status==='checked_in') { await staffOp(right,S,'complete',b.id); await staffOp(right,S,'ready',null,{table:tables[2].id}); }
+  });
+  await clearBookings();
+  await check('Overstay cannot be hidden by stale available table state or expired schedule', async () => {
+    const first=await phone(); await shift(first.id,-200);
+    await staffOp(right,S,'check_in',first.id);
+    await admin.query("update public.tables set status='available' where id=$1",[tables[2].id]);
+    const second=await phone(); await shift(second.id,0);
+    await assert.rejects(staffOp(right,S,'check_in',second.id),/TABLE_STILL_IN_USE/);
+    await staffOp(right,S,'complete',first.id);
+    await assert.rejects(staffOp(right,S,'check_in',second.id),/TABLE_NOT_READY/);
+    await staffOp(right,S,'ready',null,{table:tables[2].id});
+    await staffOp(right,S,'cancel',second.id,{reason:'PHASE7 QA'});
+  });
+  await clearBookings();
+  await check('Staff event failure rolls back booking, physical state and receipt atomically', async () => {
+    const b=await phone(); await shift(b.id,0); const key=randomUUID();
+    const before=await eventCounts(b.id);
+    await admin.query("create function private.staff_test_fail() returns trigger language plpgsql as $$ begin raise exception 'TEST_STAFF_EVENT_FAILURE'; end $$; create trigger staff_test_event_failure before insert on public.booking_history for each row execute function private.staff_test_fail()");
+    try { await assert.rejects(staffOp(right,S,'check_in',b.id,{key}),/TEST_STAFF_EVENT_FAILURE/); }
+    finally { await admin.query('drop trigger staff_test_event_failure on public.booking_history; drop function private.staff_test_fail()'); }
+    assert.equal((await admin.query('select status from public.bookings where id=$1',[b.id])).rows[0].status,'confirmed');
+    assert.equal((await admin.query('select status from public.tables where id=$1',[tables[2].id])).rows[0].status,'available');
+    assert.equal((await admin.query('select count(*)::int n from private.staff_operation_receipts where request_id=$1',[key])).rows[0].n,0);
+    assert.deepEqual(await eventCounts(b.id),before);
+  });
+  await clearBookings();
+  await check('Staff RPC denies Guest, Customer and inactive Staff; Admin remains authorized', async () => {
+    const b=await phone();
+    await assert.rejects(staffOp(right,A,'cancel',b.id,{reason:'PHASE7 QA'}),/STAFF_REQUIRED/);
+    await assert.rejects(actor(right,null,c=>c.query("select public.staff_operation($1,'cancel',$2)",[randomUUID(),b.id]),'anon'),e=>e.code==='42501');
+    await admin.query('update public.profiles set is_active=false where id=$1',[S]);
+    try { await assert.rejects(staffOp(right,S,'cancel',b.id,{reason:'PHASE7 QA'}),/STAFF_REQUIRED/); }
+    finally { await admin.query('update public.profiles set is_active=true where id=$1',[S]); }
+    assert.equal((await staffOp(right,D,'cancel',b.id,{reason:'PHASE7 QA'})).status,'cancelled');
+  });
+  await clearBookings();
+  await check('Expired pending Staff confirmation commits system expiration instead of resurrecting hold', async () => {
+    const b=(await actor(left,A,c=>book(c,args()))).rows[0];
+    await admin.query("update public.bookings set expires_at=clock_timestamp()-interval '1 second' where id=$1",[b.id]);
+    assert.equal((await staffOp(right,S,'confirm',b.id)).status,'cancelled');
+    assert.equal((await eventCounts(b.id)).history,2);
+  });
+
   await check('locked customer denied; existing booking preserved', async () => {
     const b=(await actor(left,A,c=>book(c,args()))).rows[0];
     await admin.query('update public.profiles set is_active=false where id=$1',[A]);
