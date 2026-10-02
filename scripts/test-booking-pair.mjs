@@ -107,7 +107,13 @@ const server=createServer(async(req,res)=>{
   // still protects this local harness while a supplied cross-origin value fails.
   if(req.method!=='POST'||req.url!=='/run') return reply(405,'text/plain; charset=utf-8','Phương thức không hợp lệ. Mở lại trang / để nhập form mới.');
   if(req.headers.host!==`127.0.0.1:${port}`) return reply(403,'text/plain; charset=utf-8','QA_HOST_DENIED: mở form bằng URL loopback được runner cung cấp.');
-  if(req.headers.origin && req.headers.origin!==origin) return reply(403,'text/plain; charset=utf-8','QA_ORIGIN_DENIED: request đến từ origin khác. Mở form trực tiếp trong trình duyệt.');
+  // Embedded browsers can submit an opaque Origin (null). The loopback Host
+  // and unpredictable form token are still required; no CORS is enabled.
+  if(req.headers.origin && req.headers.origin!==origin && req.headers.origin!=='null') {
+    const safeOrigin = /^https?:\/\/[a-z0-9.:-]+$/i.test(req.headers.origin) ? req.headers.origin : 'unsupported';
+    results = [`QA_ORIGIN_DENIED: received ${safeOrigin}; no credentials processed.`];
+    return reply(403,'text/plain; charset=utf-8',results[0]);
+  }
   if(!req.headers['content-type']?.startsWith('application/x-www-form-urlencoded')) return reply(415,'text/plain; charset=utf-8','QA_CONTENT_TYPE_DENIED: cần gửi bằng form trên trang QA.');
   if(busy) return reply(409,'text/plain','Test already running');
   let body='';
