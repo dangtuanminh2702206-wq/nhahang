@@ -9,8 +9,8 @@ const headers = { "Cache-Control": "private, no-store" };
 export async function POST(request: NextRequest) {
   if (request.headers.get("origin") !== getApplicationOrigin(request)) return NextResponse.json({ message: "Yêu cầu không hợp lệ." }, { status: 403, headers });
   if (!request.headers.get("content-type")?.startsWith("application/json")) return NextResponse.json({ message: "Yêu cầu cần định dạng JSON." }, { status: 415, headers });
-  // Fail closed before any RPC. Auth cannot bypass this local-only gate.
-  if (!bookingMutationsEnabled()) return NextResponse.json({ message: "Chưa nhận đặt bàn thật. Chức năng tạo booking chỉ dành cho môi trường local cô lập." }, { status: 503, headers });
+  // Fail closed before any RPC. Auth cannot bypass the environment/project gate.
+  if (!bookingMutationsEnabled()) return NextResponse.json({ message: "Chưa nhận đặt bàn thật. Chức năng tạo booking chưa được bật cho môi trường này." }, { status: 503, headers });
   try {
     const text = await request.text();
     if (text.length > 8192) return NextResponse.json({ message: "Yêu cầu quá dài." }, { status: 413, headers });
