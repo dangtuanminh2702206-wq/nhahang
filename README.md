@@ -245,6 +245,10 @@ Xem [kết quả và giới hạn kiểm thử](docs/database-testing.md) và
 
 ## Phần 6 · Customer booking management
 
+Nghiệm thu 02/10/2026: **PASS trong phạm vi đã thống nhất**. Production đã chạy
+bản `36f8288`; list/detail/cancellation/history/notification được kiểm chứng,
+35 nhóm SQL integration và các build/HTTP/responsive gates đã đạt.
+
 - `/my-bookings`: Customer active xem các booking của chính mình, trạng thái, bàn,
   thời gian và thông báo nội bộ; Guest/Staff/Admin không được dùng màn hình này.
 - `/my-bookings/[id]`: chi tiết, lịch sử trạng thái và nút hủy khi còn đủ thời gian.
@@ -257,5 +261,6 @@ Xem [kết quả và giới hạn kiểm thử](docs/database-testing.md) và
   Supabase production sau khi review; hủy là atomic, concurrency-safe, retry
   không tạo history/notification/audit trùng và đúng mốc **>= 60 phút**.
 - Contract/unit tests Phần 6, typecheck, lint, normal build và Pages build đã đạt.
-  Live UI cancellation đã PASS với booking QA được xác định rõ; race/boundary
-  trực tiếp và fixture PostgreSQL sạch vẫn cần ghi nhận riêng.
+  Live UI cancellation/read_at đã PASS với booking QA được xác định rõ.
+  Fixture PostgreSQL sạch đạt 35 nhóm, gồm boundary 60 phút, retry, concurrent
+  cancel/confirm/expire, ownership và rollback; xem bằng chứng trong tài liệu kiểm thử.

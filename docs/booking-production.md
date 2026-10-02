@@ -81,8 +81,19 @@ Earlier Auth/3D worktree changes are outside this deployment commit.
   identified QA booking `Phase 5 pair QA`. The detail page showed `Đã hủy`,
   history recorded `customer_cancelled` by the Customer, and the Customer
   notification `Đặt bàn của bạn đã được hủy.` appeared in `/my-bookings`.
-- Exact-boundary and concurrent-race evidence was not rerun through the live UI;
-  the migration contract covers those rules, but this Phase 6 record remains
-  PARTIAL until database integration/fixture evidence is added.
+- Exact SQL boundary and concurrent-race evidence: PASS in clean local PostgreSQL
+  fixture (35 checks, including independently locked cancel/cancel, cancel/confirm,
+  cancel/expire connections and atomic rollback). This is database integration,
+  not live JWT boundary testing.
+- Follow-up migration `202610020002_customer_cancellation_expiry.sql` applied
+  successfully to production; expired owned pending targets return system expiry
+  rather than recording Customer cancellation. Production notification read_at PASS.
+- Phase 6 accepted: typecheck/lint, Pages and normal build, local HTTP smoke PASS.
+  Vercel production deployment for `36f8288` is Ready and assigned to
+  `moc-vi-restaurant.vercel.app`; list/detail serve the new booking ID and
+  translated history. Responsive 320/704/1024/1600px has no horizontal overflow;
+  no console errors in the observed Customer flow. Read notification persists
+  after reload. Boundary/race/rollback evidence is local PostgreSQL integration,
+  while Customer cancellation and notification UI evidence is live production.
 
 Secrets, cookies, passwords, backup folders and 3D artifacts must not be committed.

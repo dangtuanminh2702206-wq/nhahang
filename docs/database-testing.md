@@ -593,10 +593,34 @@ sau export. Chỉ bật các tùy chọn khi đúng môi trường, không dùng
 | Notification route | PASS mock/contract — chỉ cập nhật `read_at` với recipient hiện tại, no-store, same-origin |
 | Customer UI | PASS build/static review — `/my-bookings`, `/my-bookings/[id]`, loading/empty/error, detail/history/cancel/notification; giữ editorial UI, không dashboard |
 | Typecheck/lint/build | PASS — typecheck, lint, normal Next build và Pages build; Pages loại API/Auth, giữ route preview tĩnh |
-| Database integration | NOT RUN — `TEST_DATABASE_URL` không được cấu hình trong lượt này; cần chạy fixture PostgreSQL sạch để chứng minh boundary/race bằng DB thực |
+| Database integration | PASS — 35 nhóm trên PostgreSQL 18.4 loopback 55439, database mới trống `mocvi_test_phase6_20261002_b`; 4 migration và seed hai lần, catalogue giữ nguyên |
 | Live Customer cancellation | PASS — booking QA `Phase 5 pair QA` đã chuyển sang `cancelled` trên Production; detail history ghi `customer_cancelled` do Customer và `/my-bookings` hiển thị thông báo hủy |
 
-Phần 6 hiện **PARTIAL**: ca hủy Customer đủ điều kiện đã PASS trên Production,
-nhưng retry/concurrency và boundary 60 phút chưa có bằng chứng live hoặc fixture
-PostgreSQL trong lượt này. Không suy diễn từ contract/mock thành PASS integration. Staff/Admin
-dashboard, scheduler, email/SMS, payment và reset password vẫn ngoài phạm vi.
+Kiểm chứng bổ sung 02/10/2026:
+
+- Predicate thời gian thực tế được RPC sử dụng: đúng 60 phút PASS, dưới mốc
+  một microsecond bị từ chối, trên mốc một microsecond được phép. SQL kiểm soát
+  thời gian đầu vào; không thay đồng hồ production hoặc giả kết quả HTTP boundary.
+- RPC trên PostgreSQL thật: hủy pending/confirmed, dưới 60 phút, terminal state,
+  ownership A/B, Guest/Staff/Admin/inactive, trả lại availability và retry PASS.
+- Hai kết nối độc lập cùng chờ advisory lock: cancel/cancel, cancel/confirm và
+  cancel/system-expire PASS; history/notification/audit không ghi trùng.
+- Trigger lỗi có chủ đích chứng minh cancellation và mọi side effect rollback.
+- Notification read_at chỉ owner được cập nhật; sửa recipient/history bị chặn.
+- Migration `202610020002_customer_cancellation_expiry.sql` áp dụng thành công
+  lên production: pending hết hạn được đóng với source system/pending_expired;
+  chỉ xử lý target của Customer, không expire các booking không liên quan.
+- Production Customer đã đánh dấu thông báo QA hủy đã đọc thành công.
+
+SQL fixture kiểm chứng nghiệp vụ/RLS, không giả là kiểm thử JWT. Live JWT
+Customer hủy/list/detail/history/notification trên Production đã ghi nhận ở trên.
+Nghiệm thu **Phần 6 PASS trong phạm vi Customer booking management**:
+typecheck/lint, normal build, Pages build và 506 tham chiếu basePath PASS;
+HTTP Identity/booking smoke local (mutations tắt) PASS. Sai cổng local ban đầu
+đã xử lý bằng chạy server đúng origin callback cấu hình, không đổi cloud config.
+Production deployment `36f8288` Ready, domain chính phục vụ list/detail mới.
+List/detail ở 320/704/1024/1600px không horizontal overflow; mã booking wrap,
+history hiển thị tiếng Việt và console không có error trong lượt QA.
+Notification QA đã đọc giữ trạng thái sau reload. Các gate boundary/race/rollback
+được chứng minh bằng SQL fixture, không gán thành live JWT race trên production.
+Staff/Admin dashboard, scheduler, email/SMS, payment và reset password ngoài phạm vi.
