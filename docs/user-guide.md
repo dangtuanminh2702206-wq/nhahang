@@ -79,6 +79,19 @@ xung đột lịch do database kiểm tra. Retry cùng yêu cầu không tạo e
   phép và còn ít nhất 60 phút trước giờ dùng bàn. Đồng hồ database là nguồn cuối.
 - Thông báo trong site là bản ghi nội bộ; chưa gửi email hoặc SMS.
 
+### Đặt món theo booking
+
+Sau khi booking ở trạng thái `Đã xác nhận` hoặc `Đã check-in`, Customer có thể
+chọn món lẻ và combo trong chi tiết booking rồi gửi một đơn món. Server tự kiểm tra
+catalogue đang phục vụ, số lượng nguyên dương và tính tổng dự kiến; không tin tổng
+do trình duyệt gửi. Customer chỉ sửa hoặc hủy khi đơn còn `Chờ xác nhận`.
+
+Staff/Admin xử lý đơn trong chi tiết booking theo thứ tự `Chờ xác nhận → Đã xác
+nhận → Đang chuẩn bị → Đã phục vụ`, hoặc hủy với lý do. Khi đơn đã được tiếp nhận,
+Customer cần liên hệ Staff nếu muốn thay đổi. **Thanh toán trực tiếp tại quầy nhà
+hàng**; module không có thanh toán online, đặt cọc, hoàn tiền, tồn kho hoặc
+email/SMS giao dịch.
+
 Nếu gặp lỗi `409`, hãy mở lại danh sách hoặc tìm bàn lại vì snapshot đã cũ, bàn đã
 được giữ bởi yêu cầu khác hoặc trạng thái booking đã thay đổi. Không gửi liên tục
 khi chưa đọc lại trạng thái.
@@ -163,7 +176,8 @@ vào tài liệu hoặc repository.
 ## Giới hạn đã chốt
 
 Callback email được chứng minh local; không suy thành callback production. Pages là
-demo tĩnh. Combo là dữ liệu public riêng, không có CRUD database. Recovery đã có
-implementation và test local; kiểm chứng email production còn chờ QA. Chưa có
-email/SMS booking, order, thanh toán, analytics, multi-branch hoặc viewer 360.
+demo tĩnh. Recovery đã có implementation và test local; kiểm chứng email production
+còn chờ QA. Chưa có email/SMS giao dịch, thanh toán online, analytics, multi-branch
+hoặc viewer 360. Đặt món chỉ hoạt động sau booking đã xác nhận, có feature gate và
+migration tương ứng; database production chưa được bật module này.
 Các thay đổi 3D/panorama nằm ngoài luồng vận hành này.

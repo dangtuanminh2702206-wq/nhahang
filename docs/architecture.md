@@ -118,11 +118,15 @@ sung ảnh đúng expected path, cần build/deploy lại các trang tĩnh.
 - Vercel là nền tảng triển khai.
 - Guest, Customer, Staff và Admin là bốn vai trò của hệ thống.
 - Một booking gắn với một bàn; chưa hỗ trợ ghép hoặc tách bàn.
-- Không triển khai order, hóa đơn, thanh toán, doanh thu hoặc kho trong MVP.
+- Có đặt món gắn với booking đã xác nhận: snapshot món/giá, trạng thái đơn,
+  quyền Customer/Staff và thông báo nội bộ. Không triển khai hóa đơn, thanh toán
+  online, doanh thu hoặc kho; tiền đơn chỉ là dự kiến và thanh toán tại quầy.
 
 ## Nền tảng database đã viết ở Phần 2
 
-- 12 bảng với RLS/default-deny, grants theo cột, FK RESTRICT bảo toàn lịch sử.
+- Nền tảng ban đầu có 12 bảng với RLS/default-deny; module order bổ sung các bảng
+  `orders`, `order_items`, `order_history`, `order_notifications` và receipt
+  private, vẫn dùng FK RESTRICT bảo toàn lịch sử.
 - `create_booking` và `confirm_booking` là RPC database có kiểm tra danh tính;
   chưa có API route/Server Action hoặc client Supabase trong Next.js.
 - GiST exclusion constraint chống trùng lịch bàn và lịch sử dụng của Customer.
@@ -133,6 +137,13 @@ sung ảnh đúng expected path, cần build/deploy lại các trang tĩnh.
 - Không ORM, không thêm abstraction/module rỗng. Chỉ thêm `pg` ở devDependencies
   để script test điều khiển các kết nối PostgreSQL thật, kiểm thử cạnh tranh và
   SET ROLE. Next.js không sử dụng dependency này khi phục vụ ứng dụng.
+
+Module order dùng RPC SECURITY DEFINER, không cấp ghi trực tiếp cho bảng. Customer
+chỉ thao tác trên booking của mình ở trạng thái `confirmed`/`checked_in`; Staff và
+Admin xử lý state machine. Giá, tên, combo components và total được lấy từ
+catalogue trong transaction rồi snapshot vào `order_items`. Feature gate production
+được bật riêng sau khi migration 007/008 được áp và kiểm tra live; Pages không có
+Auth/booking/order runtime.
 
 Chi tiết ERD, data dictionary, ranh giới thời gian và phần chưa triển khai nằm
 trong [database.md](database.md). Migration/seed đã chạy trên Supabase development;

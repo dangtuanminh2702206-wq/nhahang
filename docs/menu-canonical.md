@@ -93,7 +93,8 @@ MV-KV01, MV-KV02, MV-DT01, MV-DT02, MV-DT03, MV-MC01, MV-LA01, MV-TM01 và MV-DU
 
 ## Combo gợi ý
 
-Combo là nội dung recommendation theo số khách, không tạo order/cart/checkout và không gắn với mã bàn.
+Combo vẫn là catalogue public theo số khách, không có cart/checkout hoặc tồn kho;
+nhưng có thể được chọn như một dòng combo trong đơn món gắn với booking đã xác nhận.
 
 | Mã | Combo | Số khách | Giá |
 | --- | --- | ---: | ---: |
@@ -104,8 +105,9 @@ Combo là nội dung recommendation theo số khách, không tạo order/cart/ch
 
 Chi tiết đầy đủ của từng combo nằm trong data module public, đúng theo đặc tả Phase 3A.
 
-4 combo là dữ liệu public riêng trong `menuCombos`, không có bản ghi combo trong
-seed/schema hiện tại và không cộng vào 30 `menu_items`. Bộ FINAL ngày 01/10/2026
+4 combo là dữ liệu public riêng trong `menuCombos`, được seed vào `menu_combos` từ
+migration catalogue và không cộng vào 30 `menu_items`. Bộ FINAL ngày 01/10/2026
 đã tích hợp đủ 30 ảnh món và 4 ảnh combo, không thay tên/giá/category/code/khẩu phần;
 xem [asset-integration-status.md](asset-integration-status.md). Thành phần combo
-là mô tả gợi ý (có tên rút gọn và số phần), không phải FK hoặc định lượng order.
+là snapshot mô tả; không phải định mức kho hoặc cơ chế tự trừ nguyên liệu. Khi
+Customer đặt combo, server lưu snapshot thành phần hiện tại vào `order_items`.

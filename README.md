@@ -135,15 +135,16 @@ mapping media và file trong `public/images/`:
 | --- | --- |
 | Tầng / bàn / sức chứa cấu hình | 3 tầng / 22 bàn / 92 chỗ (32 + 34 + 26) |
 | Thực đơn | 6 danh mục / 30 món, 9 món nổi bật; tất cả `available=true` ở UI |
-| Combo | 4 gợi ý cho 2/4/6/8 khách; không phải món seed hoặc chức năng đặt món |
+| Combo | 4 gợi ý cho 2/4/6/8 khách; có thể chọn trong đơn món sau khi booking được xác nhận |
 | Ảnh | 50/50 FINAL assets: 16 restaurant + 30 dish + 4 combo; không canonical placeholder |
 | Trang public | 8 trang: Home, Menu, Spaces, 3 trang tầng, Contact và Đặt bàn mô phỏng |
 
 Chi tiết: [không gian và sức chứa](docs/restaurant-world.md),
 [menu và giá](docs/menu-canonical.md),
 [ảnh và placeholder](docs/asset-integration-status.md).
-92 chỗ không phải số chỗ trống hiện tại: chưa có API availability; mỗi booking
-chỉ một bàn, tối đa 8 khách và không vượt sức chứa bàn.
+92 chỗ không phải số chỗ trống hiện tại: API availability chỉ trả snapshot bàn
+phù hợp, còn database kiểm tra lần cuối khi tạo booking; mỗi booking chỉ một bàn,
+tối đa 8 khách và không vượt sức chứa bàn.
 
 Phần 4 đã có implementation Auth/phiên, hồ sơ và authorization; kiểm chứng
 Auth/JWT thật đã kiểm chứng một phần với hai Customer: server đọc/lưu hồ sơ,
@@ -387,8 +388,8 @@ Migration `supabase/migrations/202610030004_admin_management.sql` bổ sung RPC
 SECURITY DEFINER với `search_path` cố định, advisory lock, expected-value conflict,
 validation ở database, audit atomic, bảo vệ Admin active cuối cùng và bảo vệ chu
 trình bàn occupied/cleaning. Inactive catalogue chỉ mở cho Admin; Guest/Customer
-vẫn chỉ đọc dữ liệu public active. Không có upload ảnh, combo CRUD, reset mật khẩu,
-order, hóa đơn, thanh toán, doanh thu, kho, multi-branch hoặc 3D.
+vẫn chỉ đọc dữ liệu public active. Không có upload ảnh, reset mật khẩu, thanh toán,
+doanh thu, kho, multi-branch hoặc 3D.
 
 Vercel đọc menu active từ Supabase để thay đổi tên/giá/trạng thái có hiệu lực sau
 lần tải mới; GitHub Pages tiếp tục dùng snapshot canonical và không gọi API/Auth.
@@ -414,6 +415,34 @@ active cuối cùng PASS local. Đổi bàn sang tầng khác bị chặn cho đ
 tọa độ canonical được duyệt. Báo cáo tối đa 93 ngày, truy vấn tối đa 10.000
 dòng báo lỗi rõ khi vượt giới hạn; hồ sơ phân trang 25 dòng. Không có upload
 ảnh hoặc combo CRUD. Xem [bằng chứng nghiệm thu](docs/database-testing.md).
+
+## Phần 5A · Customer ordering gắn với booking
+
+Module đặt món đã được triển khai trong code và kiểm thử trên PostgreSQL cô lập;
+chưa bật trên Supabase production. Migration `202610030008_customer_orders.sql`
+phụ thuộc migration combo `202610030007_combo_catalogue.sql` và feature gate
+`ORDER_MUTATIONS_ENABLED`, vì vậy deploy code không tự mở mutation cloud.
+
+- Customer active chỉ đặt món cho booking của chính mình khi booking đã
+  `confirmed` hoặc `checked_in`; mỗi booking có tối đa một đơn.
+- Database xác minh món/combo còn phục vụ, số lượng nguyên dương, tính tổng phía
+  server và lưu snapshot tên/giá/thành phần combo. Không có giới hạn số lượng
+  nghiệp vụ ngoài validation số nguyên và giới hạn tổng kỹ thuật.
+- Customer được gửi, xem, sửa hoặc hủy khi đơn còn `Chờ xác nhận`. Staff/Admin
+  chuyển đơn qua `Đã xác nhận → Đang chuẩn bị → Đã phục vụ`, hoặc hủy có lý do.
+  Booking bị hủy/từ chối/không đến sẽ tự hủy đơn còn hoạt động; booking không
+  hoàn tất khi đơn chưa được phục vụ hoặc hủy.
+- Idempotency, optimistic version conflict, RLS/ownership, race, audit, history
+  và thông báo nội bộ được kiểm tra trong SQL. Không có thanh toán online, đặt
+  cọc, hoàn tiền, tồn kho, email/SMS giao dịch; số tiền chỉ là dự kiến và ghi rõ
+  **Thanh toán trực tiếp tại quầy nhà hàng.**
+- UI nằm trong chi tiết booking Customer và chi tiết booking Staff; Pages vẫn là
+  demo tĩnh. Production cần apply migration theo thứ tự, kiểm tra before/after
+  và bật gate riêng trước khi nghiệm thu live.
+
+Fixture local mới đạt **86 nhóm SQL PASS** trên database `mocvi_test_*` sạch,
+bao gồm hồi quy migration 001–008 và các ca order. Typecheck/lint, normal build
+và Pages build/export với 50 asset cũng đạt. Xem [database-testing.md](docs/database-testing.md).
 
 ## Phần 9 · System QA, hardening và CI
 
@@ -459,8 +488,9 @@ owner xác nhận. Chưa công bố production operational readiness đầy đ�
 
 Các giới hạn sản phẩm đã chốt vẫn giữ nguyên: callback email production chưa được
 chứng minh, role UI production bị cơ chế an toàn chặn trước request, đổi tầng bàn
-cần tọa độ canonical, Pages là demo tĩnh, combo không có CRUD database, chưa có
-reset password/email-SMS/order/payment/analytics/multi-branch và 3D/panorama.
+cần tọa độ canonical, Pages là demo tĩnh, chưa có upload ảnh, reset password,
+email/SMS giao dịch, thanh toán online/payment, analytics, multi-branch và
+3D/panorama.
 
 ## Mở rộng sau bàn giao · 03/10/2026
 

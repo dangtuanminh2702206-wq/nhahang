@@ -33,6 +33,10 @@ erDiagram
   AREAS ||--o{ TABLES : contains
   TABLES ||--o{ BOOKINGS : reserved
   MENU_CATEGORIES ||--o{ MENU_ITEMS : contains
+  BOOKINGS ||--o| ORDERS : has
+  ORDERS ||--|{ ORDER_ITEMS : contains
+  ORDERS ||--o{ ORDER_HISTORY : records
+  ORDER_HISTORY ||--o| ORDER_NOTIFICATIONS : produces
   BOOKINGS ||--|{ BOOKING_HISTORY : records
   PROFILES o|--o{ BOOKING_HISTORY : actor
   BOOKING_HISTORY ||--o| NOTIFICATIONS : produces
@@ -157,6 +161,41 @@ quản trị phải kiểm tra lịch và booking hiện hữu cùng một giao 
 trigger. Không cấp quyền trực tiếp INSERT/UPDATE/DELETE booking cho ứng dụng.
 DB owner có quyền bypass và chỉ được dùng cho migration/vận hành có kiểm soát.
 
+### Đơn món gắn với booking
+
+| Bảng | Cột | Kiểu / null | Default, ràng buộc và ý nghĩa |
+| --- | --- | --- | --- |
+| orders | id | uuid / N | PK |
+| orders | booking_id | uuid / N | UNIQUE, FK bookings; một booking tối đa một đơn |
+| orders | customer_id | uuid / N | FK profiles; phải là Customer sở hữu booking |
+| orders | status | order_status / N | pending, confirmed, preparing, served, cancelled |
+| orders | total_amount | numeric(18,0) / N | Tổng VND do server tính; không nhận từ trình duyệt |
+| orders | version | integer / N | Lạc quan CAS; tăng khi sửa/chuyển trạng thái |
+| orders | created_at, updated_at | timestamptz / N | clock_timestamp() |
+| order_items | id, order_id | uuid / N | PK; FK orders, RESTRICT |
+| order_items | line_no | integer / N | > 0, unique theo order |
+| order_items | item_type, item_code | text / N | dish/combo và mã catalogue |
+| order_items | item_name, unit_price | text, numeric(12,0) / N | Snapshot tại lúc gửi/sửa đơn |
+| order_items | quantity, line_total | integer, numeric(18,0) / N | Số nguyên dương; line_total do server tính |
+| order_items | snapshot_components | jsonb / N | Snapshot thành phần combo, không phải định mức kho |
+| order_history | id, order_id | uuid / N | PK; FK orders, ghi mọi transition và customer update |
+| order_history | actor_id | uuid / Y | FK profiles; null cho system cascade |
+| order_history | from_status, to_status | order_status | Trạng thái trước/sau |
+| order_history | reason, source | text / Y, text / N | Tối đa 500; customer/staff/system |
+| order_notifications | id, recipient_id | uuid / N | PK; thông báo nội bộ cho Customer |
+| order_notifications | history_id | uuid / N | UNIQUE, FK order_history |
+| order_notifications | read_at, created_at | timestamptz | Customer sở hữu mới được cập nhật read_at |
+
+Không cấp INSERT/UPDATE/DELETE trực tiếp cho các bảng order qua role ứng dụng.
+Các RPC `create_order`, `update_pending_order`, `cancel_pending_order` và
+`staff_order_operation` tự kiểm tra role active, ownership, booking state,
+catalogue `is_active/is_available`, idempotency và version. Giá, tên và thành phần
+được đọc trong cùng transaction rồi lưu snapshot. Booking cancelled/rejected/
+no_show tự hủy đơn chưa served; trigger chặn hoàn tất booking nếu đơn còn active.
+Receipt idempotency nằm trong `private.order_mutation_receipts`, không mở cho
+client. Đơn chỉ là yêu cầu phục vụ và tổng dự kiến; thanh toán thực hiện trực
+tiếp tại quầy, không có payment gateway.
+
 ### Lịch sử, thông báo, audit
 
 | Bảng | Cột | Kiểu / null | Default và ràng buộc |
@@ -194,6 +233,9 @@ dụng sửa hoặc xóa.
 - `history_booking_idx(booking_id, created_at)`.
 - `notifications_recipient_idx(recipient_id, created_at)`.
 - `audit_entity_idx(entity_type, entity_id, created_at)`.
+- `orders_customer_idx(customer_id, created_at)`, `orders_status_idx(status, updated_at)`.
+- `order_items_order_idx(order_id, line_no)`, `order_history_order_idx(order_id, created_at)`.
+- `order_notifications_recipient_idx(recipient_id, created_at)`.
 
 ## Chính sách thời gian và cạnh tranh
 

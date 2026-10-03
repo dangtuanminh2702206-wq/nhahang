@@ -1,0 +1,66 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import type { OrderCatalogueItem, OrderView } from "@/lib/order-shared";
+import { orderStatusLabel } from "@/lib/order-shared";
+
+type Props = { bookingId: string; bookingStatus: string; initialOrder: OrderView | null; catalogue: OrderCatalogueItem[]; enabled: boolean };
+function formatVnd(value: number) { return new Intl.NumberFormat("vi-VN").format(value) + "đ"; }
+function itemKey(item: Pick<OrderCatalogueItem, "kind" | "code">) { return `${item.kind}:${item.code}`; }
+
+export function CustomerOrderPanel({ bookingId, bookingStatus, initialOrder, catalogue, enabled }: Props) {
+  const router = useRouter();
+  const [quantities, setQuantities] = useState<Record<string, number>>(() => Object.fromEntries((initialOrder?.items ?? []).map((item) => [`${item.item_type}:${item.item_code}`, item.quantity])));
+  const [order] = useState(initialOrder);
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [reason, setReason] = useState("");
+  const editable = enabled && order?.status === "pending";
+  const canCreate = enabled && !order && ["confirmed", "checked_in"].includes(bookingStatus);
+  const selected = catalogue.filter((item) => (quantities[itemKey(item)] ?? 0) > 0 && item.available);
+  const total = selected.reduce((sum, item) => sum + item.price * (quantities[itemKey(item)] ?? 0), 0);
+
+  function setQuantity(item: OrderCatalogueItem, raw: string) {
+    if (!/^\d*$/.test(raw)) return;
+    const value = raw === "" ? 0 : Number(raw);
+    if (!Number.isSafeInteger(value) || value < 0 || value > 2147483647) return;
+    setQuantities((current) => ({ ...current, [itemKey(item)]: value }));
+  }
+
+  async function submit(action: "create" | "update" | "cancel") {
+    setMessage("");
+    if (action !== "cancel" && selected.length === 0) { setMessage("Hãy chọn ít nhất một món trước khi gửi."); return; }
+    setBusy(true);
+    try {
+      const response = await fetch("/api/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+        action, bookingId, orderId: order?.id, expectedVersion: order?.version, requestId: crypto.randomUUID(),
+        items: selected.map((item) => ({ kind: item.kind, code: item.code, quantity: quantities[itemKey(item)] })),
+      }) });
+      const result = await response.json().catch(() => null) as { message?: string; order?: { status: string; version: number; totalAmount: number } } | null;
+      if (!response.ok || !result?.order) { setMessage(result?.message ?? "Chưa thể gửi đơn món."); return; }
+      setMessage(action === "cancel" ? "Đơn món đã được hủy." : "Đơn món đã được gửi. Nhà hàng sẽ xác nhận.");
+      router.refresh();
+    } catch { setMessage("Không thể kết nối tới máy chủ. Vui lòng thử lại."); }
+    finally { setBusy(false); }
+  }
+
+  if (!enabled) return <section className="order-section" aria-labelledby="order-title"><p className="eyebrow">Đặt món tại bàn</p><h2 id="order-title">Đặt món online đang chờ mở.</h2><p className="small-note">Booking vẫn hoạt động bình thường. Module đặt món sẽ mở sau khi migration và kiểm thử dữ liệu live hoàn tất.</p></section>;
+  if (!["confirmed", "checked_in"].includes(bookingStatus) && !order) return <section className="order-section" aria-labelledby="order-title"><p className="eyebrow">Đặt món tại bàn</p><h2 id="order-title">Chờ nhà hàng xác nhận booking.</h2><p className="small-note">Bạn có thể gửi món sau khi booking được xác nhận.</p></section>;
+
+  return <section className="order-section" aria-labelledby="order-title">
+    <div className="booking-section-heading"><div><p className="eyebrow">Đặt món tại bàn</p><h2 id="order-title">Chọn món trước giờ dùng bữa.</h2></div><p className="section-note">Không quản lý tồn kho. Số lượng chỉ cần là số nguyên dương.</p></div>
+    {order && <div className="order-status-line"><span>Trạng thái: <strong className={`status status-${order.status}`}>{orderStatusLabel(order.status)}</strong></span><span>Tổng dự kiến: <strong>{formatVnd(order.total_amount)}</strong></span></div>}
+    {order && <ol className="order-history" aria-label="Lịch sử đơn món">{order.history.map((event) => <li key={event.id}><span>{orderStatusLabel(event.to_status)}</span>{event.reason && <small>{event.reason}</small>}</li>)}</ol>}
+    {(canCreate || editable) && <fieldset className="order-catalogue" disabled={busy}>
+      <legend>{editable ? "Cập nhật đơn đang chờ" : "Chọn món và combo"}</legend>
+      {catalogue.map((item) => <label className="order-catalogue-row" key={itemKey(item)}><span><strong>{item.name}</strong><small>{item.kind === "combo" ? "Combo" : "Món lẻ"} · {formatVnd(item.price)}{!item.available && " · Tạm hết"}</small></span><input aria-label={`Số lượng ${item.name}`} type="number" inputMode="numeric" min="0" max="2147483647" step="1" value={quantities[itemKey(item)] ?? 0} disabled={!item.available} onChange={(event) => setQuantity(item, event.target.value)} /></label>)}
+      <div className="order-summary"><span>Tổng dự kiến</span><strong>{formatVnd(total)}</strong></div>
+      <button className="button button-primary" type="button" onClick={() => void submit(order ? "update" : "create")}>{busy ? "Đang gửi…" : order ? "Cập nhật đơn món" : "Gửi đơn món"}</button>
+    </fieldset>}
+    {order?.status === "pending" && <div className="order-cancel-panel"><label>Lý do hủy (tùy chọn)<textarea value={reason} maxLength={500} rows={2} onChange={(event) => setReason(event.target.value)} /></label><button className="button button-secondary" type="button" disabled={busy} onClick={() => void submit("cancel")}>{busy ? "Đang xử lý…" : "Hủy đơn món"}</button></div>}
+    {order && !["pending"].includes(order.status) && <p className="small-note">Đơn đã được nhà hàng tiếp nhận; hãy liên hệ Staff nếu cần thay đổi.</p>}
+    <p className="order-payment-note">Thanh toán trực tiếp tại quầy nhà hàng.</p>
+    <p className="order-message" role={message && !message.includes("đã") ? "alert" : "status"} aria-live="polite">{message}</p>
+  </section>;
+}

@@ -14,8 +14,8 @@ MVP; bằng chứng nghiệm thu lịch sử giữ ở `database-testing.md`.
 | R06 | 3,8 | Upload ảnh | Catalogue file local | Upload validation/RLS/refs/alt/fallback/public/Pages đạt | Storage bucket và cấu hình upload | Chưa có implementation | TODO |
 | R07 | 3,8 | Chuyển tầng/vị trí bàn | Cross-floor bị khóa | Preview tọa độ, canonical mapping, active-booking protection và audit | Quy tắc vị trí được duyệt qua Admin | Chưa có implementation | TODO |
 | R08 | 4–7 | Email/SMS giao dịch | Notification nội bộ | Outbox/retry/idempotency/sandbox/email QA | Provider, sender/domain, SMS credentials nếu dùng | Đã hỏi cấu hình; chưa gửi | BLOCKED — provider; phần độc lập TODO |
-| R09 | 5–8 | Order/phiếu tính tiền | Chưa triển khai | Snapshot giá, tổng server, quyền/concurrency/audit/UI/integration | Quyết định nghiệp vụ khi cần | Chưa có implementation | TODO |
-| R10 | 5–8 | Thanh toán/hoàn tiền | Chưa triển khai | Thủ công có audit; online sandbox webhook/chữ ký/idempotency/đối soát | Provider, chính sách phí/đặt cọc/hoàn tiền | Đã hỏi; chưa thu tiền | BLOCKED — decisions; phần độc lập TODO |
+| R09 | 5–8 | Đặt món gắn booking | Code + local SQL/UI đã triển khai; chưa bật cloud | Snapshot giá, tổng server, quyền/concurrency/audit/UI/integration live | Migration 007/008, QA fixture và gate production | `database-testing.md`: 86 nhóm SQL PASS; build PASS | PARTIAL — cloud rollout pending |
+| R10 | 5–8 | Thanh toán/hoàn tiền | Đã bỏ khỏi phạm vi đồ án | Không có payment gateway, webhook, đặt cọc hoặc hoàn tiền; thanh toán tại quầy | Không có | Spec nghiệp vụ đã chốt | OUT OF SCOPE |
 | R11 | 8 | Kho | Chưa triển khai | Units/ledger/nhập-xuất-adjustment/permissions; định mức mới tự trừ | Danh mục thực và định mức cho automatic deductions | Chưa có implementation | TODO |
 | R12 | 8 | Báo cáo mở rộng | Hiện có booking reports | Phân biệt booking/order/thực thu/hoàn tiền; không cắt dữ liệu ngầm | R09–R11 | Chưa có implementation | TODO |
 | R13 | 1,2,5–8 | Nhiều chi nhánh | Schema single restaurant | Branch scope/migration/backfill/RLS/isolation/regression | Thiết kế tương thích và test trước cloud | Chưa có implementation | TODO |
@@ -100,7 +100,8 @@ expiry hoặc giới hạn; giữ R02 PARTIAL. Commit diagnostic `253e3fc`: CI
 - Feature `COMBO_CATALOGUE_ENABLED` chỉ bật server khi đúng migration đã áp và
   rollout được kiểm chứng. Khi tắt, combo snapshot được ghi nhãn tham khảo. Khi
   bật nhưng DB lỗi, không fallback giả live. Pages luôn giữ 4 combo canonical.
-- Chưa thay booking/order cũ; chưa có cloud fixture hoặc environment flag change.
+- Booking cũ không thay đổi; module order mới chưa có cloud fixture hoặc
+  environment flag change.
 
 ### Rollout/rollback nhóm combo
 

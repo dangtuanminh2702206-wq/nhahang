@@ -4,6 +4,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import pg from 'pg';
 import { testAdminDatabase } from './test-admin-database.mjs';
 import { testComboDatabase } from './test-combo-database.mjs';
+import { testOrderDatabase } from './test-order-database.mjs';
 
 // This harness intentionally accepts only an empty loopback test database.
 const url = process.env.TEST_DATABASE_URL;
@@ -173,7 +174,7 @@ try {
   });
   // Reset only test bookings using an isolated fixture (no production reset helper).
   async function clearBookings() {
-    await admin.query('truncate public.notifications,public.booking_history,public.audit_logs,public.bookings');
+    await admin.query('truncate public.order_notifications,public.order_history,public.order_items,public.orders,public.notifications,public.booking_history,public.audit_logs,public.bookings');
   }
   await clearBookings();
   await check('opening / closing boundaries and customer service endpoint', async () => {
@@ -637,6 +638,7 @@ try {
   });
   await testAdminDatabase({ admin, left, right, actor, check, compete, A, B, S, D, tables, start });
   await testComboDatabase({ admin, left, right, actor, check, compete, A, S, D });
+  await testOrderDatabase({ admin, left, right, actor, check, compete, A, B, S, D, tables, start, clearBookings });
   console.log(`${passed} database checks passed. Supabase Auth/JWT integration requires separate validation.`);
 } finally {
   await Promise.allSettled(clients.map(c=>c.end()));

@@ -339,5 +339,7 @@ Phần 10 đạt **PARTIAL — sẵn sàng demo và vận hành thử có kiểm
 checklist code/CI/deployment và hướng dẫn đã PASS. Chưa công bố production
 operational readiness đầy đủ tới khi backup/restore, người phụ trách và cửa sổ
 rollback được owner xác minh. Các giới hạn sản phẩm gồm callback email production,
-role UI production, đổi tầng bàn, combo CRUD, reset password, email/SMS,
-order/payment, analytics, multi-branch và 3D vẫn giữ nguyên.
+role UI production, đổi tầng bàn, combo CRUD, reset password, email/SMS giao dịch,
+thanh toán online/payment, analytics, multi-branch và 3D vẫn giữ nguyên. Đặt món
+Customer đã có trong phạm vi MVP; chỉ ghi tổng dự kiến và thanh toán trực tiếp tại
+quầy, không có payment gateway, webhook, kho hoặc hoàn tiền.

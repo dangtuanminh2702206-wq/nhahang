@@ -929,3 +929,27 @@ components, no-op/retry, expected version, archive, race và rollback audit.
 Không chạy runner reset/seed lên Supabase. Migration combo chưa áp production.
 Contract/API và browser local provider synthetic được ghi riêng ở
 [completion-backlog.md](completion-backlog.md); không dùng chúng chứng nhận JWT thật.
+
+### Module đặt món gắn với booking — local 03/10/2026
+
+Migration `202610030008_customer_orders.sql` đã được áp sau migration combo
+`202610030007_combo_catalogue.sql` trên database loopback mới
+`mocvi_test_order_20261003i`. Đây là kiểm thử cô lập; chưa áp Supabase
+development/production và chưa bật `ORDER_MUTATIONS_ENABLED` trên Vercel.
+
+| Nhóm | Bằng chứng |
+| --- | --- |
+| Schema/catalogue | Order, line item, snapshot tên/giá/thành phần combo và total server-controlled PASS |
+| Quyền | Customer ownership, Staff/Admin operations, inactive/Guest/direct write denial PASS |
+| Workflow | pending → confirmed → preparing → served/cancelled; customer sửa/hủy pending; booking terminal cascade PASS |
+| Safety | idempotency, payload mismatch, optimistic version conflict, duplicate item/quantity validation, unavailable catalogue PASS |
+| Concurrency/rollback | Staff race, event/audit failure rollback, booking completion guard PASS |
+| Tổng SQL | **86 nhóm PASS**, bao gồm hồi quy migration 001–008 và seed/canonical checks |
+| Code/build | typecheck PASS; lint PASS; normal build PASS; Pages build/export, `/nhahang` basePath và 50 asset check PASS |
+
+Đơn món chỉ dành cho booking của Customer đã `confirmed` hoặc `checked_in`, mỗi
+booking một đơn. Giá hiển thị là tổng dự kiến; thanh toán trực tiếp tại quầy,
+không có payment gateway, đặt cọc, hoàn tiền, kho hoặc email/SMS giao dịch.
+Production rollout vẫn là **NOT RUN**: cần operator review migration 007/008,
+đối chiếu before/after, QA fixture có nhãn và bật feature gate sau khi code deploy;
+không suy local SQL thành live/RLS/JWT production PASS.
