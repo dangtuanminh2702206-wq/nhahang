@@ -12,7 +12,9 @@
     "test:booking": "node scripts/test-booking.mjs",
     "test:customer-booking": "node scripts/test-customer-booking.mjs",
     "test:staff": "node scripts/test-staff.mjs",
-    "test:identity:smoke": "node scripts/test-identity-smoke.mjs"
+    "test:identity:contract": "node scripts/test-identity-contract.mjs",
+    "test:identity:smoke": "node scripts/test-identity-smoke.mjs",
+    "test:public-assets": "node scripts/test-public-assets.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
