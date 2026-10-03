@@ -13,6 +13,7 @@
     "test:customer-booking": "node scripts/test-customer-booking.mjs",
     "test:staff": "node scripts/test-staff.mjs",
     "test:identity:contract": "node scripts/test-identity-contract.mjs",
+    "test:identity:storage": "node scripts/test-recovery-storage.mjs",
     "test:identity:smoke": "node scripts/test-identity-smoke.mjs",
     "test:public-assets": "node scripts/test-public-assets.mjs"
   },

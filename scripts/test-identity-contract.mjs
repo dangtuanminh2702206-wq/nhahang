@@ -242,6 +242,12 @@ assert.equal(logoutScope, 'local');
 profile = { id: 'other', is_active: true, role: 'customer' };
 assert.equal((await recoveryRoute.GET(request('code=qa-code'))).url.pathname, '/forgot-password');
 client.auth.exchangeCodeForSession = async () => ({ data: { user: null }, error: { code: 'otp_expired' } });
-assert.equal((await recoveryRoute.GET(request('code=qa-code'))).url.pathname, '/forgot-password');
+assert.equal((await recoveryRoute.GET(request('code=qa-code'))).url.searchParams.get('reason'), 'expired');
+for (const [code, expected] of [['pkce_code_verifier_not_found','browser'],['bad_code_verifier','browser'],['flow_state_not_found','expired'],['unmapped_provider_error','service']]) {
+  client.auth.exchangeCodeForSession = async () => ({ data: {user:null}, error: {code,message:'PRIVATE_DO_NOT_REFLECT'} });
+  const failed = await recoveryRoute.GET(request('code=qa-code'));
+  assert.equal(failed.url.searchParams.get('reason'),expected);
+  assert.equal(failed.url.href.includes('PRIVATE_DO_NOT_REFLECT'),false);
+}
 console.log('PASS password contracts: origin/content whitelist, input bounds, enumeration response, quota, verified active ownership, update/logout failure, global logout, PKCE/recovery OTP, expired links and fixed redirects.');
 console.log('NOT RUN here: provider email delivery, real recovery cookies or production password update.');

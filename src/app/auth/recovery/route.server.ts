@@ -8,7 +8,8 @@ export async function GET(request: NextRequest) {
   const redirect = (path: string) => NextResponse.redirect(new URL(path, origin), {
     headers: { "Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer" },
   });
-  if (!getSupabaseConfig()) return redirect("/forgot-password?recovery=failed");
+  const failure = (reason: "browser" | "expired" | "account" | "service" | "invalid") => redirect(`/forgot-password?recovery=failed&reason=${reason}`);
+  if (!getSupabaseConfig()) return failure("service");
   try {
     const supabase = await createSupabaseServerClient();
     const code = request.nextUrl.searchParams.get("code");
@@ -16,12 +17,20 @@ export async function GET(request: NextRequest) {
     const type = request.nextUrl.searchParams.get("type");
     const result = code ? await supabase.auth.exchangeCodeForSession(code)
       : tokenHash && type === "recovery" ? await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" }) : null;
-    if (!result || result.error || !result.data.user?.email_confirmed_at) return redirect("/forgot-password?recovery=failed");
+    if (!result) return failure("invalid");
+    if (result.error) {
+      // Only classify safe categories. Never reflect tokens, codes or raw provider errors.
+      const code = result.error.code;
+      if (["pkce_code_verifier_not_found", "bad_code_verifier"].includes(code ?? "")) return failure("browser");
+      if (["otp_expired", "flow_state_expired", "flow_state_not_found"].includes(code ?? "")) return failure("expired");
+      return failure("service");
+    }
+    if (!result.data.user?.email_confirmed_at) return failure("account");
     const { data, error } = await supabase.from("profiles").select("id,is_active").eq("id", result.data.user.id).maybeSingle();
     if (error || !data?.is_active || data.id !== result.data.user.id) {
       await supabase.auth.signOut({ scope: "local" });
-      return redirect("/forgot-password?recovery=failed");
+      return failure(error ? "service" : "account");
     }
     return redirect("/reset-password");
-  } catch { return redirect("/forgot-password?recovery=failed"); }
+  } catch { return failure("service"); }
 }

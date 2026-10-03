@@ -55,6 +55,22 @@ Hoàn tất kiểm thử/phát hành nhóm Identity và health, rồi tiếp t�
 Thông tin provider, policy tài chính, owner và bàn giao asset được hỏi một lần;
 thiếu câu trả lời không ngăn các phần code/SQL độc lập.
 
+## Production recovery — 03/10, cần điều tra callback
+
+Runtime `c86a7da`, tài liệu/CI `cf09cc9`: CI 37122838138 và Pages
+37122838143 success; Vercel status success trên cùng SHA; health production
+trả đúng `{status: ok}`. Trang forgot-password public hiển thị đúng.
+Supabase redirect allowlist đã thêm chính xác `/auth/recovery` trên domain
+production, giữ nguyên Site URL và ba redirect cũ, không thêm wildcard.
+
+Người dùng xác nhận nhận được email nhưng callback quay về nhập email, thử hai
+trình duyệt vẫn lỗi. **Email delivery observed; recovery E2E FAIL/IN INVESTIGATION**,
+không nâng R02 thành PASS. Bổ sung phân loại thông báo browser/expired/account/
+service/invalid, không phản chiếu lỗi thô, token hoặc code. Test bằng SDK SSR
+đang cài chứng minh verifier cookie được lưu, same-browser exchange thành công
+và missing-cookie bị chặn với provider synthetic; chưa thay thế bằng chứng thật.
+Chờ thông báo phân loại production để xác định nguyên nhân trước khi gửi thêm thư.
+
 ## Nhóm Identity/health — bằng chứng local 03/10
 
 - Typecheck/lint và identity/recovery contracts PASS. Recovery provider là mock;
