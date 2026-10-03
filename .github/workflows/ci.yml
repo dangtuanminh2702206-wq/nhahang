@@ -66,6 +66,9 @@ jobs:
       - name: Combo catalogue contract tests
         run: pnpm test:combos
 
+      - name: Customer order API contract tests
+        run: pnpm test:order
+
       - name: Backup encryption and restore safety guards
         run: pnpm test:backup
 
