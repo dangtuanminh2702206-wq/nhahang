@@ -189,6 +189,23 @@ log và environment theo đúng target.
 
 ### Phương án miễn phí đã chọn cho backlog mở rộng
 
+**Diễn tập full restore 03/10:** database loopback riêng FAIL do thiếu `pg_cron`
+trên Windows; transaction rollback hoàn toàn (0 relations). Không bỏ phần dump
+để tính PASS. Cần môi trường Linux/Supabase tương thích trước nghiệm thu restore.
+
+Owner chọn OneDrive cá nhân ngoài source: encrypted archive ở
+`OneDrive/MocVi-Backups/Archives`, Windows DPAPI key copy ở
+`OneDrive/MocVi-Backups/Windows-Key-Recovery`; checksum khớp. Chưa chứng minh cloud
+upload/download vì trình duyệt chưa đăng nhập OneDrive. Key này vẫn Windows-bound.
+
+Portable key: human chạy `scripts/export-backup-recovery-key.ps1 -OutputPath`
+với đường dẫn file tuyệt đối ngoài Git, tự nhập/confirm passphrase riêng >=16
+ký tự. Tool bọc khóa backup bằng scrypt/AES-GCM, kiểm chứng round-trip trước ghi,
+không ghi plaintext key/passphrase. Không lưu passphrase trong chat, command
+arguments, `.env` hoặc cùng key file trên OneDrive. Mất passphrase không khôi phục
+portable key. Công cụ đã chuẩn bị/test; owner chưa export và cross-machine
+drill chưa chạy. OneDrive không thay thế retention, key recovery và restore QA.
+
 **Cập nhật 03/10 sau khi owner điền connection:** đã export production mã hóa,
 580916 byte, giải mã xác thực và đọc mục lục 940 entries thành công. Có dữ liệu
 bookings/profiles/menu_items/auth.users/storage.objects. Chưa restore cô lập;

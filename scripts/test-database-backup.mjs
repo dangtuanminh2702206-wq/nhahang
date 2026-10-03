@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import { connection, keyBytes, encryptBackup, decryptBackup } from './database-backup.mjs';
+import { wrapKey, unwrapKey } from './backup-recovery-key.mjs';
 
 const key = randomBytes(32), data = Buffer.from('PGDMP synthetic fixture, not a database export');
 const encrypted = encryptBackup(data, key);
@@ -11,6 +12,12 @@ const damaged = Buffer.from(encrypted); damaged[damaged.length - 1] ^= 1;
 assert.throws(() => decryptBackup(damaged, key));
 assert.throws(() => decryptBackup(encrypted, randomBytes(32)));
 assert.throws(() => keyBytes('short'));
+const recovery=wrapKey(key,'LOCAL QA recovery passphrase only');
+assert.deepEqual(unwrapKey(recovery,'LOCAL QA recovery passphrase only'),key);
+assert.throws(()=>unwrapKey(recovery,'Different LOCAL QA recovery passphrase'));
+const tamperedRecovery=Buffer.from(recovery);tamperedRecovery[tamperedRecovery.length-1]^=1;
+assert.throws(()=>unwrapKey(tamperedRecovery,'LOCAL QA recovery passphrase only'));
+assert.throws(()=>wrapKey(key,'too short'));
 assert.equal(keyBytes('ab'.repeat(32)).length, 32);
 assert.throws(() => connection('postgres://postgres@db.example.com/postgres', true));
 assert.throws(() => connection('postgres://postgres@127.0.0.1/postgres', true));

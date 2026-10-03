@@ -14,12 +14,13 @@ foreach ($taskDirectory in @($taskKeyDirectory,$taskArchiveDirectory)) {
   if (-not (Test-Path -LiteralPath $taskDirectory)) {
     New-Item -ItemType Directory -Path $taskDirectory | Out-Null
   }
-  $taskAcl = Get-Acl -LiteralPath $taskDirectory
+  # Only write a new DACL; do not copy SACL/owner fields requiring elevated privileges.
+  $taskAcl = [System.Security.AccessControl.DirectorySecurity]::new()
   $taskAcl.SetAccessRuleProtection($true,$false)
   $taskUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().User
   $taskRule = [System.Security.AccessControl.FileSystemAccessRule]::new($taskUser,'FullControl','ContainerInherit,ObjectInherit','None','Allow')
   $taskAcl.AddAccessRule($taskRule)
-  Set-Acl -LiteralPath $taskDirectory -AclObject $taskAcl
+  [System.IO.FileSystemAclExtensions]::SetAccessControl([System.IO.DirectoryInfo]::new($taskDirectory),$taskAcl)
 }
 $taskKeyFile = Join-Path $taskKeyDirectory 'database-key.dpapi'
 if (-not (Test-Path -LiteralPath $taskKeyFile)) {

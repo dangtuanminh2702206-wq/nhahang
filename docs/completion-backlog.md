@@ -120,6 +120,21 @@ không đổi TODO thành PASS chỉ vì nhóm này build đạt.
 
 ### Backup prerequisite
 
+Diễn tập tiếp theo: full archive restore vào loopback trống
+`mocvi_test_restore_20261003_2110` FAIL vì extension `pg_cron` không có trên
+PostgreSQL Windows; single transaction rollback, 0 relations sau lỗi. Không bỏ
+extension hoặc dùng mock để gọi full restore PASS. Máy chưa có Docker/WSL Linux.
+User chọn OneDrive cá nhân: đã copy archive mã hóa và DPAPI key riêng vào
+`OneDrive/MocVi-Backups` ngoài source, SHA-256 nguồn/đích khớp. Cloud upload
+chưa xác minh: browser OneDrive yêu cầu đăng nhập. DPAPI copy không chứng minh
+khôi phục key trên máy khác.
+
+Đã chuẩn bị `scripts/export-backup-recovery-key.ps1` để human tự nhập passphrase
+riêng (không chat/arguments), xuất key envelope scrypt/AES-GCM ngoài Git.
+Round-trip/wrong-passphrase/tamper có automated tests; chưa export key thật bằng
+passphrase owner, chưa nghiệm thu cross-machine restore. Không lưu passphrase
+cùng archive/key trên OneDrive. R16 vẫn PARTIAL.
+
 Cập nhật sau khi owner sửa connection ngày 03/10: kết nối production chỉ đọc với
 CA tải từ Supabase chính thức PASS (PostgreSQL 17.6). Dùng pg_dump/pg_restore
 17.11 portable từ trang EDB chính thức, không cài service. Export mã hóa thành
