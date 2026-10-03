@@ -418,10 +418,12 @@ dòng báo lỗi rõ khi vượt giới hạn; hồ sơ phân trang 25 dòng. Kh
 
 ## Phần 5A · Customer ordering gắn với booking
 
-Module đặt món đã được triển khai trong code và kiểm thử trên PostgreSQL cô lập;
-chưa bật trên Supabase production. Migration `202610030008_customer_orders.sql`
-phụ thuộc migration combo `202610030007_combo_catalogue.sql` và feature gate
-`ORDER_MUTATIONS_ENABLED`, vì vậy deploy code không tự mở mutation cloud.
+Module đặt món đã bật trên production `moc-vi-restaurant.vercel.app` sau khi
+operator duyệt rollout. Migration `202610030007_combo_catalogue.sql` rồi
+`202610030008_customer_orders.sql` đã áp trên project production được operator duyệt;
+`COMBO_CATALOGUE_ENABLED=true` và `ORDER_MUTATIONS_ENABLED=true` được lưu cho
+Vercel Production. Runtime `6b435ab` đã deploy và kiểm thử HTTP thật với
+Customer/Staff test, đối chiếu trực tiếp database; không dùng mock làm bằng chứng live.
 
 - Customer active chỉ đặt món cho booking của chính mình khi booking đã
   `confirmed` hoặc `checked_in`; mỗi booking có tối đa một đơn.
@@ -437,8 +439,16 @@ phụ thuộc migration combo `202610030007_combo_catalogue.sql` và feature gat
   cọc, hoàn tiền, tồn kho, email/SMS giao dịch; số tiền chỉ là dự kiến và ghi rõ
   **Thanh toán trực tiếp tại quầy nhà hàng.**
 - UI nằm trong chi tiết booking Customer và chi tiết booking Staff; Pages vẫn là
-  demo tĩnh. Production cần apply migration theo thứ tự, kiểm tra before/after
-  và bật gate riêng trước khi nghiệm thu live.
+  demo tĩnh. Customer mở **Đặt bàn của tôi → Chi tiết booking đã xác nhận** để
+  gửi món; Staff mở chi tiết booking để xử lý đơn.
+
+Fixture `ORDER QA` đạt 15 assertions: tạo booking/xác nhận, gửi món + combo,
+snapshot/tổng server, retry không trùng, validation, cập nhật pending, chặn quyền
+Customer và sửa sau xác nhận, Staff confirmed/preparing/served, history/notification/
+audit. Booking QA đã hủy, không giữ lịch bàn; đơn served và bằng chứng audit được
+giữ, không xóa lịch sử. Catalogue public vẫn có 30 món và 4 combo.
+Không công khai số liệu vận hành, tài khoản hoặc mã fixture. Chi tiết kiểm thử ở
+[database-testing.md](docs/database-testing.md#production-order-rollout).
 
 Fixture local mới đạt **86 nhóm SQL PASS** trên database `mocvi_test_*` sạch,
 bao gồm hồi quy migration 001–008 và các ca order. Typecheck/lint, normal build

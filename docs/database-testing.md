@@ -950,6 +950,64 @@ development/production và chưa bật `ORDER_MUTATIONS_ENABLED` trên Vercel.
 Đơn món chỉ dành cho booking của Customer đã `confirmed` hoặc `checked_in`, mỗi
 booking một đơn. Giá hiển thị là tổng dự kiến; thanh toán trực tiếp tại quầy,
 không có payment gateway, đặt cọc, hoàn tiền, kho hoặc email/SMS giao dịch.
-Production rollout vẫn là **NOT RUN**: cần operator review migration 007/008,
+Ở lượt local phía trên, production rollout là **NOT RUN**: cần operator review migration 007/008,
 đối chiếu before/after, QA fixture có nhãn và bật feature gate sau khi code deploy;
 không suy local SQL thành live/RLS/JWT production PASS.
+
+## Production order rollout
+
+Operator đã duyệt chạy thật migration 007/008, hai cờ Vercel Production và một
+fixture `ORDER QA`. Branch `codex/restaurant-booking-platform`, runtime `6b435ab`.
+Kết nối PostgreSQL dùng CA Supabase và xác minh hostname/TLS; không tắt kiểm tra
+certificate, không in connection string, cookie, JWT hoặc password.
+
+### Before/after đã kiểm tra riêng
+
+Hai bảng mới chưa tồn tại trước migration, đã tạo sau migration đúng thứ tự.
+Catalogue public giữ 30 món/4 combo. Không reset/seed hoặc thay catalogue/tài khoản
+cũ. Dọn fixture bằng hủy booking qua Staff RPC/API, không DELETE history/audit;
+booking cancelled, đơn served, không còn giữ lịch bàn của fixture.
+Số liệu vận hành và định danh fixture chỉ giữ trong báo cáo local ngoài Git,
+không công khai trên repository.
+
+### Bằng chứng live
+
+Runner tạm ngoài repo dùng `/auth/session`, cookie chỉ trong RAM, API same-origin
+trên domain chính; SQL production chỉ đọc để đối chiếu. Không giả role qua SQL
+cho ca nghiệm thu này. **15 assertions PASS**:
+
+- Customer/Staff active đăng nhập và trusted role đúng.
+- Tạo booking có nhãn ORDER QA và Staff xác nhận qua production HTTP.
+- Gửi dish + combo; snapshot và tổng phía server khớp catalogue database.
+- Retry cùng request: cùng order ID, chỉ một event; quantity 0 bị HTTP 400.
+- Customer sửa pending tăng version; Customer gọi Staff API bị HTTP 403.
+- Chi tiết Customer HTTP 200, hiện món đã gửi, không còn thông báo mutation-off.
+- Staff confirmed → preparing → served được lưu thật; Customer sửa sau confirm
+  bị HTTP 409.
+- 5 history, 5 internal notifications, 5 audit tương ứng create/update/confirm/
+  preparing/served; booking cleanup cancelled và history/audit vẫn còn.
+
+Guest gọi API orders nhận HTTP 401 (không phải gate-off 503). Browser Menu sau
+reload hiển thị 30 món/4 combo live, không còn câu “chưa đồng bộ database”.
+Chỉ có một fixture; không chạy tải/race cloud hoặc đổi role, giờ/giá để lấy PASS.
+Concurrency/rollback/RLS exhaustive vẫn là bằng chứng SQL local trong bộ 86 tests,
+không suy thành đã chạy mọi ca với JWT production.
+
+### Runtime và kiểm tra code
+
+Sửa Customer panel đọc order mới từ server props thay vì giữ `useState` cũ sau
+refresh, giữ request ID khi retry cùng payload, hiện snapshot dòng món đã gửi,
+bỏ ô lý do hủy không được server lưu. Skill UI/UX hướng dẫn phản hồi loading/
+success/error; không redesign public UI.
+
+Typecheck, lint, order API contract và normal build PASS. Build sandbox gặp
+`spawn EPERM`; chạy lại ngoài sandbox đạt. CI/SQL/normal/Pages gates thực tế:
+[CI PASS](https://github.com/dangtuanminh2702206-wq/nhahang/actions/runs/37138242514),
+[Pages build/deploy PASS](https://github.com/dangtuanminh2702206-wq/nhahang/actions/runs/37138242505).
+[Vercel deployment](https://vercel.com/minh-5f07/nhahang/5pXURvD95rdxQqK4MRoJWQrouQCN)
+status success đúng SHA; domain production HTTP và fixture live kiểm chứng riêng.
+Browser Customer đã đăng nhập, mở chi tiết đúng fixture, hiển thị các dòng snapshot,
+trạng thái Đã phục vụ và tổng dự kiến đúng; booking Đã hủy sau cleanup. Ảnh bằng chứng
+được lưu ngoài repository, không chứa mật khẩu/token.
+Chưa chứng nhận interaction responsive đầy đủ cho form order qua browser trong
+lượt rollout này; browser có gián đoạn, không tính timeout là PASS.
