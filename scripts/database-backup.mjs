@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 import { readFile, realpath, stat, writeFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -53,7 +54,10 @@ export function connection(value, restore = false) {
   return {
     host: url.hostname.replace(/^\[|\]$/g, ''), port: Number(url.port || 5432),
     user: decodeURIComponent(url.username), password: decodeURIComponent(url.password),
-    database: decodeURIComponent(url.pathname.slice(1)), ssl: local ? false : { rejectUnauthorized: true },
+    database: decodeURIComponent(url.pathname.slice(1)), ssl: local ? false : {
+      rejectUnauthorized: true,
+      ...(process.env.PGSSLROOTCERT ? { ca: readFileSync(process.env.PGSSLROOTCERT, 'utf8') } : {}),
+    },
     connectionTimeoutMillis: 15000, query_timeout: 15000,
   };
 }

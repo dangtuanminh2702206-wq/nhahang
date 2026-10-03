@@ -10,7 +10,8 @@ Nhóm mở rộng combo đã có code/migration và kiểm thử local; live/Adm
 bật khi `COMBO_CATALOGUE_ENABLED=true` sau rollout database đã kiểm chứng.
 Production chưa bật flag: không coi catalogue tham khảo là dữ liệu live. Công cụ
 backup mã hóa/restore local được mô tả ở [operations-runbook.md](docs/operations-runbook.md);
-chưa có backup production hoặc nghiệm thu disaster recovery.
+đã có backup production mã hóa và kiểm chứng archive, nhưng chưa nghiệm thu
+restore cô lập, off-site/key recovery hoặc disaster recovery.
 
 ## Phạm vi sản phẩm
 

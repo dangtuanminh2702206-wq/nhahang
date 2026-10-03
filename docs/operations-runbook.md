@@ -189,6 +189,23 @@ log và environment theo đúng target.
 
 ### Phương án miễn phí đã chọn cho backlog mở rộng
 
+**Cập nhật 03/10 sau khi owner điền connection:** đã export production mã hóa,
+580916 byte, giải mã xác thực và đọc mục lục 940 entries thành công. Có dữ liệu
+bookings/profiles/menu_items/auth.users/storage.objects. Chưa restore cô lập;
+không coi mục lục là chứng minh ứng dụng/Supabase Auth khôi phục được.
+
+Trên Windows PowerShell 7 / Node 24, dùng `scripts/run-database-backup.ps1`
+với `-ToolsDirectory` trỏ bin PostgreSQL portable và `-CertificatePath` trỏ CA
+download từ Database Settings của Supabase. Wrapper nạp `.env.local`, bảo vệ
+khóa bằng Windows CurrentUser DPAPI và lưu archive ngoài Git ở
+`LocalAppData/MocViBackups`; key file nằm riêng `LocalAppData/MocViBackupKeys`.
+Không sao chép key hoặc archive vào repository/OneDrive source/chat. CA được
+truyền qua PGSSLROOTCERT, không tắt xác minh certificate hoặc hostname.
+
+DPAPI hiện phụ thuộc Windows user/máy: **chưa có phương án key recovery ngoài
+máy được kiểm chứng**. Không xóa key, mất key không giải mã được archive. Cần
+diễn tập restore local và phương án off-site/key recovery trước nghiệm thu DR.
+
 Export logical database bằng `pg_dump --format=custom`, mã hóa AES-256-GCM
 trước khi ghi file `.mocvi.enc` ngoài repository. Không ghi plaintext SQL vào
 đĩa, không đưa credentials vào command arguments hoặc log. Công cụ:
@@ -221,7 +238,7 @@ không tự chứng minh Auth service chạy được sau khôi phục. Storage 
 backup riêng khi bắt đầu upload. Tham khảo:
 [Supabase backups](https://supabase.com/docs/guides/platform/backups).
 
-Ngày 03/10: test mã hóa/guard đã chạy; chưa có PostgreSQL backup credentials
+Ghi nhận đầu ngày 03/10 (trước cập nhật export ở trên): test mã hóa/guard đã chạy; chưa có PostgreSQL backup credentials
 hoặc pg_dump/pg_restore trên máy nên export/restore production **NOT RUN**.
 Không đổi password database để lấy kết nối. RPO/RTO và retention chưa được owner
 xác nhận; không tự đặt giá trị hoặc chứng nhận disaster recovery PASS.

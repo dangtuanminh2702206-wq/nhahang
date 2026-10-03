@@ -21,7 +21,7 @@ MVP; bằng chứng nghiệm thu lịch sử giữ ở `database-testing.md`.
 | R13 | 1,2,5–8 | Nhiều chi nhánh | Schema single restaurant | Branch scope/migration/backfill/RLS/isolation/regression | Thiết kế tương thích và test trước cloud | Chưa có implementation | TODO |
 | R14 | 3 | 3D/360 | Có thay đổi asset/tooling của công việc khác | Asset duyệt, panorama decode, hotspots đúng, viewer mobile/accessibility | Xác định bộ asset bàn giao và quyền sở hữu | Không stage artifacts/panorama/tools hiện có | BLOCKED — asset handover |
 | R15 | 9,10 | Health/logs/scheduler | Thêm liveness tối thiểu | Health không lộ config; readiness/scheduler có bằng chứng riêng | Operator cloud cho scheduler | Endpoint chỉ chứng minh Next server sống | IN PROGRESS |
-| R16 | 10 | Backup/restore | Đã chọn encrypted logical export miễn phí; công cụ có guard restore loopback | Database/Auth/Storage scope, backup retention, restore cô lập và đối chiếu | PostgreSQL backup connection, pg_dump/pg_restore; owner giữ key và bản off-site | Encryption/tamper/target guards PASS; export/restore thật NOT RUN | PARTIAL — connection/tooling prerequisite |
+| R16 | 10 | Backup/restore | Đã export production mã hóa; công cụ có guard restore loopback | Database/Auth/Storage scope, backup retention, restore cô lập và đối chiếu | Restore tương thích Supabase; bản off-site và key recovery | 03/10: TLS/read-only/export/decrypt/archive list PASS; restore NOT RUN | PARTIAL — isolated restore/off-site/key recovery pending |
 | R17 | 10 | Owner/RPO/RTO/rollback | Placeholder | Owner xác nhận người phụ trách và mục tiêu khôi phục | Người dùng trả lời | Đã hỏi, chưa tự gán | BLOCKED — owner decision |
 | R18 | 9,10 | Phát hành | Commit theo nhóm | CI/Pages/Vercel đúng SHA và smoke domain sau push | Network/provider | Ghi ở từng nhóm bên dưới | IN PROGRESS |
 
@@ -119,6 +119,23 @@ và tooling backup cô lập trong lúc chờ. Các nhóm R08–R14 vẫn chưa 
 không đổi TODO thành PASS chỉ vì nhóm này build đạt.
 
 ### Backup prerequisite
+
+Cập nhật sau khi owner sửa connection ngày 03/10: kết nối production chỉ đọc với
+CA tải từ Supabase chính thức PASS (PostgreSQL 17.6). Dùng pg_dump/pg_restore
+17.11 portable từ trang EDB chính thức, không cài service. Export mã hóa thành
+công vào `LocalAppData/MocViBackups/mocvi-20261003-211024.mocvi.enc` (580916 byte).
+Kiểm chứng AES-GCM authentication và `pg_restore --list`: 940 entries; có TABLE
+DATA bookings/profiles/menu_items/auth.users/storage.objects. Không in entries
+hoặc dữ liệu khách; không dump plaintext trên đĩa, không ghi database cloud.
+
+Khóa bảo vệ bằng Windows CurrentUser DPAPI trong `LocalAppData/MocViBackupKeys`,
+không cùng thư mục archive, không vào Git. Chưa xác minh portability/khôi phục
+key khi mất máy/tài khoản Windows; chưa có off-site copy, restore cô lập hoặc
+Auth service/Storage file recovery. Export/list PASS không phải DR PASS.
+Tool hỗ trợ PGSSLROOTCERT cho cả Node và pg_dump, giữ xác minh hostname/TLS.
+Wrapper PowerShell nạp `.env.local` qua Node --env-file, không sửa file secrets.
+
+Ghi nhận trước khi owner cung cấp kết nối (lịch sử, không phải trạng thái mới):
 
 Owner giao quyền chọn phương án ngày 03/10: chọn logical archive miễn phí, mã
 hóa AES-256-GCM, không plaintext trên đĩa, không ghi đè file cũ, lưu ngoài repo.
