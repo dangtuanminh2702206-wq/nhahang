@@ -187,6 +187,45 @@ log và environment theo đúng target.
 
 ## Backup, restore và diễn tập
 
+### Phương án miễn phí đã chọn cho backlog mở rộng
+
+Export logical database bằng `pg_dump --format=custom`, mã hóa AES-256-GCM
+trước khi ghi file `.mocvi.enc` ngoài repository. Không ghi plaintext SQL vào
+đĩa, không đưa credentials vào command arguments hoặc log. Công cụ:
+`scripts/database-backup.mjs`; test guard: `pnpm test:backup`.
+
+Cấu hình riêng trong môi trường shell được bảo vệ (script không tự đọc `.env`):
+`DATABASE_BACKUP_URL` là direct/session connection của project đã xác minh;
+`DATABASE_BACKUP_PROJECT_REF=unhybmmbgumyhzaftlli`; `PG_TOOLS_DIR` là thư mục
+client PostgreSQL tin cậy, phiên bản không cũ hơn server; `DATABASE_BACKUP_KEY`
+là 32 byte ngẫu nhiên dạng 64 hex. Giữ key riêng với archive và có bản sao key
+được owner quản lý; mất key đồng nghĩa không giải mã được. Không sử dụng anon
+key hoặc service-role key thay mật khẩu PostgreSQL.
+
+`node scripts/database-backup.mjs export ABSOLUTE_FILE.mocvi.enc` không ghi đè
+file cũ. Giới hạn archive 256 MiB và thời gian 180 giây; vượt giới hạn là FAIL,
+không backup một phần. Kết nối cloud xác minh TLS và project ref, không dùng
+transaction pooler 6543. Một bản sao mã hóa thứ hai ở thiết bị/vị trí riêng vẫn
+cần owner lựa chọn; file trên cùng máy không phải off-site backup.
+
+Restore chỉ qua `restore-local`, `TEST_DATABASE_URL` loopback database trống
+tên `mocvi_test_*`; kiểm chứng authentication tag trước khi gọi `pg_restore`,
+single transaction và dừng khi lỗi. Không có clean/drop/reset hoặc restore cloud.
+Supabase roles/extensions có thể cần bootstrap tương thích riêng; nếu thiếu,
+restore phải FAIL, không bỏ ACL để giả PASS. Sau restore cần đối chiếu schema,
+grants, counts và invariants với nguồn; output RESTORED không phải nghiệm thu DR.
+
+Scope archive là PostgreSQL database: không chứa file Storage, cloud settings,
+SMTP, secret của dịch vụ hoặc cấu hình Vercel. Supabase Auth schema trong dump
+không tự chứng minh Auth service chạy được sau khôi phục. Storage objects cần
+backup riêng khi bắt đầu upload. Tham khảo:
+[Supabase backups](https://supabase.com/docs/guides/platform/backups).
+
+Ngày 03/10: test mã hóa/guard đã chạy; chưa có PostgreSQL backup credentials
+hoặc pg_dump/pg_restore trên máy nên export/restore production **NOT RUN**.
+Không đổi password database để lấy kết nối. RPO/RTO và retention chưa được owner
+xác nhận; không tự đặt giá trị hoặc chứng nhận disaster recovery PASS.
+
 Kiểm tra read-only ngày 03/10/2026 tại dashboard của project
 `unhybmmbgumyhzaftlli` (hiển thị `mocvi-development`): **Free Plan không bao gồm
 project backups**. Dashboard không cung cấp bản backup scheduled để restore.
@@ -254,6 +293,13 @@ Các vai trò dưới đây chưa được gán tên trong repository; điền t
 - [ ] Người phụ trách đã được điền và biết đường rollback.
 
 ## Kết luận readiness
+
+Scope mở rộng ngày 03/10 được theo dõi ở [completion-backlog.md](completion-backlog.md).
+Recovery production đã phát hành nhưng email callback vẫn chưa nghiệm thu do
+người dùng gặp lỗi rồi rate limit. Không resend lặp lại để lấy PASS. Combo live
+đang được kiểm thử local, flag `COMBO_CATALOGUE_ENABLED` không tự bật khi deploy.
+Chỉ bật sau migration và kiểm tra khôi phục/before-after theo backlog. Tắt flag
+giữ UI tham khảo, không xóa bảng, audit hoặc dữ liệu để rollback.
 
 Phần 10 đạt **PARTIAL — sẵn sàng demo và vận hành thử có kiểm soát** khi các
 checklist code/CI/deployment và hướng dẫn đã PASS. Chưa công bố production

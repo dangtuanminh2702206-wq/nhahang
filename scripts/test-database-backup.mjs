@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict';
+import { randomBytes } from 'node:crypto';
+import { connection, keyBytes, encryptBackup, decryptBackup } from './database-backup.mjs';
+
+const key = randomBytes(32), data = Buffer.from('PGDMP synthetic fixture, not a database export');
+const encrypted = encryptBackup(data, key);
+assert.deepEqual(decryptBackup(encrypted, key), data);
+assert(!encrypted.includes(data));
+assert.notDeepEqual(encryptBackup(data, key), encrypted);
+const damaged = Buffer.from(encrypted); damaged[damaged.length - 1] ^= 1;
+assert.throws(() => decryptBackup(damaged, key));
+assert.throws(() => decryptBackup(encrypted, randomBytes(32)));
+assert.throws(() => keyBytes('short'));
+assert.equal(keyBytes('ab'.repeat(32)).length, 32);
+assert.throws(() => connection('postgres://postgres@db.example.com/postgres', true));
+assert.throws(() => connection('postgres://postgres@127.0.0.1/postgres', true));
+assert.throws(() => connection('postgres://postgres@127.0.0.1/mocvi_test_ok?host=remote', true));
+assert.equal(connection('postgres://postgres@127.0.0.1:55439/mocvi_test_restore', true).database, 'mocvi_test_restore');
+const previous = process.env.DATABASE_BACKUP_PROJECT_REF;
+process.env.DATABASE_BACKUP_PROJECT_REF = 'unhybmmbgumyhzaftlli';
+assert.throws(() => connection('postgres://postgres.other@aws-0.pooler.supabase.com:5432/postgres'));
+assert.throws(() => connection('postgres://postgres.unhybmmbgumyhzaftlli@aws-0.pooler.supabase.com:6543/postgres'));
+assert(connection('postgres://postgres@db.unhybmmbgumyhzaftlli.supabase.co/postgres').ssl.rejectUnauthorized);
+if (previous === undefined) delete process.env.DATABASE_BACKUP_PROJECT_REF; else process.env.DATABASE_BACKUP_PROJECT_REF = previous;
+console.log('PASS backup encryption/authentication and loopback restore guards. NOT RUN: real export, pg_restore, Supabase Auth/Storage restoration or disaster recovery.');

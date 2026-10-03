@@ -6,6 +6,7 @@ import { AdminConsole } from "@/components/admin-console";
 import { getAdminSnapshot } from "@/lib/admin";
 import { IdentityError, requireRole } from "@/lib/identity";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { liveCombosEnabled } from "@/lib/combos.server";
 
 export const metadata: Metadata = { title: "Quản trị hệ thống", robots: { index: false, follow: false } };
 type Props = { searchParams: Promise<{ from?: string; to?: string }> };
@@ -38,5 +39,5 @@ export default async function AdminPage({ searchParams }: Props) {
   try { snapshot = await getAdminSnapshot(await createSupabaseServerClient(), { from: rangeFrom, to: rangeTo }); } catch {
     return <section className="section"><div className="site-container admin-container"><p className="eyebrow">Admin management</p><h1>Chưa thể tải dữ liệu quản trị.</h1><p className="booking-error" role="alert">Kiểm tra migration Phần 8, phiên Admin và kết nối Supabase. Không dùng dữ liệu snapshot cũ để thay thế dữ liệu live.</p><Link className="text-link" href="/staff">Về vận hành Staff</Link></div></section>;
   }
-  return <AdminConsole snapshot={snapshot} range={{ from, to }} />;
+  return <AdminConsole snapshot={snapshot} range={{ from, to }} combosEnabled={liveCombosEnabled()} />;
 }

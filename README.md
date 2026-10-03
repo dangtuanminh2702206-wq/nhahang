@@ -6,6 +6,12 @@ booking, Customer, Staff và Admin; các mục tiến trình bên dưới có c�
 lịch sử. Trạng thái mở rộng mới được theo dõi tại
 [completion-backlog.md](docs/completion-backlog.md).
 
+Nhóm mở rộng combo đã có code/migration và kiểm thử local; live/Admin combo chỉ
+bật khi `COMBO_CATALOGUE_ENABLED=true` sau rollout database đã kiểm chứng.
+Production chưa bật flag: không coi catalogue tham khảo là dữ liệu live. Công cụ
+backup mã hóa/restore local được mô tả ở [operations-runbook.md](docs/operations-runbook.md);
+chưa có backup production hoặc nghiệm thu disaster recovery.
+
 ## Phạm vi sản phẩm
 
 Hệ thống dự kiến phục vụ bốn vai trò: Guest, Customer, Staff và Admin. Luồng

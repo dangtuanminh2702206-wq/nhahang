@@ -56,6 +56,8 @@ export type MenuCombo = {
   price: number;
   items: readonly string[];
   description: string;
+  imagePath?: string | null;
+  available?: boolean;
 };
 
 export const menuCategories = [

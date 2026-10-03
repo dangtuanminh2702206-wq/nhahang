@@ -138,6 +138,8 @@ result = await proxyModule.default(proxyRequest);
 assert.equal(claimsCalls, 2, 'Unconfigured Proxy makes no Auth request');
 assert.equal(result.cookies.values.length, 0);
 console.log('PASS mocked Proxy contracts: refreshed request/response cookies, stale chunks, SDK headers, no-store, transport failure and unconfigured mode.');
+assert.ok(proxyModule.config.matcher.includes('/admin/:path*'));
+assert.ok(proxyModule.config.matcher.includes('/api/admin/:path*'));
 console.log('NOT JWT integration: no real signup callback, inactive or Staff/Admin account tested here.');
 
 // Password recovery contracts run against the actual handlers with an isolated provider mock.

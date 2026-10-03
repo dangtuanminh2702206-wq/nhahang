@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { readFile, readdir } from 'node:fs/promises';
 import pg from 'pg';
 import { testAdminDatabase } from './test-admin-database.mjs';
+import { testComboDatabase } from './test-combo-database.mjs';
 
 // This harness intentionally accepts only an empty loopback test database.
 const url = process.env.TEST_DATABASE_URL;
@@ -635,6 +636,7 @@ try {
     assert.equal((await admin.query('select status from public.bookings where id=$1',[b.id])).rows[0].status,'pending');
   });
   await testAdminDatabase({ admin, left, right, actor, check, compete, A, B, S, D, tables, start });
+  await testComboDatabase({ admin, left, right, actor, check, compete, A, S, D });
   console.log(`${passed} database checks passed. Supabase Auth/JWT integration requires separate validation.`);
 } finally {
   await Promise.allSettled(clients.map(c=>c.end()));

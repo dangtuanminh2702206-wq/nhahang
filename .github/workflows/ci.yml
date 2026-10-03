@@ -63,6 +63,12 @@ jobs:
       - name: Recovery SDK cookie storage
         run: pnpm test:identity:storage
 
+      - name: Combo catalogue contract tests
+        run: pnpm test:combos
+
+      - name: Backup encryption and restore safety guards
+        run: pnpm test:backup
+
       - name: Booking contract tests
         run: pnpm test:booking
 

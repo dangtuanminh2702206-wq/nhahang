@@ -3,7 +3,7 @@
 import { useState, type KeyboardEvent } from "react";
 import { AssetImage } from "@/components/asset-image";
 import type { ResolvedMedia } from "@/data/media";
-import { formatPrice, getCategoryLabel, menuCategories, menuCombos, restaurantMenu, type MenuCategoryId, type MenuItem } from "@/data/restaurant";
+import { formatPrice, getCategoryLabel, menuCategories, menuCombos, restaurantMenu, type MenuCombo, type MenuCategoryId, type MenuItem } from "@/data/restaurant";
 
 type MenuTab = "combos" | MenuCategoryId;
 
@@ -13,10 +13,11 @@ type MenuBrowserProps = {
     combos: Record<string, ResolvedMedia>;
   };
   items?: readonly MenuItem[];
+  combos?: readonly MenuCombo[];
   categories?: readonly { id: MenuCategoryId; label: string }[];
 };
 
-export function MenuBrowser({ media, items = restaurantMenu, categories = menuCategories }: MenuBrowserProps) {
+export function MenuBrowser({ media, items = restaurantMenu, combos = menuCombos, categories = menuCategories }: MenuBrowserProps) {
   const [activeTab, setActiveTab] = useState<MenuTab>("combos");
   const tabs: readonly { id: MenuTab; label: string }[] = [{ id: "combos", label: "Combo" }, ...categories];
   const visibleItems = activeTab === "combos" ? [] : items.filter((item) => item.category === activeTab);
@@ -44,7 +45,8 @@ export function MenuBrowser({ media, items = restaurantMenu, categories = menuCa
       </div>
       {activeTab === "combos" ? (
         <div className="combo-grid" id="menu-panel" role="tabpanel" aria-labelledby={`menu-tab-${activeTab}`} tabIndex={0}>
-          {menuCombos.map((combo) => (
+          {combos.length === 0 && <p>Hiện chưa có combo hiển thị.</p>}
+          {combos.map((combo) => (
             <article className="combo-card" key={combo.code}>
               <AssetImage asset={media.combos[combo.code]} kind="combo" label={combo.name} sizes="(max-width: 704px) calc(100vw - 40px), 45vw" />
               <div className="combo-content">
@@ -52,6 +54,7 @@ export function MenuBrowser({ media, items = restaurantMenu, categories = menuCa
                 <h2>{combo.name}</h2>
                 <p>{combo.description}</p>
                 <strong className="price">{formatPrice(combo.price)}</strong>
+                {combo.available === false && <p className="availability">Tạm hết</p>}
                 <details><summary>Xem thành phần</summary><ul>{combo.items.map((item) => <li key={item}>{item}</li>)}</ul></details>
               </div>
             </article>

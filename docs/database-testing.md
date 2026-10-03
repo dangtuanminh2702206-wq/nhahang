@@ -919,3 +919,13 @@ Backup/restore Supabase production, người phụ trách và cửa sổ rollbac
 xác minh; không dùng các gate code/CI/HTTP để suy thành production operational
 readiness đầy đủ. Không chạy mutation production, signup/resend, migration cloud,
 load test hoặc reset dữ liệu trong lượt này.
+
+### Mở rộng catalogue combo — local 03/10/2026
+
+Không thay nghiệm thu MVP ở các mục lịch sử phía trên. Runner trên PostgreSQL
+loopback trống `mocvi_test_combo2_20261003` áp 11 migrations, seed hai lần và chạy
+**76 nhóm SQL PASS**, bao gồm bảo toàn 4 combo canonical, quyền/RLS, validate
+components, no-op/retry, expected version, archive, race và rollback audit.
+Không chạy runner reset/seed lên Supabase. Migration combo chưa áp production.
+Contract/API và browser local provider synthetic được ghi riêng ở
+[completion-backlog.md](completion-backlog.md); không dùng chúng chứng nhận JWT thật.
