@@ -48,6 +48,18 @@ async function read<T>(promise: PromiseLike<{ data: unknown; error: { message: s
 }
 
 export async function getAdminSnapshot(supabase: SupabaseClient, range: { from: string; to: string }): Promise<AdminSnapshot> {
+  // PostgREST caps each response: page explicitly instead of silently undercounting.
+  async function allRows<T>(table: string, columns: string, order: string, code: string, bookingRange = false): Promise<T[]> {
+    const rows: T[] = [];
+    for (let offset = 0; offset < 10000; offset += 500) {
+      let query = supabase.from(table).select(columns).order(order).order("id").range(offset, offset + 499);
+      if (bookingRange) query = query.gte("starts_at", range.from).lt("starts_at", range.to);
+      const batch = await read<T[]>(query, code);
+      rows.push(...batch);
+      if (batch.length < 500) return rows;
+    }
+    throw new Error(code);
+  }
   const [settings, hours, closures, areas, tables, categories, menuItems, profiles, audits, bookings] = await Promise.all([
     read<AdminSettings>(supabase.from("restaurant_settings").select("id,name,timezone,duration_minutes,buffer_minutes,min_notice_minutes,max_advance_days,pending_minutes,cancellation_minutes,early_checkin_minutes,no_show_minutes,max_active_bookings,max_guests").eq("id", true).single(), "ADMIN_SETTINGS_UNAVAILABLE"),
     read<AdminHour[]>(supabase.from("business_hours").select("id,weekday,opens_at,closes_at").order("weekday").order("opens_at"), "ADMIN_HOURS_UNAVAILABLE"),
@@ -56,9 +68,9 @@ export async function getAdminSnapshot(supabase: SupabaseClient, range: { from: 
     read<AdminTable[]>(supabase.from("tables").select("id,code,area_id,capacity,status,is_active,description").order("code"), "ADMIN_TABLES_UNAVAILABLE"),
     read<AdminCategory[]>(supabase.from("menu_categories").select("id,code,name,sort_order,is_active").order("sort_order").order("code"), "ADMIN_CATEGORIES_UNAVAILABLE"),
     read<AdminMenuItem[]>(supabase.from("menu_items").select("id,code,category_id,name,description,price,image_path,is_available,is_active,is_featured,sort_order").order("sort_order").order("code"), "ADMIN_MENU_UNAVAILABLE"),
-    read<AdminProfile[]>(supabase.from("profiles").select("id,full_name,phone,role,is_active,created_at").order("created_at", { ascending: false }).limit(200), "ADMIN_PROFILES_UNAVAILABLE"),
+    allRows<AdminProfile>("profiles", "id,full_name,phone,role,is_active,created_at", "created_at", "ADMIN_PROFILES_UNAVAILABLE"),
     read<AdminAudit[]>(supabase.from("audit_logs").select("id,actor_id,entity_id,entity_type,action,details,created_at").order("created_at", { ascending: false }).limit(80), "ADMIN_AUDIT_UNAVAILABLE"),
-    read<AdminBookingSummary[]>(supabase.from("bookings").select("id,table_id,status,source,starts_at").gte("starts_at", range.from).lt("starts_at", range.to).order("starts_at").limit(10000), "ADMIN_BOOKINGS_UNAVAILABLE"),
+    allRows<AdminBookingSummary>("bookings", "id,table_id,status,source,starts_at", "starts_at", "ADMIN_BOOKINGS_UNAVAILABLE", true),
   ]);
   return { settings, hours, closures, areas, tables, categories, menuItems, profiles, audits, bookings };
 }
@@ -67,6 +79,8 @@ export function adminErrorMessage(error: unknown) {
   const code = error instanceof Error ? error.message : "";
   const messages: Record<string, string> = {
     ADMIN_CONFLICT: "Dữ liệu vừa thay đổi ở nơi khác. Hãy tải lại rồi thử lại.",
+    ADMIN_EXPECTED_REQUIRED: "Thiếu dữ liệu đối chiếu. Hãy tải lại trang trước khi lưu.",
+    SPATIAL_MAPPING_REQUIRED: "Chuyển tầng cần sơ đồ vị trí được duyệt; chức năng này chưa được hỗ trợ.",
     ADMIN_REQUIRED: "Tài khoản không có quyền Admin.",
     REASON_REQUIRED: "Thao tác quản trị cần lý do rõ ràng.",
     INVALID_POLICY: "Các policy chưa hợp lệ: kiểm tra quan hệ giữa thời lượng, giờ báo trước và giới hạn.",

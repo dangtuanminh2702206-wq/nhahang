@@ -1,3 +1,5 @@
+import { connection } from "next/server";
+import { getLiveFloors } from "@/lib/spaces-live";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -15,7 +17,11 @@ export async function generateMetadata({ params }: FloorPageProps): Promise<Meta
 }
 
 export default async function FloorPage({ params }: FloorPageProps) {
-  const floor = getFloor((await params).slug);
+  if (process.env.NEXT_PUBLIC_STATIC_DEMO !== "true") await connection();
+  const floors = await getLiveFloors();
+  if (!floors) return <p role="alert">Chưa thể tải không gian. Vui lòng thử lại sau.</p>;
+  const slug = (await params).slug;
+  const floor = floors.find(item => item.slug === slug);
   if (!floor) notFound();
   const capacity = floor.tables.reduce((total, table) => total + table.capacity, 0);
 

@@ -13,7 +13,7 @@ export async function getLiveMenu(): Promise<LiveMenuResult> {
     const supabase = await createSupabaseServerClient();
     const [categoryResult, itemResult] = await Promise.all([
       supabase.from("menu_categories").select("id,code,name,sort_order").eq("is_active", true).order("sort_order").order("code"),
-      supabase.from("menu_items").select("code,category_id,name,description,price,is_available,is_featured").eq("is_active", true).order("sort_order").order("code"),
+      supabase.from("menu_items").select("code,category_id,name,description,price,image_path,is_available,is_featured").eq("is_active", true).order("sort_order").order("code"),
     ]);
     if (categoryResult.error || itemResult.error) return { mode: "error", items: [], categories: [] };
     const categoryById = new Map((categoryResult.data ?? []).map((category) => [category.id as string, category]));
@@ -27,7 +27,7 @@ export async function getLiveMenu(): Promise<LiveMenuResult> {
       const category = categoryById.get(row.category_id as string);
       const categoryId = menuCategories.find((item) => item.id === category?.code)?.id;
       if (!canonical || !categoryId) return [];
-      return [{ ...canonical, category: categoryId, name: String(row.name), description: String(row.description), price: Number(row.price), available: Boolean(row.is_available), featured: Boolean(row.is_featured) }];
+      return [{ ...canonical, category: categoryId, name: String(row.name), description: String(row.description), price: Number(row.price), imagePath: row.image_path as string | null, available: Boolean(row.is_available), featured: Boolean(row.is_featured) }];
     });
     return { mode: "live", items, categories };
   } catch {

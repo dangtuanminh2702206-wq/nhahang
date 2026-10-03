@@ -1,11 +1,12 @@
 "use client";
 import { useRef, useState } from "react";
 import { FloorPlan } from "@/components/floor-plan";
-import { restaurantFloors } from "@/data/restaurant";
+import { restaurantFloors as canonicalFloors, type RestaurantFloor } from "@/data/restaurant";
 import Link from "next/link";
 import type { AvailableTable } from "@/lib/booking-input";
 
-export function ReservationPreview({ demo = true, mutationsEnabled = false }: { demo?: boolean; mutationsEnabled?: boolean }) {
+export function ReservationPreview({ demo = true, mutationsEnabled = false, floors = canonicalFloors }: { demo?: boolean; mutationsEnabled?: boolean; floors?: readonly RestaurantFloor[] }) {
+  const restaurantFloors = floors;
   const [floorSlug, setFloorSlug] = useState(restaurantFloors[0].slug);
   const [tableCode, setTableCode] = useState(restaurantFloors[0].tables[0].code);
   const [date, setDate] = useState("");

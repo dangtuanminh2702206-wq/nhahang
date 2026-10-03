@@ -12,7 +12,10 @@ export default async function MenuPage() {
   if (liveMenu.mode === "error") return <section className="section"><div className="site-container"><p className="eyebrow">Thực đơn</p><h1>Thực đơn đang được cập nhật.</h1><p className="booking-error" role="alert">Chưa thể đọc dữ liệu live từ Supabase. Vui lòng thử lại sau; catalogue snapshot không được dùng để giả làm dữ liệu online.</p></div></section>;
   const restaurantMenu = liveMenu.items;
   const media = {
-    dishes: Object.fromEntries(restaurantMenu.map((item) => [item.code, resolveMedia(getMenuImage(item.code, item.name))])),
+    dishes: Object.fromEntries(restaurantMenu.map((item) => {
+      const asset = getMenuImage(item.code, item.name);
+      return [item.code, resolveMedia(item.imagePath ? { ...asset, path: item.imagePath } : asset)];
+    })),
     combos: Object.fromEntries(menuCombos.map((combo) => [combo.code, resolveMedia(getMenuImage(combo.code, combo.name, "combo"))])),
   };
   return (

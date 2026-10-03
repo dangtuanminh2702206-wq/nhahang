@@ -38,6 +38,7 @@ export type MenuCategoryId =
   | "drinks";
 
 export type MenuItem = {
+  imagePath?: string | null;
   code: string;
   category: MenuCategoryId;
   name: string;

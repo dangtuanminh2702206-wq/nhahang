@@ -26,10 +26,14 @@ export default async function AdminPage({ searchParams }: Props) {
   }
   const query = await searchParams;
   const today = datePart(new Date());
-  const from = /^\d{4}-\d{2}-\d{2}$/.test(query.from ?? "") ? query.from as string : today;
-  const to = /^\d{4}-\d{2}-\d{2}$/.test(query.to ?? "") ? query.to as string : today;
+  const validDate = (value?: string) => value && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
+  const from = validDate(query.from) ? query.from as string : today;
+  const to = validDate(query.to) ? query.to as string : today;
+  const span = Date.parse(to) - Date.parse(from);
+  if (span < 0 || span > 92 * 86400000) return <section className="section"><div className="site-container"><h1>Khoảng ngày chưa hợp lệ.</h1><p role="alert">Chọn ngày kết thúc không trước ngày bắt đầu, tối đa 93 ngày.</p><Link href="/admin">Về quản trị</Link></div></section>;
   const rangeFrom = `${from}T00:00:00+07:00`;
-  const rangeTo = `${to}T00:00:00+07:00` === rangeFrom ? `${to}T23:59:59.999+07:00` : `${to}T23:59:59.999+07:00`;
+  const nextDay = new Date(Date.parse(to) + 86400000).toISOString().slice(0, 10);
+  const rangeTo = `${nextDay}T00:00:00+07:00`;
   let snapshot;
   try { snapshot = await getAdminSnapshot(await createSupabaseServerClient(), { from: rangeFrom, to: rangeTo }); } catch {
     return <section className="section"><div className="site-container admin-container"><p className="eyebrow">Admin management</p><h1>Chưa thể tải dữ liệu quản trị.</h1><p className="booking-error" role="alert">Kiểm tra migration Phần 8, phiên Admin và kết nối Supabase. Không dùng dữ liệu snapshot cũ để thay thế dữ liệu live.</p><Link className="text-link" href="/staff">Về vận hành Staff</Link></div></section>;

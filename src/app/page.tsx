@@ -1,23 +1,30 @@
+import { ServiceHours } from "@/components/service-hours";
+import { connection } from "next/server";
+import { getLiveMenu } from "@/lib/menu-live";
+import { getLiveFloors } from "@/lib/spaces-live";
 import Link from "next/link";
 import { AssetImage } from "@/components/asset-image";
 import { SpaceStories } from "@/components/space-stories";
 import { getMenuImage, restaurantMedia } from "@/data/media";
-import { featuredMenuItems, formatPrice, menuCombos } from "@/data/restaurant";
+import { formatPrice, menuCombos } from "@/data/restaurant";
 import { resolveMedia } from "@/lib/media.server";
 import { bookingMutationsEnabled } from "@/lib/booking";
 
-export default function Home() {
-  const signatures = featuredMenuItems.slice(0, 4).filter((_, index) => index !== 1);
+export default async function Home() {
+  if (process.env.NEXT_PUBLIC_STATIC_DEMO !== "true") await connection();
+  const live = await getLiveMenu();
+  const floors = await getLiveFloors();
+  const signatures = live.items.filter(item => item.featured).slice(0, 4).filter((_, index) => index !== 1);
   return <>
     <section className="preview-hero">
       <AssetImage asset={resolveMedia(restaurantMedia.hero)} label="Không gian Mộc Vị" className="preview-hero-image" kind="hero" sizes="(max-width: 704px) 100vw, 55vw" preload />
       <div className="preview-hero-copy"><p className="eyebrow">Ẩm thực Việt đương đại</p><h1>Mộc Vị<span className="hero-script">Chậm lại. Gần nhau.</span></h1><p className="hero-subtitle">Vietnamese contemporary dining</p><p className="lead">Một bàn ăn, những hương vị thân quen và khoảng thời gian dành cho nhau.</p><div className="action-row"><Link className="button button-primary" href="/reservation">Đặt bàn</Link><Link className="button button-secondary" href="/menu">Xem thực đơn</Link></div><p className="hero-footnote">Bản thử nghiệm giao diện · Nhà hàng giả định</p></div>
     </section>
     <section className="section"><div className="site-container story-intro"><p className="eyebrow">Tinh thần Mộc Vị</p><div><h2>Vị Việt quen thuộc.<br /><em>Một nhịp thưởng thức mới.</em></h2><p>Gỗ ấm, sắc kem và một chút xanh olive. Mộc Vị mang hình dung về một nhà hàng Việt đương đại: chỉn chu, gần gũi và có chỗ cho những cuộc gặp khác nhau.</p><p className="small-note">Concept và hình ảnh AI phục vụ đồ án Kỹ thuật phần mềm ứng dụng, không đại diện cho nhà hàng đang hoạt động.</p></div></div></section>
-    <section className="section section-tint"><div className="site-container"><div className="section-heading"><div><p className="eyebrow">Từ thực đơn Mộc Vị</p><h2>Hương vị để nhớ.</h2></div><Link className="text-link" href="/menu">Khám phá thực đơn ↗</Link></div><div className="signature-grid">{signatures.map((item, index) => <article className="signature-item" key={item.code}><AssetImage asset={resolveMedia(getMenuImage(item.code, item.name))} label={item.name} kind="dish" sizes="(max-width: 704px) calc(100vw - 40px), 30vw" /><div className="signature-caption"><span className="editorial-number" aria-hidden="true">0{index + 1}</span><div><h3>{item.name}</h3><p>{item.description}</p><strong className="price">{formatPrice(item.price, item.fromPrice)}</strong></div></div></article>)}</div></div></section>
-    <section className="section"><div className="site-container"><div className="section-heading"><div><p className="eyebrow">Ba tầng · Ba nhịp điệu</p><h2>Một chỗ ngồi cho mỗi cuộc gặp.</h2></div><Link className="text-link" href="/spaces">Khám phá không gian ↗</Link></div><SpaceStories /></div></section>
+    <section className="section section-tint"><div className="site-container"><div className="section-heading"><div><p className="eyebrow">Từ thực đơn Mộc Vị</p><h2>Hương vị để nhớ.</h2></div><Link className="text-link" href="/menu">Khám phá thực đơn ↗</Link></div>{live.mode === "error" && <p role="alert">Chưa thể tải thực đơn. Vui lòng thử lại sau.</p>}<div className="signature-grid">{signatures.map((item, index) => <article className="signature-item" key={item.code}><AssetImage asset={resolveMedia({ ...getMenuImage(item.code, item.name), ...(item.imagePath ? { path: item.imagePath } : {}) })} label={item.name} kind="dish" sizes="(max-width: 704px) calc(100vw - 40px), 30vw" /><div className="signature-caption"><span className="editorial-number" aria-hidden="true">0{index + 1}</span><div><h3>{item.name}</h3><p>{item.description}</p><strong className="price">{formatPrice(item.price, item.fromPrice)}</strong></div></div></article>)}</div></div></section>
+    <section className="section"><div className="site-container"><div className="section-heading"><div><p className="eyebrow">Ba tầng · Ba nhịp điệu</p><h2>Một chỗ ngồi cho mỗi cuộc gặp.</h2></div><Link className="text-link" href="/spaces">Khám phá không gian ↗</Link></div>{floors ? <SpaceStories floors={floors} /> : <p role="alert">Chưa thể tải không gian.</p>}</div></section>
     <section className="section section-tint" id="combos"><div className="site-container combo-intro-grid"><div><p className="eyebrow">Cùng nhau dùng bữa</p><h2>Thêm người.<br /><em>Thêm chuyện để kể.</em></h2><p className="lead">Bốn gợi ý combo cho bàn 2, 4, 6 hoặc 8 người. Chọn theo cuộc gặp của bạn, không cần vội.</p><Link className="text-link" href="/menu">Xem thành phần combo ↗</Link></div><div className="combo-summary-list">{menuCombos.map((combo) => <article key={combo.code}><AssetImage asset={resolveMedia(getMenuImage(combo.code, combo.name, "combo"))} label={combo.name} kind="combo" sizes="(max-width: 704px) 96px, 128px" /><div><p className="meta-line">Dành cho {combo.guestCount} người</p><h3>{combo.name}</h3><strong className="price">{formatPrice(combo.price)}</strong></div></article>)}</div></div></section>
     <section className="preview-booking" id="booking"><div className="site-container"><p className="eyebrow">Hẹn nhau ở Mộc Vị</p><h2>Giữ một khoảng thời gian<br /><em>cho những người bạn quý.</em></h2><Link className="button button-light" href="/reservation">Khám phá đặt bàn ↗</Link><p>{bookingMutationsEnabled() ? "Gửi yêu cầu đặt bàn · Chờ nhà hàng xác nhận" : "Preview mô phỏng · Không tạo đặt bàn thật"}</p></div></section>
-    <section className="section"><div className="site-container visit-strip"><div><p className="eyebrow">Thông tin ghé thăm</p><h2>Hẹn một bữa ăn, thật thong thả.</h2></div><div><p>Giờ mở cửa mô phỏng</p><strong>10:00–22:00 · Mỗi ngày</strong><Link className="text-link" href="/contact">Thông tin liên hệ ↗</Link></div></div></section>
+    <section className="section"><div className="site-container visit-strip"><div><p className="eyebrow">Thông tin ghé thăm</p><h2>Hẹn một bữa ăn, thật thong thả.</h2></div><div><p>Giờ mở cửa mô phỏng</p><strong><ServiceHours /></strong><Link className="text-link" href="/contact">Thông tin liên hệ ↗</Link></div></div></section>
   </>;
 }

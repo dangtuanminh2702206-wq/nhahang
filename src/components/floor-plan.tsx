@@ -38,6 +38,10 @@ type FloorPlanProps = {
 };
 
 export function FloorPlan({ floor, tableState = "neutral", selectedCode, onTableSelect, availableCodes, tableStates }: FloorPlanProps) {
+  return floor.tables.length ? <PopulatedFloorPlan key={floor.slug} floor={floor} tableState={tableState} selectedCode={selectedCode} onTableSelect={onTableSelect} availableCodes={availableCodes} tableStates={tableStates} /> : <p role="status">Tầng này hiện không có bàn đang hoạt động.</p>;
+}
+
+function PopulatedFloorPlan({ floor, tableState = "neutral", selectedCode, onTableSelect, availableCodes, tableStates }: FloorPlanProps) {
   const [localSelection, setLocalSelection] = useState<RestaurantTable>(floor.tables[0]);
   const selectedTable = floor.tables.find((table) => table.code === (selectedCode ?? localSelection.code)) ?? floor.tables[0];
   function selectTable(table: RestaurantTable) {

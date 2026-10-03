@@ -408,3 +408,17 @@ Profile RPC không sửa `auth.users`, email, password hay confirmation; cấm t
 tự hạ quyền và cấm loại bỏ Admin active cuối cùng dưới advisory lock. Inactive
 areas/tables/categories/items chỉ được Admin đọc qua policy bổ sung; Guest và
 Customer vẫn bị lọc khỏi public catalogue inactive.
+
+Migration bổ sung `202610030005_admin_safety.sql` khóa chung với booking/Staff
+`(60260930, 1)` trước khóa Admin và profile, tránh race/deadlock giữa hai workflow.
+Expected phải chứa đủ mọi trường có thể sửa; snapshot cũ trả conflict, không ghi
+audit. Lưu lại giá trị giống hiện tại không tạo audit mới; retry snapshot cũ trả
+409 để người dùng tải lại, không âm thầm ghi đè. Kiểm tra capacity tính cả
+actual_guest_count và checked-in quá giờ. Không được tự chuyển sang occupied/
+cleaning; quy trình này thuộc Staff.
+
+Chưa hỗ trợ chuyển bàn sang tầng khác: mã/ID và tọa độ canonical được giữ nguyên;
+cần metadata vị trí được duyệt trước khi mở thao tác này. Migration
+`202610030006_admin_input_validation.sql` kiểm tra giá numeric hữu hạn,
+lý do audit và conflict khi ngày nghỉ đã bị xóa. Không mở quyền mới hoặc sửa
+migration đã áp dụng.

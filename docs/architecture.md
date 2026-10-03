@@ -292,3 +292,16 @@ canonical vẫn ở data layer; tên, mô tả, giá, active/available, featured
 trang dùng snapshot repo. Khi live database lỗi, trang báo lỗi thay vì hiển thị
 snapshot như dữ liệu online. Combo không bị biến thành thực thể database; Admin
 không có combo CRUD.
+
+Public Home/Menu đọc tên, giá, ảnh và trạng thái món live. Home/Spaces/chi tiết
+tầng/Reservation ghép khu vực và capacity/description/active với coordinate
+canonical bằng code ổn định qua `spaces-live.ts`. Không tạo vị trí bàn mới.
+Giờ phục vụ ở Home/Contact/Footer đọc business_hours; lịch nghỉ vẫn được kiểm
+tra ở availability/create_booking. Live read lỗi hiển thị lỗi, không giả dùng
+snapshot. Pages không gọi Supabase/API và giữ toàn bộ snapshot canonical.
+
+Báo cáo Admin giới hạn 93 ngày, ngày kết thúc inclusive bằng upper bound ngày
+kế tiếp theo UTC+7. Booking/profile được đọc thành các trang 500 dòng để tránh
+PostgREST cắt ngầm; vượt 10.000 dòng báo lỗi thay vì báo cáo thiếu. Danh sách
+hồ sơ hiển thị 25 dòng/trang sau tìm kiếm. Thay quyền/active cần xác nhận; xóa
+lịch cần xác nhận và lý do nhập trực tiếp.

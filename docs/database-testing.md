@@ -809,3 +809,18 @@ Trạng thái hiện tại: **PARTIAL — target database state đã kiểm ch�
 SQL integration trên database sạch, JWT/Admin UI production, chứng minh public
 live menu sync và deployment smoke**. Không dùng build hoặc toast làm bằng chứng
 quyền database.
+
+### Phần 8 — bổ sung QA local và migration an toàn — 03/10/2026
+
+Database loopback sạch `mocvi_test_admin_20261003k` đã chạy toàn bộ 10 migration,
+seed hai lần và **68 nhóm PASS**. Có 12 nhóm Admin mới: Guest/Customer/Staff/
+inactive Admin bị từ chối, private helper/direct write bị chặn, expected đầy đủ,
+stale edit và hai request đồng thời chỉ một thắng, audit rollback/no-op không
+nhân đôi, RLS inactive, image allowlist/numeric hữu hạn, policy/lịch, capacity
+với actual guest/checked-in quá giờ, race Admin với booking và race hai Admin
+không thể loại bỏ tất cả Admin active. Audit access chỉ chứa role/active,
+không chứa contact. Đây là SQL integration, không phải JWT bằng fixture.
+
+Migration 005 đã thực thi thành công trên project `unhybmmbgumyhzaftlli` qua SQL
+Editor. Migration 006 bổ sung validation không đổi quyền. Chưa dùng kết quả local
+để gán PASS production; bằng chứng nghiệm thu JWT/UI/deployment ghi riêng sau QA.
