@@ -260,15 +260,19 @@ $$;
 -- active public data through the original policies.
 drop policy if exists areas_read on public.areas;
 create policy areas_read on public.areas for select to anon using (is_active);
+drop policy if exists areas_admin_read on public.areas;
 create policy areas_admin_read on public.areas for select to authenticated using (is_active or private.current_role() = 'admin');
 drop policy if exists tables_read on public.tables;
 create policy tables_read on public.tables for select to anon using (is_active);
+drop policy if exists tables_admin_read on public.tables;
 create policy tables_admin_read on public.tables for select to authenticated using (is_active or private.current_role() = 'admin');
 drop policy if exists categories_read on public.menu_categories;
 create policy categories_read on public.menu_categories for select to anon using (is_active);
+drop policy if exists categories_admin_read on public.menu_categories;
 create policy categories_admin_read on public.menu_categories for select to authenticated using (is_active or private.current_role() = 'admin');
 drop policy if exists menu_read on public.menu_items;
 create policy menu_read on public.menu_items for select to anon using (is_active and exists(select 1 from public.menu_categories c where c.id = category_id and c.is_active));
+drop policy if exists menu_admin_read on public.menu_items;
 create policy menu_admin_read on public.menu_items for select to authenticated using (is_active and exists(select 1 from public.menu_categories c where c.id = category_id and c.is_active) or private.current_role() = 'admin');
 
 revoke all on function private.admin_actor() from public, anon, authenticated;

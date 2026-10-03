@@ -365,8 +365,10 @@ trên `moc-vi-restaurant.vercel.app`:
 
 ## Phần 8 · Admin management
 
-Phần 8 đã có implementation local trên nhánh hiện tại nhưng **chưa tuyên bố
-PASS production** trước khi migration mới được review và áp dụng có kiểm soát.
+Phần 8 đã có implementation trên nhánh hiện tại và target database Admin đã
+được kiểm tra trên Supabase project `unhybmmbgumyhzaftlli` qua SQL Editor.
+Tài liệu vẫn **chưa tuyên bố PASS production** vì các gate JWT/Admin UI, live
+menu sync và deployment smoke chưa đủ bằng chứng.
 `/admin` chỉ cho Admin active truy cập; Staff tiếp tục dùng `/staff`, không
 duplicate workflow vận hành. Màn hình Admin hiện có tổng quan booking theo khoảng
 ngày, policy/giờ phục vụ/ngày nghỉ, khu vực/bàn, danh mục/món, tài khoản trusted
@@ -383,5 +385,8 @@ order, hóa đơn, thanh toán, doanh thu, kho, multi-branch hoặc 3D.
 Vercel đọc menu active từ Supabase để thay đổi tên/giá/trạng thái có hiệu lực sau
 lần tải mới; GitHub Pages tiếp tục dùng snapshot canonical và không gọi API/Auth.
 Nếu database live lỗi, public menu hiển thị trạng thái lỗi thay vì giả dùng snapshot
-cũ. Cần hoàn tất gate SQL local, áp migration vào đúng Supabase project, QA
-Admin/JWT fixture có thể hoàn nguyên, rồi mới ghi nhận Phần 8 PASS.
+cũ. Read-only verification đã xác nhận đủ 10 public RPC ở trạng thái
+`SECURITY DEFINER`, `authenticated` có EXECUTE, `anon` không có EXECUTE và bốn
+policy Admin đọc inactive tồn tại. Vẫn cần QA Admin/JWT với fixture có thể hoàn
+nguyên, chứng minh menu live trên Vercel và deployment smoke trước khi ghi nhận
+Phần 8 PASS.

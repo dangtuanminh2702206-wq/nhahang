@@ -779,7 +779,7 @@ Các fixture owner-prepared trước đó vẫn được giữ để chứng min
 vụ khác; chúng không được dùng thay cho bằng chứng walk-in này. Không đổi policy,
 giờ phục vụ, role, RLS hoặc scheduler.
 
-### Phần 8 — Admin management (implementation trước nghiệm thu)
+### Phần 8 — Admin management (đã kiểm chứng target database, còn gate runtime)
 
 Migration mới `202610030004_admin_management.sql` chưa được coi là đã áp dụng
 production chỉ từ việc file tồn tại trong repo. Gate local cần chạy trên database
@@ -796,6 +796,16 @@ không đổi giờ/giá canonical để lấy PASS. Cần chứng minh menu đ�
 hiện trên Vercel live, inactive item không lộ public, `/admin` chặn non-Admin và
 audit chỉ Admin đọc được. GitHub Pages chỉ kiểm tra snapshot và không gọi Admin API.
 
-Trạng thái hiện tại: **PARTIAL — code/typecheck/lint đã có; SQL local, áp migration,
-production JWT QA, public live sync và deployment smoke chưa được nghiệm thu trong
-lượt này**. Không dùng build hoặc toast làm bằng chứng quyền database.
+Kiểm tra bổ sung ngày 03/10/2026 trên Supabase project `unhybmmbgumyhzaftlli` qua
+SQL Editor đã xác nhận target database state của migration: đủ 10 public RPC Admin
+và 2 private helper tồn tại; 10 public RPC đều `SECURITY DEFINER`, chỉ
+`authenticated` có EXECUTE, `anon` không có EXECUTE; bốn policy đọc inactive cho
+Admin tồn tại trên `areas`, `tables`, `menu_categories` và `menu_items`. Lần chạy
+lại SQL nguyên bản dừng ở lỗi policy đã tồn tại; migration local đã được bổ sung
+`drop policy if exists` cho bốn policy Admin để có thể chạy lại an toàn. Không
+seed/reset catalogue, đổi role, đổi policy booking hoặc ghi dữ liệu nghiệp vụ.
+
+Trạng thái hiện tại: **PARTIAL — target database state đã kiểm chứng; còn thiếu
+SQL integration trên database sạch, JWT/Admin UI production, chứng minh public
+live menu sync và deployment smoke**. Không dùng build hoặc toast làm bằng chứng
+quyền database.
