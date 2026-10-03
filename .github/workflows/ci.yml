@@ -78,14 +78,19 @@ jobs:
       - name: Normal production build
         env:
           NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-anon-key
         run: pnpm build
 
       - name: Start isolated server
         env:
           NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-anon-key
           BOOKING_LOCAL_MUTATIONS_ENABLED: "false"
         shell: bash
         run: |
+          node scripts/test-supabase-http-mock.mjs > supabase-mock.log 2>&1 &
           pnpm start --hostname 127.0.0.1 --port 3000 > next-server.log 2>&1 &
           for attempt in {1..30}; do
             if curl --fail --silent http://127.0.0.1:3000/ > /dev/null; then
@@ -97,9 +102,12 @@ jobs:
           exit 1
 
       - name: HTTP identity and booking smoke
+        env:
+          IDENTITY_SMOKE_URL: http://127.0.0.1:3000
+          BOOKING_TEST_BASE_URL: http://127.0.0.1:3000
         run: |
-          IDENTITY_SMOKE_URL=http://127.0.0.1:3000 pnpm test:identity:smoke
-          BOOKING_TEST_BASE_URL=http://127.0.0.1:3000 pnpm test:booking
+          pnpm test:identity:smoke
+          pnpm test:booking
 
       - name: GitHub Pages build
         env:
