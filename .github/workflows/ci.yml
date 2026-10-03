@@ -93,7 +93,7 @@ jobs:
 
       - name: HTTP identity and booking smoke
         run: |
-          pnpm test:identity:smoke
+          IDENTITY_SMOKE_URL=http://127.0.0.1:3000 pnpm test:identity:smoke
           BOOKING_TEST_BASE_URL=http://127.0.0.1:3000 pnpm test:booking
 
       - name: GitHub Pages build
