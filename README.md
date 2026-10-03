@@ -362,3 +362,26 @@ trên `moc-vi-restaurant.vercel.app`:
   `cleaning`. Phần 7 **PASS trong phạm vi Staff operations đã thống nhất**.
 - Các đoạn PARTIAL phía trên được giữ làm lịch sử; bằng chứng chi tiết ở
   [database-testing.md](docs/database-testing.md).
+
+## Phần 8 · Admin management
+
+Phần 8 đã có implementation local trên nhánh hiện tại nhưng **chưa tuyên bố
+PASS production** trước khi migration mới được review và áp dụng có kiểm soát.
+`/admin` chỉ cho Admin active truy cập; Staff tiếp tục dùng `/staff`, không
+duplicate workflow vận hành. Màn hình Admin hiện có tổng quan booking theo khoảng
+ngày, policy/giờ phục vụ/ngày nghỉ, khu vực/bàn, danh mục/món, tài khoản trusted
+role và audit gần đây. Mọi mutation đi qua API cùng origin và RPC Admin, không mở
+ghi trực tiếp vào bảng.
+
+Migration `supabase/migrations/202610030004_admin_management.sql` bổ sung RPC
+SECURITY DEFINER với `search_path` cố định, advisory lock, expected-value conflict,
+validation ở database, audit atomic, bảo vệ Admin active cuối cùng và bảo vệ chu
+trình bàn occupied/cleaning. Inactive catalogue chỉ mở cho Admin; Guest/Customer
+vẫn chỉ đọc dữ liệu public active. Không có upload ảnh, combo CRUD, reset mật khẩu,
+order, hóa đơn, thanh toán, doanh thu, kho, multi-branch hoặc 3D.
+
+Vercel đọc menu active từ Supabase để thay đổi tên/giá/trạng thái có hiệu lực sau
+lần tải mới; GitHub Pages tiếp tục dùng snapshot canonical và không gọi API/Auth.
+Nếu database live lỗi, public menu hiển thị trạng thái lỗi thay vì giả dùng snapshot
+cũ. Cần hoàn tất gate SQL local, áp migration vào đúng Supabase project, QA
+Admin/JWT fixture có thể hoàn nguyên, rồi mới ghi nhận Phần 8 PASS.

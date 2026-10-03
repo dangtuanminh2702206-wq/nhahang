@@ -274,3 +274,21 @@ ngày 03/10. Staff/Admin workflow, quyền production và ca walk-in trong giờ
 vụ thật đã đạt; Phần 7 PASS trong phạm vi Staff operations. Xem
 database-testing.md để phân biệt fixture owner được duyệt, SQL local, HTTP local
 và JWT/UI production.
+
+### Admin management · Phần 8
+
+Admin dùng Server Component `/admin` để đọc snapshot quản trị và Client Component
+chỉ cho form/filter. API `POST /api/admin` kiểm tra same-origin, content type,
+payload whitelist và `requireRole(["admin"])`; actor/role không nhận từ client.
+Các mutation policy, lịch, khu vực/bàn, menu và profile gọi RPC trong migration
+`202610030004_admin_management.sql`. RPC là SECURITY DEFINER với `search_path = ''`,
+kiểm tra `auth.uid()` qua profile Admin active, khóa transaction chung, expected
+value chống lost update và ghi `audit_logs` trong cùng transaction. Không cấp
+INSERT/UPDATE/DELETE trực tiếp cho authenticated.
+
+Public Vercel menu dùng `src/lib/menu-live.ts`: code, ảnh và nội dung editorial
+canonical vẫn ở data layer; tên, mô tả, giá, active/available, featured và nhóm
+được ghép từ catalogue active trong database. Khi không có Supabase (GitHub Pages),
+trang dùng snapshot repo. Khi live database lỗi, trang báo lỗi thay vì hiển thị
+snapshot như dữ liệu online. Combo không bị biến thành thực thể database; Admin
+không có combo CRUD.

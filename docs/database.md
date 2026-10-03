@@ -384,3 +384,27 @@ và walk-in production nằm ở [`database-testing.md`](database-testing.md).
 - [PostgreSQL: Row Security](https://www.postgresql.org/docs/current/ddl-rowsecurity.html).
 - [Supabase: database functions và search_path](https://supabase.com/docs/guides/database/functions).
 - [Supabase: RLS](https://supabase.com/docs/guides/database/postgres/row-level-security).
+
+### RPC quản trị · Phần 8
+
+Migration `202610030004_admin_management.sql` bổ sung các RPC
+`admin_update_settings`, `admin_upsert_business_hours`,
+`admin_delete_business_hours`, `admin_upsert_closure_date`,
+`admin_delete_closure_date`, `admin_update_area`, `admin_update_table`,
+`admin_update_menu_category`, `admin_update_menu_item` và
+`admin_update_profile`. Chúng chỉ grant EXECUTE cho `authenticated`; mỗi hàm tự
+kiểm tra Admin active từ `auth.uid()` trong transaction, không tin role/actor từ
+payload. Direct write trên bảng vẫn bị revoke.
+
+Mỗi mutation nhận `p_expected` cho các trường liên quan và trả `ADMIN_CONFLICT`
+khi snapshot đã cũ. Advisory lock `(60260930, 8)` serialize thay đổi quản trị.
+Audit được ghi bởi helper private sau khi update; nếu audit lỗi, cả transaction
+rollback. Policy cập nhật không hủy hoặc tính lại booking cũ. Thay đổi lịch không
+cho phép khung giờ chồng lấn; thay đổi bàn không làm nhỏ capacity dưới booking
+active, không ẩn khu vực còn bàn active, không đưa occupied/cleaning về available,
+và không đưa bàn có booking active thành out-of-service.
+
+Profile RPC không sửa `auth.users`, email, password hay confirmation; cấm tự khóa,
+tự hạ quyền và cấm loại bỏ Admin active cuối cùng dưới advisory lock. Inactive
+areas/tables/categories/items chỉ được Admin đọc qua policy bổ sung; Guest và
+Customer vẫn bị lọc khỏi public catalogue inactive.

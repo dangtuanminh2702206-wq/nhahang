@@ -778,3 +778,24 @@ Với gate này, **Phần 7 PASS trong phạm vi Staff operations đã thống n
 Các fixture owner-prepared trước đó vẫn được giữ để chứng minh các nhánh nghiệp
 vụ khác; chúng không được dùng thay cho bằng chứng walk-in này. Không đổi policy,
 giờ phục vụ, role, RLS hoặc scheduler.
+
+### Phần 8 — Admin management (implementation trước nghiệm thu)
+
+Migration mới `202610030004_admin_management.sql` chưa được coi là đã áp dụng
+production chỉ từ việc file tồn tại trong repo. Gate local cần chạy trên database
+sạch: Admin active được đọc/sửa qua RPC; Guest/Customer/Staff/inactive Admin bị
+chặn; direct table write và private helper bị chặn; expected-value conflict không
+ghi audit; policy/hours overlap, capacity/table state, image allowlist, area/menu
+inactive và last active Admin được kiểm tra. Chạy hồi quy booking/Customer/Staff
+sau migration.
+
+Gate production phải dùng Admin test chuyên dụng đã được operator xác minh. Ưu tiên
+read-only trước; mutation chỉ dùng fixture `PHASE8 QA`, lưu before/after và hoàn
+nguyên được dữ liệu QA, giữ audit. Không đổi role/active của tài khoản thật,
+không đổi giờ/giá canonical để lấy PASS. Cần chứng minh menu đổi qua Admin xuất
+hiện trên Vercel live, inactive item không lộ public, `/admin` chặn non-Admin và
+audit chỉ Admin đọc được. GitHub Pages chỉ kiểm tra snapshot và không gọi Admin API.
+
+Trạng thái hiện tại: **PARTIAL — code/typecheck/lint đã có; SQL local, áp migration,
+production JWT QA, public live sync và deployment smoke chưa được nghiệm thu trong
+lượt này**. Không dùng build hoặc toast làm bằng chứng quyền database.

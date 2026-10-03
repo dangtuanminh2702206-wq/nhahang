@@ -9,6 +9,7 @@ export function AccountControl() {
   const [authenticated, setAuthenticated] = useState(false);
   const [customer, setCustomer] = useState(false);
   const [staff, setStaff] = useState(false);
+  const [admin, setAdmin] = useState(false);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
   const demo = process.env.NEXT_PUBLIC_STATIC_DEMO === "true";
@@ -17,7 +18,7 @@ export function AccountControl() {
     const controller = new AbortController();
     fetch("/auth/session", { cache: "no-store", signal: controller.signal })
       .then(response => response.ok ? response.json() : null)
-      .then((data: { authenticated?: boolean; active?: boolean; role?: string } | null) => { setAuthenticated(!!data?.authenticated); setCustomer(!!data?.active && data.role === "customer"); setStaff(!!data?.active && (data.role === "staff" || data.role === "admin")); })
+      .then((data: { authenticated?: boolean; active?: boolean; role?: string } | null) => { setAuthenticated(!!data?.authenticated); setCustomer(!!data?.active && data.role === "customer"); setStaff(!!data?.active && (data.role === "staff" || data.role === "admin")); setAdmin(!!data?.active && data.role === "admin"); })
       .catch(() => { /* Navigation stays usable if session lookup fails. */ });
     return () => controller.abort();
   }, [pathname, demo]);
@@ -33,5 +34,5 @@ export function AccountControl() {
       setPending(false);
     } catch { setMessage("Chưa thể đăng xuất. Vui lòng thử lại."); setPending(false); }
   }
-  return <div className="account-control">{authenticated ? <>{customer && <Link href="/my-bookings">Đặt bàn của tôi</Link>}{staff && <Link href="/staff">Vận hành</Link>}<Link href="/profile">Hồ sơ</Link><button type="button" disabled={pending} onClick={logout}>{pending ? "Đang thoát…" : "Đăng xuất"}</button></> : <Link href="/login">Đăng nhập</Link>}{message && <p role="alert">{message}</p>}</div>;
+  return <div className="account-control">{authenticated ? <>{customer && <Link href="/my-bookings">Đặt bàn của tôi</Link>}{staff && <Link href="/staff">Vận hành</Link>}{admin && <Link href="/admin">Quản trị</Link>}<Link href="/profile">Hồ sơ</Link><button type="button" disabled={pending} onClick={logout}>{pending ? "Đang thoát…" : "Đăng xuất"}</button></> : <Link href="/login">Đăng nhập</Link>}{message && <p role="alert">{message}</p>}</div>;
 }

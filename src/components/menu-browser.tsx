@@ -3,25 +3,23 @@
 import { useState, type KeyboardEvent } from "react";
 import { AssetImage } from "@/components/asset-image";
 import type { ResolvedMedia } from "@/data/media";
-import { formatPrice, getCategoryLabel, menuCategories, menuCombos, restaurantMenu, type MenuCategoryId } from "@/data/restaurant";
+import { formatPrice, getCategoryLabel, menuCategories, menuCombos, restaurantMenu, type MenuCategoryId, type MenuItem } from "@/data/restaurant";
 
 type MenuTab = "combos" | MenuCategoryId;
-
-const tabs: readonly { id: MenuTab; label: string }[] = [
-  { id: "combos", label: "Combo" },
-  ...menuCategories,
-];
 
 type MenuBrowserProps = {
   media: {
     dishes: Record<string, ResolvedMedia>;
     combos: Record<string, ResolvedMedia>;
   };
+  items?: readonly MenuItem[];
+  categories?: readonly { id: MenuCategoryId; label: string }[];
 };
 
-export function MenuBrowser({ media }: MenuBrowserProps) {
+export function MenuBrowser({ media, items = restaurantMenu, categories = menuCategories }: MenuBrowserProps) {
   const [activeTab, setActiveTab] = useState<MenuTab>("combos");
-  const visibleItems = activeTab === "combos" ? [] : restaurantMenu.filter((item) => item.category === activeTab);
+  const tabs: readonly { id: MenuTab; label: string }[] = [{ id: "combos", label: "Combo" }, ...categories];
+  const visibleItems = activeTab === "combos" ? [] : items.filter((item) => item.category === activeTab);
 
   function handleTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     let nextIndex: number;
@@ -65,7 +63,7 @@ export function MenuBrowser({ media }: MenuBrowserProps) {
             <article className="menu-card" key={item.code}>
               <AssetImage asset={media.dishes[item.code]} kind="dish" label={item.name} sizes="(max-width: 704px) 88px, 144px" />
               <div className="menu-card-copy">
-                <p className="meta-line">{item.code} · {getCategoryLabel(item.category)}</p>
+                <p className="meta-line">{item.code} · {categories.find((category) => category.id === item.category)?.label ?? getCategoryLabel(item.category)}</p>
                 <h2>{item.name}</h2>
                 <p>{item.description}</p>
                 <div className="menu-card-footer"><strong className="price">{formatPrice(item.price, item.fromPrice)}</strong><span className="availability">{item.available ? "Đang phục vụ" : "Tạm hết"}</span></div>
