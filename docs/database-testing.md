@@ -899,3 +899,23 @@ Không chạy signup/resend, role mutation, load test, migration cloud, thay pol
 đổi dữ liệu production hoặc thao tác 3D. JWT/Auth thật, live database và các giới
 hạn đã ghi ở các phần trước vẫn phải được phân biệt với contract/local CI; mock
 Supabase chỉ chứng minh guest fail-closed/HTTP guard, không chứng minh JWT thật.
+
+### Phần 10 — final handover và operational readiness — 03/10/2026
+
+Phần 10 không sửa runtime, migration, seed, policy hoặc dữ liệu cloud. Đã bổ sung
+[hướng dẫn sử dụng](user-guide.md) và [runbook vận hành](operations-runbook.md),
+cập nhật README, push trên nhánh `codex/restaurant-booking-platform`.
+
+| Gate bàn giao | Bằng chứng |
+| --- | --- |
+| CI | Commit `ce89bbc`: [Continuous integration PASS](https://github.com/dangtuanminh2702206-wq/nhahang/actions/runs/37119930019) |
+| GitHub Pages | Commit `ce89bbc`: [Pages deploy PASS](https://github.com/dangtuanminh2702206-wq/nhahang/actions/runs/37119929962) |
+| Vercel | [Vercel check PASS](https://vercel.com/minh-5f07/nhahang/HdPGWnBbJ8yRSy69nRev4YtLjGxZ) cho đúng commit |
+| Public HTTP smoke | Read-only HTTP 200 cho `/`, `/menu`, `/spaces`, `/reservation` trên Vercel và `/nhahang/`, `/nhahang/menu` trên Pages |
+| Local regression | Tái sử dụng bằng chứng Phần 9 còn đúng phạm vi: 68 nhóm SQL loopback, typecheck/lint/contracts, normal build, Pages build và HTTP smoke |
+
+Trạng thái Phần 10: **PARTIAL — sẵn sàng demo và vận hành thử có kiểm soát**.
+Backup/restore Supabase production, người phụ trách và cửa sổ rollback chưa được
+xác minh; không dùng các gate code/CI/HTTP để suy thành production operational
+readiness đầy đủ. Không chạy mutation production, signup/resend, migration cloud,
+load test hoặc reset dữ liệu trong lượt này.
