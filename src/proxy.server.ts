@@ -25,4 +25,4 @@ export default async function proxy(request: NextRequest) {
   return response;
 }
 
-export const config = { matcher: ["/login", "/signup", "/profile/:path*", "/auth/:path*", "/reservation", "/api/bookings", "/staff/:path*", "/api/staff/:path*"] };
+export const config = { matcher: ["/login", "/signup", "/forgot-password", "/reset-password", "/profile/:path*", "/auth/:path*", "/reservation", "/api/bookings", "/staff/:path*", "/api/staff/:path*"] };

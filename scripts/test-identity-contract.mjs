@@ -139,3 +139,109 @@ assert.equal(claimsCalls, 2, 'Unconfigured Proxy makes no Auth request');
 assert.equal(result.cookies.values.length, 0);
 console.log('PASS mocked Proxy contracts: refreshed request/response cookies, stale chunks, SDK headers, no-store, transport failure and unconfigured mode.');
 console.log('NOT JWT integration: no real signup callback, inactive or Staff/Admin account tested here.');
+
+// Password recovery contracts run against the actual handlers with an isolated provider mock.
+configured = true;
+user = { id: 'customer-qa', email_confirmed_at: 'confirmed' };
+profile = { id: user.id, role: 'customer', is_active: true };
+let recoveryError = null;
+let updateError = null;
+let logoutError = null;
+let recoveryCalls = 0;
+let passwordCalls = 0;
+let logoutScope = null;
+client.auth.resetPasswordForEmail = async (email, options) => {
+  recoveryCalls++;
+  assert.ok(['qa@example.invalid', 'missing@example.invalid'].includes(email));
+  assert.equal(options.redirectTo, `${origin}/auth/recovery`);
+  return { error: recoveryError };
+};
+client.auth.updateUser = async fields => {
+  passwordCalls++;
+  assert.deepEqual(Object.keys(fields), ['password']);
+  return { error: updateError };
+};
+client.auth.signOut = async fields => { logoutScope = fields.scope; return { error: logoutError }; };
+const passwordRoute = await load('src/app/auth/password/route.server.ts', {
+  ...modules,
+  'next/server': { NextResponse: { json: (body, options) => ({ body, ...options }) } },
+  '@/lib/identity': identity,
+  '@/lib/supabase/origin': { getApplicationOrigin: () => origin },
+});
+const passwordRequest = (fields, overrides = {}) => ({
+  headers: new Map([['origin', origin], ['content-type', 'application/json']]),
+  text: async () => JSON.stringify(fields), ...overrides,
+});
+result = await passwordRoute.POST(passwordRequest({ action: 'forgot-password', email: 'qa@example.invalid' }, { headers: new Map([['origin', 'https://attacker.invalid'], ['content-type', 'application/json']]) }));
+assert.equal(result.status, 403);
+assert.equal(recoveryCalls, 0);
+for (const contentType of ['application/x-www-form-urlencoded', 'application/jsonp', 'text/plain']) {
+  result = await passwordRoute.POST(passwordRequest({ action: 'forgot-password', email: 'qa@example.invalid' }, { headers: new Map([['origin', origin], ['content-type', contentType]]) }));
+  assert.equal(result.status, 403);
+}
+assert.equal(recoveryCalls, 0);
+for (const fields of [null, [], { action: 'forgot-password', email: 'not-an-email' }, { action: 'forgot-password', email: 'qa@example.invalid', redirectTo: 'https://attacker.invalid' }, { action: 'reset-password', password: 'synthetic-password', password_confirmation: 'different' }, { action: 'reset-password', password: 'synthetic-password', password_confirmation: 'synthetic-password', user_id: 'other' }]) {
+  result = await passwordRoute.POST(passwordRequest(fields));
+  assert.equal(result.status, 400);
+}
+assert.equal(passwordCalls, 0);
+result = await passwordRoute.POST(passwordRequest({}, { text: async () => 'x'.repeat(2049) }));
+assert.equal(result.status, 413);
+result = await passwordRoute.POST(passwordRequest({}, { text: async () => '{' }));
+assert.equal(result.status, 400);
+const existing = await passwordRoute.POST(passwordRequest({ action: 'forgot-password', email: 'qa@example.invalid' }));
+recoveryError = { status: 400, code: 'email_not_found' };
+const missing = await passwordRoute.POST(passwordRequest({ action: 'forgot-password', email: 'missing@example.invalid' }));
+assert.equal(existing.status, missing.status);
+assert.equal(existing.body.message, missing.body.message, 'Email membership must not be exposed');
+assert.equal(existing.headers['Cache-Control'], 'private, no-store');
+recoveryError = { status: 429 };
+assert.equal((await passwordRoute.POST(passwordRequest({ action: 'forgot-password', email: 'qa@example.invalid' }))).status, 429);
+recoveryError = { status: 500 };
+assert.equal((await passwordRoute.POST(passwordRequest({ action: 'forgot-password', email: 'qa@example.invalid' }))).status, 503);
+const change = { action: 'reset-password', password: 'synthetic-password', password_confirmation: 'synthetic-password' };
+user = null;
+assert.equal((await passwordRoute.POST(passwordRequest(change))).status, 401);
+user = { id: 'customer-qa', email_confirmed_at: 'confirmed' };
+profile.is_active = false;
+assert.equal((await passwordRoute.POST(passwordRequest(change))).status, 403);
+profile.is_active = true;
+assert.equal(passwordCalls, 0, 'Unauthenticated/inactive callers cannot change a password');
+result = await passwordRoute.POST(passwordRequest(change));
+assert.equal(result.body.redirect, '/login?password=updated');
+assert.equal(logoutScope, 'global');
+logoutError = { status: 503 };
+result = await passwordRoute.POST(passwordRequest(change));
+assert.equal(result.body.updated, true, 'Logout failure must not conceal a successful password update');
+assert.equal(result.body.redirect, undefined);
+updateError = { status: 422 };
+assert.equal((await passwordRoute.POST(passwordRequest(change))).status, 400);
+configured = false;
+assert.equal((await passwordRoute.POST(passwordRequest(change))).status, 503);
+
+configured = true;
+logoutError = null;
+const recoveryRoute = await load('src/app/auth/recovery/route.server.ts', {
+  ...modules,
+  'next/server': { NextResponse: { redirect: (url, options) => ({ url, ...options }) } },
+  '@/lib/supabase/origin': { getApplicationOrigin: () => origin },
+});
+result = await recoveryRoute.GET(request('code=qa-code&next=https://attacker.invalid'));
+assert.equal(result.url.href, `${origin}/reset-password`);
+assert.equal(result.headers['Referrer-Policy'], 'no-referrer');
+result = await recoveryRoute.GET(request('token_hash=qa-token-hash&type=recovery'));
+assert.equal(result.url.pathname, '/reset-password');
+for (const query of ['', 'token_hash=qa-token-hash&type=signup', 'error=access_denied&error_code=otp_expired']) {
+  result = await recoveryRoute.GET(request(query));
+  assert.equal(result.url.pathname, '/forgot-password');
+  assert.equal(result.url.searchParams.get('recovery'), 'failed');
+}
+profile.is_active = false;
+assert.equal((await recoveryRoute.GET(request('code=qa-code'))).url.pathname, '/forgot-password');
+assert.equal(logoutScope, 'local');
+profile = { id: 'other', is_active: true, role: 'customer' };
+assert.equal((await recoveryRoute.GET(request('code=qa-code'))).url.pathname, '/forgot-password');
+client.auth.exchangeCodeForSession = async () => ({ data: { user: null }, error: { code: 'otp_expired' } });
+assert.equal((await recoveryRoute.GET(request('code=qa-code'))).url.pathname, '/forgot-password');
+console.log('PASS password contracts: origin/content whitelist, input bounds, enumeration response, quota, verified active ownership, update/logout failure, global logout, PKCE/recovery OTP, expired links and fixed redirects.');
+console.log('NOT RUN here: provider email delivery, real recovery cookies or production password update.');
