@@ -477,6 +477,23 @@ try {
     assert.equal((await admin.query('select status from public.bookings where id=$1',[b.id])).rows[0].status,'cancelled');
   });
   await clearBookings();
+  await check('Staff exact microsecond boundaries use the installed migration predicates', async () => {
+    const definition = (await admin.query("select pg_get_functiondef('public.staff_update_booking(uuid,text,text,integer)'::regprocedure) definition")).rows[0].definition;
+    for (const sample of [
+      { error: 'CHECKIN_TOO_EARLY', policy: 'early_checkin_minutes', sign: '-', expected: [true, false, false] },
+      { error: 'NO_SHOW_TOO_EARLY', policy: 'no_show_minutes', sign: '+', expected: [true, true, false] },
+    ]) {
+      const predicate = definition.match(new RegExp("if (v_now [^\\n]+) then raise exception '" + sample.error + "'"))?.[1];
+      assert(predicate, `Installed ${sample.error} predicate must be found`);
+      const expression = predicate.replaceAll('v_booking.starts_at', 'starts_at').replaceAll('v_policy.' + sample.policy, 'minutes').replaceAll('v_now', 'observed_at');
+      const rows = (await admin.query(`with policy as (select ${sample.policy} minutes from public.restaurant_settings where id),
+        samples as (select n, minutes, timestamptz '2030-01-01 12:00+07' starts_at,
+          timestamptz '2030-01-01 12:00+07' ${sample.sign} make_interval(mins => minutes) + n * interval '1 microsecond' observed_at
+          from policy cross join generate_series(-1,1) n)
+        select (${expression}) denied from samples order by n`)).rows;
+      assert.deepEqual(rows.map(row => row.denied), sample.expected);
+    }
+  });
   await check('Staff check-in boundaries, capacity and late arrival use policy without altering reserved count', async () => {
     const b=await phone();
     await shift(b.id,16);

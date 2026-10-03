@@ -324,3 +324,26 @@ check-in, no-show, hoàn tất phục vụ, đổi bàn và cleaning → availab
 - Phần 7 vẫn **PARTIAL**: còn chu trình JWT/UI production confirm/reject/cancel,
   walk-in/check-in/complete/ready/no-show, scheduler và responsive đầy đủ.
   Không sửa policy/giờ production hoặc ép trạng thái bàn để lấy PASS.
+
+### Trạng thái Phần 7 mới nhất — 03/10/2026
+
+Mục này thay thế trạng thái kiểm thử Phần 7 ngày 02/10 ở trên, không xóa lịch sử.
+
+- Staff/Admin production: confirm, reject, hủy pending/confirmed, no-show,
+  check-in/số khách thực tế, complete và dọn bàn đã kiểm chứng. Hai chu kỳ
+  cleaning → available liên tiếp trên cùng bảng không reload toàn trang đạt;
+  request key được cấp lại sau thành công. Phone/đổi bàn đã đạt ngày 02/10.
+- Scheduler hết hạn **tự nhiên PASS**: QA cancelled/pending_expired đúng phút
+  cron succeeded; 2 history / 2 notifications / 2 audit, không nhân đôi sau chạy lại.
+- JWT production: Staff active được nhận ở API; Customer bị chặn trang/API/RPC;
+  Guest API 401 và RPC 42501. Admin active thao tác hủy QA thành công.
+- Database loopback sạch: **53 nhóm PASS**, gồm predicate check-in/no-show
+  tại mốc chính xác và ±1 microsecond. Typecheck/lint/contracts, Pages/normal
+  build, HTTP smoke đạt. Responsive Staff 320/704/1024/1600 không overflow.
+- Runtime `56735e5` đã push; Vercel báo deployment completed. Không merge main,
+  không stage thay đổi 3D. Catalogue vẫn 22 bàn; sau QA cả 22 bàn available.
+- **PARTIAL: còn ca tạo walk-in thành công bằng JWT production trong giờ
+  phục vụ 10:00–22:00.** Các fixture được operator duyệt chỉ kiểm chứng thao tác
+  sau tạo, không thay thế bằng chứng walk-in. Operator chọn tự gọi tiếp sau
+  10:00 ngày 03/10; không tự chạy hoặc đổi policy. Chi tiết trong
+  [database-testing.md](docs/database-testing.md).

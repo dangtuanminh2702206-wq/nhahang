@@ -696,3 +696,57 @@ Pages build (Staff không chứa QA, menu dùng /nhahang/images), normal build v
 HTTP Identity/public/Guest Staff APIs PASS. Guest page dùng streamed redirect
 Next.js tới /login, không trả dữ liệu booking; không đòi HTTP 307 khi redirect
 đã được stream bằng meta refresh. Responsive/live confirmation chưa nghiệm thu.
+
+### Phần 7 — nghiệm thu cập nhật 03/10/2026
+
+Mục này thay thế các trạng thái chờ ở những ghi nhận Phần 7 phía trên; không
+thay đổi lịch sử kiểm thử Auth. Kết luận: **PARTIAL**, chỉ còn nghiệm thu tạo
+walk-in thành công bằng JWT production trong giờ phục vụ thật.
+
+| Gate | Kết quả và phạm vi bằng chứng |
+| --- | --- |
+| SQL local | **53 nhóm PASS**, PostgreSQL 18.4, database sạch `mocvi_test_staff_boundary_20261003` |
+| Biên thời gian | Đánh giá predicate lấy từ hàm đã cài tại đúng biên và ±1 microsecond; check-in quá sớm `[true,false,false]`, no-show quá sớm `[true,true,false]`; giữ các ca RPC và race hiện có |
+| Production Staff | Confirm/reject/cancel, check-in/complete/ready, no-show thực hiện qua UI/JWT thật; check-in vượt capacity, check-in/no-show quá sớm bị từ chối |
+| Production Admin | Profile trusted role Admin được xác minh; hủy fixture confirmed thành công, có lý do |
+| Ready nhiều chu kỳ | Hai chu kỳ check-in → complete → cleaning → available trên T1-B03 trong cùng bảng bàn đang mounted; SQL ghi **2 ready audit events** |
+| Phân quyền production | **14 kiểm tra PASS**: Staff/Customer trusted active, Staff API nhận request và validate schema, Customer API 403, Guest API 401, Customer/Guest RPC 42501, trang Staff chặn Customer; response API no-store |
+| Responsive | Staff board và chi tiết tại 320/704/1024/1600px; client width 305/689/1009/1585px do scrollbar, body/root không tràn ngang; console error 0 |
+| Accessibility | Chọn marker T1-B05 bằng Enter cập nhật aria-pressed; xác nhận inline có focus và không phụ thuộc hộp thoại native |
+| Regression | Typecheck, lint, Staff/booking/Customer contracts, Pages build rồi normal build, Identity HTTP smoke và public/Guest Staff routes PASS |
+| Deployment runtime | `56735e5`, Vercel báo deployment completed; production mobile và hai chu kỳ ready được kiểm tra sau rollout |
+
+Local `.env.local` đang trỏ development; HTTP smoke local không được coi là
+bằng chứng production. Permission probe production dùng URL/key public của
+project được duyệt và JWT thật trong bộ nhớ, không lưu credentials vào repo.
+
+**Scheduler tự hết hạn — PASS:** booking QA
+`c31e7847-d79d-4243-8865-d6255c9b3c82` có expires_at
+`2026-10-02T15:40:24.38002Z`, chuyển cancelled/pending_expired lúc
+`2026-10-02T15:41:00.047475Z`. Job `mocvi-expire-pending` succeeded lúc
+`15:41:00.041368Z`; sau nhiều lượt cron vẫn **2 history / 2 notifications /
+2 audit** (gồm sự kiện tạo và hết hạn). Transition hết hạn có source system,
+actor null. Không gọi hết hạn thủ công hoặc đổi policy/đồng hồ.
+
+**Fixtures mới được operator duyệt:** owner chỉ chuẩn bị booking QA trên bàn
+trống, history ban đầu source system/actor null ghi rõ không phải JWT create
+evidence. Các transition sau đó thực hiện bằng Staff/Admin UI thật:
+
+| Booking QA | ID | Kết quả cuối |
+| --- | --- | --- |
+| Service | `4558171f-aa41-4e28-b599-7058ff58c1c6` | completed, reserved 2 / actual 3 |
+| Service cycle 2 | `cfa134d1-24d3-4c6d-b01c-2ac886c57bd3` | completed, actual 2 |
+| No-show | `a5735b55-7150-420f-a798-a7e06e7d6e48` | no_show |
+| Confirm | `a033a269-3c6c-4a9b-90b9-8584980c81bd` | Staff confirmed, sau đó Admin cancelled |
+| Reject | `75a708f7-d5e2-40d3-b523-c45b303715ae` | rejected |
+| Cancel | `03037c18-0959-4315-9650-7ce2fe2c2aae` | cancelled |
+
+Phone QA cũ `7d09de91-7e8a-4e97-b9e0-3335d8166c5d` đã cancelled sau ca
+đổi bàn thành công. Lần đọc cuối xác minh **22/22 bàn available**; giữ nguyên
+history/audit QA, không xóa dữ liệu để làm sạch kết quả.
+
+**Gate còn lại:** sau 10:00, tạo walk-in PHASE7 QA bằng Staff/Admin trên bàn
+thực sự khả dụng, xác minh confirmed/customer_id null và chu trình phục vụ,
+rồi dọn bàn available. Không dùng owner fixture để thay ca tạo walk-in thật,
+không đổi policy production. Operator chọn tự gọi tiếp sau 10:00: **không
+lên lịch hoặc chạy kiểm thử tự động lúc mở cửa**.

@@ -257,12 +257,19 @@ database-testing.md; không coi implementation là chứng nhận tích hợp đ
 ## Staff operations · Phần 7 · 02/10/2026
 
 Khu vực `/staff` dùng Server Component để đọc dữ liệu qua Supabase RLS và Client
-Component tối thiểu cho các nút thao tác. Mọi thay đổi booking/bàn gọi RPC
-`staff_update_booking`, `staff_move_booking` hoặc `staff_mark_table_ready`; route
+Component tối thiểu cho các nút thao tác. Mọi chuyển trạng thái/đổi bàn/dọn bàn gọi
+RPC `staff_operation`; các hàm staff_update/move/ready chỉ là helper nội bộ. Route
 kiểm tra same-origin, JSON, role Staff/Admin active và chỉ trả DTO tối thiểu.
 
 Migration `202610030001_staff_operations.sql` giữ trạng thái booking và trạng thái
 vật lý bàn trong cùng transaction, ghi history/notification/audit bằng helper hiện
 có. Phone/walk-in tái sử dụng `create_booking` với source vận hành; không liên kết
-khách vãng lai vào Customer chỉ bằng số điện thoại/email. Production migration và
-scheduler vẫn cần operator có quyền database để nghiệm thu riêng.
+khách vãng lai vào Customer chỉ bằng số điện thoại/email. Migration 001/002/003
+đã áp production; receipt private theo actor/request bảo vệ retry, kể cả khi
+booking đã đổi trạng thái sau lần gọi đầu. Client không có EXECUTE helper hay
+UPDATE booking/table trực tiếp.
+
+Job `mocvi-expire-pending` mỗi phút đã kiểm chứng hết hạn tự nhiên trên production
+ngày 03/10. Staff/Admin workflow và quyền production đã đạt; Phần 7 còn một gate
+tạo walk-in thành công trong giờ phục vụ thật. Xem database-testing.md để phân
+biệt fixture owner được duyệt, SQL local, HTTP local và JWT/UI production.

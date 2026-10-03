@@ -2,6 +2,11 @@
 
 ## Trạng thái và ranh giới
 
+**Cập nhật hiện hành 03/10/2026:** các đoạn dưới ghi lại mốc Phần 2. Migration
+Phần 4–7 và scheduler đã áp production theo các lượt duyệt; Staff workflow đã
+được kiểm chứng, còn gate tạo walk-in thành công trong giờ phục vụ thật. Bộ SQL
+local sạch hiện đạt 53 nhóm. Nguồn nghiệm thu mới nhất: database-testing.md.
+
 Migration và seed đã chạy thành công trên Supabase development và PostgreSQL
 local. Bộ 18 nhóm kiểm thử tích hợp local và smoke test quyền trên Supabase đều
 đạt với catalogue Phần 2 cũ (16 bàn/24 món). Seed trong repo thay đổi ở Phần 3A
@@ -234,22 +239,23 @@ bị lọc như foundation. Không thay policy/rule của RPC đã deploy.
 
 ## Vòng đời booking
 
-| Chuyển trạng thái | Điều kiện | Phần 2 |
+| Chuyển trạng thái | Điều kiện | Implementation hiện tại (03/10/2026) |
 | --- | --- | --- |
 | Mới → pending | Customer qua website | Đã có create_booking |
 | Mới → confirmed | Staff/Admin qua phone/walk_in | Đã có create_booking |
 | pending → confirmed | Staff/Admin, chưa hết hạn, bàn/khu vực hoạt động | Đã có confirm_booking |
 | pending → cancelled | expires_at <= now, source=system, reason=pending_expired | Đã có expire_pending |
-| pending/confirmed → cancelled | Customer chủ booking khi start − now >= 60 phút; Staff theo quyền, có lý do | Customer `cancel_booking` đã có; Staff chưa có |
-| pending → rejected | Staff từ chối, bắt buộc lý do | Chưa có mutation |
-| confirmed → checked_in | Từ start − 15 phút, bàn sẵn sàng, không xung đột; lưu số khách thực | Chưa có mutation |
-| confirmed → no_show | now > start + 15 phút, chưa check-in; Staff xác nhận | Chưa có mutation |
-| checked_in → completed | Staff kết thúc phục vụ, bàn chuyển cleaning | Chưa có mutation |
-| confirmed → confirmed (đổi bàn) | Chưa nhận khách, khách đồng ý, bàn mới hợp lệ; phải ghi history/audit | Chưa có mutation |
+| pending/confirmed → cancelled | Customer chủ booking khi start − now >= 60 phút; Staff theo quyền, có lý do | Customer `cancel_booking`; Staff `staff_operation(cancel)` |
+| pending → rejected | Staff từ chối, bắt buộc lý do | `staff_operation(reject)` |
+| confirmed → checked_in | Từ start − early_checkin_minutes, bàn sẵn sàng, không xung đột; lưu số khách thực | `staff_operation(check_in)` |
+| confirmed → no_show | now > start + no_show_minutes, chưa check-in; Staff xác nhận | `staff_operation(no_show)` |
+| checked_in → completed | Staff kết thúc phục vụ, bàn chuyển cleaning | `staff_operation(complete)` |
+| confirmed → confirmed (đổi bàn) | Chưa nhận khách, khách đồng ý, bàn mới hợp lệ; phải ghi history/audit | `staff_operation(move)` |
 
 Không có chuyển ngược từ trạng thái cuối. Việc dọn xong cleaning → available là
-thao tác bàn riêng, không tự động theo đồng hồ. Enum/cột cho các bước chưa làm
-chỉ chuẩn bị dữ liệu, không được coi là chức năng đã hoàn thành.
+thao tác bàn riêng qua `staff_operation(ready)`, không tự động theo đồng hồ.
+Implementation có đủ mutation không đồng nghĩa toàn bộ nghiệm thu production
+đã hoàn tất; gate walk-in hiện còn chờ giờ phục vụ thật.
 
 ## Phân quyền và SECURITY DEFINER
 
@@ -369,8 +375,9 @@ giờ dự kiến; complete → cleaning và ready là hai thao tác riêng.
 
 Production đã bật job `mocvi-expire-pending` mỗi phút bằng script owner opt-in
 [`phase7-scheduler.sql`](../supabase/operations/phase7-scheduler.sql).
-Job succeeded được xác minh, nhưng nghiệm thu QA hết hạn tự nhiên và Staff UI/JWT
-được theo dõi riêng ở [`database-testing.md`](database-testing.md).
+Job succeeded đúng phút QA hết hạn tự nhiên đã được đối chiếu ngày 03/10;
+history/notification/audit không trùng sau nhiều lần cron. Bằng chứng Staff UI/JWT
+và gate walk-in còn lại nằm ở [`database-testing.md`](database-testing.md).
 
 - [PostgreSQL: range và exclusion constraint](https://www.postgresql.org/docs/current/rangetypes.html).
 - [PostgreSQL: Row Security](https://www.postgresql.org/docs/current/ddl-rowsecurity.html).
