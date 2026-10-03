@@ -57,3 +57,9 @@ const panel = await readFile(new URL("../src/components/staff-action-panel.tsx",
 assert(!panel.includes('window.confirm'));
 for (const marker of ['setConfirmation(action)', 'run(confirmation, true)', 'cancelButton.current?.focus()', 'event.key === "Escape"', 'disabled={!!pending || !!confirmation}', 'role="group"', 'role="alert"']) assert(panel.includes(marker), marker);
 console.log("PASS Staff confirmation source contract: explicit approval, locked inputs, cancel focus and Escape; browser interaction still requires live QA.");
+
+const board = await readFile(new URL("../src/components/staff-table-board.tsx", import.meta.url), "utf8");
+assert(board.includes("requestIds.current[id] ??= crypto.randomUUID()"));
+assert(board.indexOf("delete requestIds.current[id]") > board.indexOf("if (!response.ok)"));
+assert(board.indexOf("delete requestIds.current[id]") < board.indexOf('setMessage("Đã đánh dấu bàn sẵn sàng.")'));
+console.log("PASS Staff ready source contract: retry retains its key; success clears it for the next cleaning cycle. Live repeated-cycle QA remains required.");
