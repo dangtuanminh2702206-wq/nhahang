@@ -1,0 +1,258 @@
+# Runbook vận hành Mộc Vị Restaurant
+
+Tài liệu này dành cho người phụ trách repository, deployment, Supabase và kiểm
+thử bàn giao. Không đặt secret, mật khẩu, token, cookie hoặc connection string
+vào tài liệu, GitHub hay chat.
+
+## Trạng thái và phạm vi
+
+- Repository: `dangtuanminh2702206-wq/nhahang`.
+- Nhánh triển khai: `codex/restaurant-booking-platform`.
+- Runtime server: [moc-vi-restaurant.vercel.app](https://moc-vi-restaurant.vercel.app/).
+- Demo tĩnh: [dangtuanminh2702206-wq.github.io/nhahang](https://dangtuanminh2702206-wq.github.io/nhahang/).
+- Supabase production được tài liệu hóa với project ref `unhybmmbgumyhzaftlli`.
+- Baseline repo: 3 tầng, 22 bàn, 92 chỗ cấu hình, 30 món, 4 combo, 50 ảnh.
+  Đây là baseline data/UI, không phải số lượng khả dụng live tại mọi thời điểm.
+- Phần 1–9 đã nghiệm thu trong phạm vi tương ứng. Phần 10 xác nhận khả năng bàn
+  giao và readiness, không mở thêm nghiệp vụ.
+
+## Sơ đồ triển khai
+
+```text
+Git push
+  ├─ GitHub Actions CI: lint, typecheck, contract, SQL loopback, build, HTTP smoke
+  ├─ GitHub Pages: static public demo với basePath /nhahang
+  └─ Vercel: Next.js server + Auth/booking/admin qua Supabase
+                                  └─ Supabase PostgreSQL/Auth/RLS/RPC
+```
+
+Vercel là bản vận hành. Pages chỉ phục vụ HTML/CSS/JS public đã export; cookies,
+Proxy, Route Handler phụ thuộc request và logic server không hoạt động trên Pages.
+
+## Local setup
+
+Yêu cầu Node.js 20.9 trở lên và pnpm 11.25 trở lên.
+
+```powershell
+pnpm install --frozen-lockfile
+Copy-Item .env.example .env.local
+pnpm dev
+```
+
+Trên macOS/Linux dùng `cp .env.example .env.local`. Chỉ điền giá trị vào file
+local hoặc secret store của môi trường; không commit `.env.local`.
+
+| Biến | Mục đích | Quy tắc |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | Origin cho callback, redirect và same-origin guard | Phải khớp origin; HTTPS trên production |
+| `NEXT_PUBLIC_SUPABASE_URL` | URL public của project Supabase | Chỉ dùng project đúng môi trường |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable/anon key cho request scoped | Không dùng secret/service-role key |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Fallback legacy cho publishable key | Chỉ dùng khi chưa có biến preferred |
+| `BOOKING_MUTATIONS_ENABLED` | Cờ production cho tạo/hủy booking | Chỉ bật với origin HTTPS và project ref được duyệt |
+| `BOOKING_LOCAL_MUTATIONS_ENABLED` | Cờ local development cô lập | Không tự bật production |
+| `BOOKING_ALLOWED_SUPABASE_PROJECT_REF` | Project ref được phép cho booking mutation | Phải đối chiếu môi trường đã duyệt |
+| `TEST_DATABASE_URL` | PostgreSQL loopback cho `pnpm test:db` | Database mới, trống, tên `mocvi_test_*` |
+| `RESEND_API_KEY` | Dự phòng email về sau | Chưa tích hợp; không cần cho hiện tại |
+
+Sau khi đổi biến `NEXT_PUBLIC_*`, build lại vì Next.js đưa biến public vào bundle
+tại thời điểm build. Không dùng origin GitHub Pages cho Auth thật.
+
+## Kiểm tra local trước bàn giao
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm typecheck
+pnpm lint
+pnpm test:identity:contract
+pnpm test:booking
+pnpm test:customer-booking
+pnpm test:staff
+pnpm test:public-assets
+pnpm test:db
+pnpm build
+pnpm start
+```
+
+`pnpm test:db` chỉ chạy với PostgreSQL loopback database mới, trống và có tên
+`mocvi_test_*`. Script áp migration và seed trong database cô lập; không dùng
+Supabase production/development cho runner có reset/seed. Nếu chưa có database
+phù hợp, ghi `NOT RUN`.
+
+Pages build phải chạy riêng sau khi normal build đã hoàn tất:
+
+```powershell
+$env:GITHUB_PAGES="true"
+pnpm build
+$env:PUBLIC_CHECK_PAGES="true"
+$env:BOOKING_CHECK_PAGES="true"
+pnpm test:public-assets
+pnpm test:booking
+```
+
+Sau Pages build, build lại normal trước khi chạy `pnpm start`. Không dùng chung
+output `.next` và `.next-pages` trong hai server đồng thời.
+
+## CI và deployment
+
+Push vào `codex/restaurant-booking-platform` hoặc Pull Request sẽ chạy
+`.github/workflows/ci.yml`. Workflow cài bằng lockfile, dùng PostgreSQL service
+`mocvi_test_*`, chạy quality gates, normal build, HTTP smoke với mock Supabase
+loopback 401 và Pages build tuần tự. Workflow không cần Supabase credentials,
+Auth account, email hoặc cloud mutation.
+
+`.github/workflows/pages.yml` build `GITHUB_PAGES=true`, upload `.next-pages` và
+deploy bằng GitHub Pages. Vercel deploy runtime Next.js theo repository/branch đã
+liên kết. Sau mỗi push:
+
+1. Mở CI run và kiểm tra đúng `head_sha`, không chỉ xem tên workflow.
+2. Kiểm tra Pages run cùng SHA nếu có thay đổi public.
+3. Kiểm tra Vercel deployment/check cùng SHA và trạng thái `success`.
+4. Smoke read-only `/`, `/menu`, `/spaces`, `/reservation` trên Vercel và
+   `/nhahang/`, `/nhahang/menu` trên Pages.
+5. Đăng nhập QA chỉ khi có ca kiểm thử đã duyệt; không đưa credential vào log.
+
+CI PASS là bằng chứng build/test trong môi trường cô lập. Nó không tự chứng nhận
+JWT production, RLS production hoặc dữ liệu live.
+
+## Migration và scheduler
+
+Migration database phải additive, được review trước khi chạy và áp đúng thứ tự:
+
+1. `202609300001_foundation.sql`
+2. `202610010001_availability.sql`
+3. `202610020001_customer_booking_management.sql`
+4. `202610020002_customer_cancellation_expiry.sql`
+5. `202610030001_staff_operations.sql`
+6. `202610030002_staff_operations_hardening.sql`
+7. `202610030003_staff_operation_receipts.sql`
+8. `202610030004_admin_management.sql`
+9. `202610030005_admin_safety.sql`
+10. `202610030006_admin_input_validation.sql`
+
+Quy trình áp dụng:
+
+1. Xác định project và môi trường bằng dashboard, ref và kết nối operator.
+2. Sao lưu hoặc xác minh khả năng khôi phục theo policy trước khi đổi schema.
+3. Đọc migration, kiểm tra migration trước đó và dữ liệu ảnh hưởng.
+4. Chạy một migration đúng một lần qua quy trình operator được duyệt.
+5. Kiểm tra grants, RLS, RPC, audit và invariant liên quan.
+6. Chạy smoke read-only và ghi commit/migration/evidence vào tài liệu.
+
+Không sửa migration đã áp dụng để chữa lỗi. Tạo migration additive mới. Không
+seed/reset môi trường có booking hoặc audit production.
+
+Expiration là thao tác owner opt-in, không tự cài bởi migration. File
+`supabase/operations/phase7-scheduler.sql` tạo hoặc kiểm tra job
+`mocvi-expire-pending` mỗi phút với lệnh `select private.expire_pending();`.
+Trước khi áp dụng, kiểm tra job trùng, schedule, database và `active`. Sau đó đọc
+`cron.job` và `cron.job_run_details`, kiểm tra một booking QA pending đã hết hạn
+theo database clock rồi dọn fixture theo quy trình đã duyệt. `job succeeded` chỉ
+chứng minh scheduler chạy; phải quan sát booking chuyển trạng thái để kết luận
+expiration hoạt động.
+
+## Chẩn đoán nhanh
+
+### Auth và callback
+
+Kiểm tra `NEXT_PUBLIC_SITE_URL`, Supabase Site URL và redirect allowlist của đúng
+môi trường. Callback redirect cố định về `/profile` hoặc `/login`; query `next`
+không được tin cậy. Liên kết email phải mở trong trình duyệt đã đăng ký.
+Nếu link hết hạn hoặc quota email bị giới hạn, ghi rõ lỗi và chờ operator; không
+resend lặp lại, không giảm expiry và không đổi SMTP để làm test dễ hơn.
+
+### Database hoặc live catalogue không tải được
+
+Trang public Vercel hiển thị lỗi khi live database lỗi, không giả snapshot cũ là
+dữ liệu live. Kiểm tra Vercel environment variables, project ref, Supabase status
+và log server. Không in key, cookie hoặc payload booking.
+
+### Booking conflict hoặc 409
+
+Tải lại availability và booking detail trước khi thử lại. Kiểm tra ngày/giờ, sức
+chứa, buffer, giờ phục vụ, ngày nghỉ và booking active. Không xóa history/audit
+hoặc sửa đồng hồ/policy để vượt conflict.
+
+### Admin conflict hoặc lỗi quyền
+
+`409` nghĩa snapshot expected đã cũ; tải lại `/admin`. `401` yêu cầu đăng nhập;
+`403` nghĩa role/is_active hoặc RLS không cho phép. Role/actor lấy từ Auth và
+database, không lấy từ payload client. Không retry thao tác đổi role bị chặn.
+
+### Deploy fail
+
+Đối chiếu commit SHA, xem bước CI fail đầu tiên, chạy cùng lệnh local và kiểm tra
+lockfile. Với Pages, kiểm tra `GITHUB_PAGES=true`, `.next-pages`, basePath `/nhahang`
+và không có API/private runtime trong static output. Với Vercel, kiểm tra build
+log và environment theo đúng target.
+
+## Backup, restore và diễn tập
+
+Trạng thái backup tự động/retention của Supabase production: **NOT VERIFIED trong
+Phần 10**. Chưa xuất dữ liệu production và chưa thực hiện restore production.
+Owner phải xác nhận trong dashboard/plan hiện tại hoặc với nhà cung cấp: retention,
+backup gần nhất, phạm vi backup, quyền restore và chi phí.
+
+Diễn tập an toàn trên database cô lập:
+
+1. Tạo database/project development riêng, không trỏ runtime production vào đó.
+2. Lưu backup ở nơi được kiểm soát; không đưa file vào repo, `artifacts/` hoặc chat.
+3. Restore vào database cô lập, ghi thời điểm và source backup.
+4. Đối chiếu schema/migration, catalogue, constraints, grants/RLS, RPC, audit và scheduler.
+5. Chạy `pnpm test:db` trên PostgreSQL loopback mới và smoke server với biến cô lập.
+6. Kiểm tra route public, guest guard và dữ liệu live read-only.
+7. Ghi chênh lệch, thời gian restore và cách khôi phục; không dùng database này làm
+   production nếu chưa có approval riêng.
+
+Restore production chỉ thực hiện sau khi xác định mốc khôi phục, ảnh hưởng booking/
+audit, cửa sổ bảo trì và người duyệt. Rollback code không tự hoàn nguyên schema.
+
+## Rollback
+
+### Rollback code
+
+1. Xác định commit cuối cùng đã PASS CI/Vercel.
+2. Tạo commit revert rõ ràng trên nhánh hiện tại hoặc dùng rollback deployment được
+   Vercel hỗ trợ; không force push.
+3. Chờ CI/Vercel PASS rồi smoke lại các route public.
+
+### Rollback database
+
+Không checkout đè migration hoặc chạy lệnh xóa dữ liệu. Đối chiếu schema, audit và
+booking trước khi chọn migration sửa/additive hoặc restore cô lập. Thao tác production
+cần operator có quyền và evidence before/after.
+
+## Người phụ trách bàn giao
+
+Các vai trò dưới đây chưa được gán tên trong repository; điền trước khi vận hành thật:
+
+| Vai trò | Người phụ trách |
+| --- | --- |
+| Product/đồ án owner | `[CHƯA GÁN]` |
+| Repository và deploy | `[CHƯA GÁN]` |
+| Supabase/database operator | `[CHƯA GÁN]` |
+| Người duyệt migration/quyền | `[CHƯA GÁN]` |
+| Người xử lý sự cố | `[CHƯA GÁN]` |
+
+## Checklist release
+
+- [ ] Đúng branch/commit đã push; không có `.env`, secret, backup, build output,
+      fixture hoặc asset 3D ngoài phạm vi trong staged diff.
+- [ ] `pnpm install --frozen-lockfile`, typecheck và lint đạt.
+- [ ] Contract/SQL tests chạy trên database cô lập; kết quả lưu theo SHA.
+- [ ] Normal build và Pages build chạy tuần tự; basePath/asset/link đạt.
+- [ ] CI quality job PASS; Pages deploy PASS nếu public thay đổi.
+- [ ] Vercel deployment/check PASS đúng SHA.
+- [ ] Smoke read-only Vercel/Pages đạt; không có route public 4xx/5xx bất thường.
+- [ ] Auth/booking live mutation chỉ chạy khi có QA fixture và approval riêng.
+- [ ] Migration/scheduler được đối chiếu; không có failed run chưa xử lý.
+- [ ] Backup/restore status đã xác minh, hoặc ghi rõ `NOT VERIFIED`.
+- [ ] Người phụ trách đã được điền và biết đường rollback.
+
+## Kết luận readiness
+
+Phần 10 đạt **PARTIAL — sẵn sàng demo và vận hành thử có kiểm soát** khi các
+checklist code/CI/deployment và hướng dẫn đã PASS. Chưa công bố production
+operational readiness đầy đủ tới khi backup/restore, người phụ trách và cửa sổ
+rollback được owner xác minh. Các giới hạn sản phẩm gồm callback email production,
+role UI production, đổi tầng bàn, combo CRUD, reset password, email/SMS,
+order/payment, analytics, multi-branch và 3D vẫn giữ nguyên.

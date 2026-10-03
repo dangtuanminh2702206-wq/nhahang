@@ -432,4 +432,24 @@ PASS trên [GitHub Actions](https://github.com/dangtuanminh2702206-wq/nhahang/ac
 và [GitHub Pages](https://github.com/dangtuanminh2702206-wq/nhahang/actions/runs/37114247136);
 kiểm tra [Vercel](https://vercel.com/minh-5f07/nhahang/3xxV6QZqbGuryozVb3RJ9WrMNQy4)
 cũng PASS cho commit này. Không stage các thay đổi 3D, panorama và tooling ngoài
-phạm vi. Phần 10 — bàn giao cuối — chưa triển khai.
+phạm vi.
+
+## Phần 10 · Final handover & operational readiness
+
+Phần 10 đã bổ sung bộ tài liệu bàn giao, hướng dẫn sử dụng và runbook vận hành:
+
+- [Hướng dẫn sử dụng](docs/user-guide.md): Guest, Customer, Staff, Admin, kịch
+  bản demo và lỗi thường gặp.
+- [Runbook vận hành](docs/operations-runbook.md): local/CI/deployment, migration,
+  scheduler, chẩn đoán, rollback, backup/restore và checklist release.
+
+Trạng thái hiện tại: **PARTIAL — sẵn sàng demo và vận hành thử có kiểm soát**.
+Các gate code/CI/deployment của Phần 9 đã PASS và được tái sử dụng theo commit/
+ngày ghi trong tài liệu kiểm thử. Backup/restore Supabase production chưa được
+xác minh, người phụ trách vận hành còn placeholder và cửa sổ rollback chưa được
+owner xác nhận. Chưa công bố production operational readiness đầy đủ.
+
+Các giới hạn sản phẩm đã chốt vẫn giữ nguyên: callback email production chưa được
+chứng minh, role UI production bị cơ chế an toàn chặn trước request, đổi tầng bàn
+cần tọa độ canonical, Pages là demo tĩnh, combo không có CRUD database, chưa có
+reset password/email-SMS/order/payment/analytics/multi-branch và 3D/panorama.
