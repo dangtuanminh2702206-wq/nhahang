@@ -824,3 +824,42 @@ không chứa contact. Đây là SQL integration, không phải JWT bằng fixtu
 Migration 005 đã thực thi thành công trên project `unhybmmbgumyhzaftlli` qua SQL
 Editor. Migration 006 bổ sung validation không đổi quyền. Chưa dùng kết quả local
 để gán PASS production; bằng chứng nghiệm thu JWT/UI/deployment ghi riêng sau QA.
+
+### Phần 8 — nghiệm thu runtime và production — 03/10/2026
+
+Mục này thay thế trạng thái PARTIAL Phần 8 phía trên; giữ lịch sử các lần kiểm tra.
+**PASS trong phạm vi Admin management đã kiểm chứng**, không chứng nhận các ca
+production chưa thực hiện được mô tả dưới đây.
+
+| Gate | Bằng chứng thực tế |
+| --- | --- |
+| Migration | 005 và 006 chạy thành công qua SQL Editor đúng project `unhybmmbgumyhzaftlli`; không seed/reset hoặc đổi role |
+| SQL local | Database trống `mocvi_test_admin_20261003k`, 10 migration, seed hai lần, 68 nhóm PASS; gồm 12 nhóm Admin và hồi quy booking/Customer/Staff |
+| JWT Admin production | Trusted Admin active, API/RPC lưu trạng thái món thành công; đọc lại database/public; stale retry 409; save giống hệt không thêm audit |
+| Inactive/public RLS | Món thử inactive bị ẩn với anon và không xuất hiện trong Menu public; Admin vẫn đọc được |
+| Quyền production | Guest API 401/RPC từ chối; Staff/Customer bị chặn trang/API/RPC và không đọc được audit; foreign origin 403; tự hạ quyền Admin bị từ chối |
+| UI live sync | Admin đổi availability MV-KV01 → public Menu hiện Tạm hết; lưu khôi phục → public Menu hiện Đang phục vụ, tên/giá gốc giữ nguyên |
+| Khôi phục QA | Helper finally khôi phục toàn bộ editable fields món; ca UI khôi phục availability; giữ audit, không sửa role/active của tài khoản |
+| Responsive/a11y | Admin và Home/Menu/Spaces/ba tầng/Reservation ở 320/704/1024/1600px không whole-page overflow; Admin không có enabled control thiếu nhãn; console error không ghi nhận |
+| Typecheck/lint/contracts | PASS; contract booking/Customer/Staff PASS |
+| Pages | Build PASS, 20 HTML, basePath `/nhahang`, 39 image src được đối chiếu resolve, không export API hoặc URL development/Supabase trong rendered HTML |
+| Normal build/local HTTP | Build PASS; start normal port 3018; tám trang public HTTP 200, không thông báo lỗi live data |
+| Deployment | Runtime `1b5c1f100aaff915a029703fd47eea2997f93a05`, Vercel combined status success; UI mới quan sát trên `moc-vi-restaurant.vercel.app` |
+
+Live JWT suite hoàn tất hai lượt, lượt cuối trên deployment runtime nêu trên.
+Credentials chỉ ở bộ nhớ tiến trình/phiên test, không đưa vào repo hoặc báo cáo.
+Local HTTP dùng override môi trường riêng của tiến trình để đọc project được
+duyệt; `.env.local` vẫn giữ development, không chỉnh file cấu hình.
+
+**Giới hạn bằng chứng:** thử submit UI hạ quyền Admin bị cơ chế an toàn chặn
+trước request. Không retry để vượt chặn, không đổi quyền thật và không gán ca
+browser này PASS. Self-protection đã kiểm tra bằng SQL và JWT; thay đổi quyền,
+inactive/last-active và race giữa Admin kiểm chứng ở database local cô lập,
+không phải mutation role production. Không thay thế kết quả local bằng toast.
+
+Đổi tầng của bàn bị chặn `SPATIAL_MAPPING_REQUIRED` đến khi có mapping tọa độ
+được duyệt; không chế tọa độ hoặc tạo bảng dữ liệu thứ hai. Giới hạn truy vấn
+10.000 dòng báo lỗi thay vì cắt âm thầm, báo cáo tối đa 93 ngày, hồ sơ phân trang
+25 dòng. Combo vẫn snapshot; upload ảnh, CRUD mới ngoài catalogue, reset mật
+khẩu, tài chính, multi-branch và 3D ngoài phạm vi. Các thay đổi 3D chưa commit
+được bảo toàn và không đưa vào commit Admin.

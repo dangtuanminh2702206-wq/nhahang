@@ -365,10 +365,10 @@ trên `moc-vi-restaurant.vercel.app`:
 
 ## Phần 8 · Admin management
 
-Phần 8 đã có implementation trên nhánh hiện tại và target database Admin đã
-được kiểm tra trên Supabase project `unhybmmbgumyhzaftlli` qua SQL Editor.
-Tài liệu vẫn **chưa tuyên bố PASS production** vì các gate JWT/Admin UI, live
-menu sync và deployment smoke chưa đủ bằng chứng.
+Nghiệm thu 03/10/2026: **Phần 8 PASS trong phạm vi Admin management đã kiểm
+chứng**, với giới hạn QA quyền trên UI production ghi rõ bên dưới. Runtime
+`1b5c1f1` đã push trên nhánh `codex/restaurant-booking-platform`; Vercel báo
+deployment success và giao diện mới đã được kiểm tra trên domain chính thức.
 `/admin` chỉ cho Admin active truy cập; Staff tiếp tục dùng `/staff`, không
 duplicate workflow vận hành. Màn hình Admin hiện có tổng quan booking theo khoảng
 ngày, policy/giờ phục vụ/ngày nghỉ, khu vực/bàn, danh mục/món, tài khoản trusted
@@ -387,6 +387,22 @@ lần tải mới; GitHub Pages tiếp tục dùng snapshot canonical và không
 Nếu database live lỗi, public menu hiển thị trạng thái lỗi thay vì giả dùng snapshot
 cũ. Read-only verification đã xác nhận đủ 10 public RPC ở trạng thái
 `SECURITY DEFINER`, `authenticated` có EXECUTE, `anon` không có EXECUTE và bốn
-policy Admin đọc inactive tồn tại. Vẫn cần QA Admin/JWT với fixture có thể hoàn
-nguyên, chứng minh menu live trên Vercel và deployment smoke trước khi ghi nhận
-Phần 8 PASS.
+policy Admin đọc inactive tồn tại. Migration 005/006 đã áp dụng thành công:
+khóa chung với booking/Staff, expected snapshot đầy đủ, audit atomic/no-op,
+validation và bảo vệ trạng thái bàn. Database loopback sạch đạt **68 nhóm**;
+JWT thật kiểm chứng Admin được sửa, Guest/Customer/Staff bị chặn, stale retry
+409, inactive món không lộ public và audit không lộ cho non-Admin.
+
+UI Admin đổi trạng thái phục vụ của món QA đã đồng bộ tới Menu public; sau thử
+đã khôi phục dữ liệu gốc và giữ audit. Typecheck/lint/contracts, Pages build
+với `/nhahang`, normal build và HTTP smoke tám trang public local đạt. Admin
+và các trang public liên quan đã kiểm tra ở 320/704/1024/1600px, không tràn
+ngang; không ghi nhận console error. Nhãn form Admin được kiểm tra.
+
+Giới hạn: không thực hiện gửi thay đổi role qua UI production vì cơ chế an
+toàn chặn trước request; không tài khoản nào bị đổi quyền. Không tính ca này
+là browser PASS; bảo vệ tự hạ quyền đã PASS ở SQL và JWT, race bảo vệ Admin
+active cuối cùng PASS local. Đổi bàn sang tầng khác bị chặn cho đến khi có
+tọa độ canonical được duyệt. Báo cáo tối đa 93 ngày, truy vấn tối đa 10.000
+dòng báo lỗi rõ khi vượt giới hạn; hồ sơ phân trang 25 dòng. Không có upload
+ảnh hoặc combo CRUD. Xem [bằng chứng nghiệm thu](docs/database-testing.md).
