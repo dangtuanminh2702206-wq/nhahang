@@ -43,7 +43,23 @@ và sức chứa cần thiết; không trả thông tin khách hàng.
 5. Mở `/profile` để điền hoặc cập nhật họ tên và số điện thoại.
 
 Không nhập thông tin tài khoản trên GitHub Pages hoặc bản local chưa cấu hình
-Supabase. Chưa có chức năng tự cấp Staff/Admin hoặc đặt lại mật khẩu.
+Supabase. Tài khoản đăng ký không tự được cấp Staff/Admin.
+
+### Quên mật khẩu
+
+Tại trang đăng nhập, chọn `Quên mật khẩu?`, nhập email và yêu cầu liên kết.
+Mở thư trong cùng trình duyệt đã gửi yêu cầu. Liên kết hợp lệ đưa tới trang đặt
+mật khẩu mới; trang hiển thị email tài khoản đang được đổi. Nếu tài khoản đang
+đăng nhập active, trang này cũng cho đổi chính mật khẩu của tài khoản đó.
+
+Nhập mật khẩu mới hai lần. Sau khi cập nhật và đăng xuất thành công, đăng nhập
+lại bằng mật khẩu mới. Nếu cập nhật thành công nhưng đăng xuất gặp lỗi, trang
+báo rõ để bạn không hiểu nhầm mật khẩu vẫn như cũ. Liên kết hết hạn dẫn về trang
+yêu cầu khôi phục, không chuyển tới địa chỉ do trình duyệt cung cấp.
+
+Provider áp dụng giới hạn gửi thư; không gửi liên tục. Phiên JWT đã cấp có thể
+còn hiệu lực đến expiry riêng dù refresh tokens bị thu hồi. Email thật và callback
+production phải được kiểm chứng riêng; test local không thay thế việc này.
 
 ### Tạo và quản lý booking
 
@@ -147,6 +163,7 @@ vào tài liệu hoặc repository.
 ## Giới hạn đã chốt
 
 Callback email được chứng minh local; không suy thành callback production. Pages là
-demo tĩnh. Combo là dữ liệu public riêng, không có CRUD database. Chưa có reset
-mật khẩu, email/SMS, order, thanh toán, analytics, multi-branch hoặc viewer 360.
+demo tĩnh. Combo là dữ liệu public riêng, không có CRUD database. Recovery đã có
+implementation và test local; kiểm chứng email production còn chờ QA. Chưa có
+email/SMS booking, order, thanh toán, analytics, multi-branch hoặc viewer 360.
 Các thay đổi 3D/panorama nằm ngoài luồng vận hành này.

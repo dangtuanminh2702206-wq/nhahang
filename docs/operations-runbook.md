@@ -187,8 +187,11 @@ log và environment theo đúng target.
 
 ## Backup, restore và diễn tập
 
-Trạng thái backup tự động/retention của Supabase production: **NOT VERIFIED trong
-Phần 10**. Chưa xuất dữ liệu production và chưa thực hiện restore production.
+Kiểm tra read-only ngày 03/10/2026 tại dashboard của project
+`unhybmmbgumyhzaftlli` (hiển thị `mocvi-development`): **Free Plan không bao gồm
+project backups**. Dashboard không cung cấp bản backup scheduled để restore.
+Chưa xuất dữ liệu production và chưa thực hiện restore production hoặc diễn tập
+restore cô lập. Đây là khoảng trống vận hành thực tế, không phải backup PASS.
 Owner phải xác nhận trong dashboard/plan hiện tại hoặc với nhà cung cấp: retention,
 backup gần nhất, phạm vi backup, quyền restore và chi phí.
 
@@ -198,7 +201,9 @@ Diễn tập an toàn trên database cô lập:
 2. Lưu backup ở nơi được kiểm soát; không đưa file vào repo, `artifacts/` hoặc chat.
 3. Restore vào database cô lập, ghi thời điểm và source backup.
 4. Đối chiếu schema/migration, catalogue, constraints, grants/RLS, RPC, audit và scheduler.
-5. Chạy `pnpm test:db` trên PostgreSQL loopback mới và smoke server với biến cô lập.
+5. Chạy `pnpm test:db` trên database loopback mới, trống khác với database vừa
+   restore; runner này không nhận database đã có dữ liệu. Smoke server trỏ riêng
+   vào database phục hồi và tắt tác vụ gửi email/SMS/payment/scheduler.
 6. Kiểm tra route public, guest guard và dữ liệu live read-only.
 7. Ghi chênh lệch, thời gian restore và cách khôi phục; không dùng database này làm
    production nếu chưa có approval riêng.

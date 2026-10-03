@@ -1,9 +1,10 @@
 # Mộc Vị Restaurant
 
 Website quản lý và đặt bàn trực tuyến cho một nhà hàng, được phát triển trong
-đồ án môn Kỹ thuật phần mềm ứng dụng. Phiên bản hiện tại có nền tảng database và
-giao diện public đã chốt, đủ bộ ảnh FINAL; các module nghiệp vụ sẽ được triển
-khai theo từng giai đoạn.
+đồ án môn Kỹ thuật phần mềm ứng dụng. Bản Vercel hiện có public UI, Identity,
+booking, Customer, Staff và Admin; các mục tiến trình bên dưới có cả bằng chứng
+lịch sử. Trạng thái mở rộng mới được theo dõi tại
+[completion-backlog.md](docs/completion-backlog.md).
 
 ## Phạm vi sản phẩm
 
@@ -453,3 +454,19 @@ Các giới hạn sản phẩm đã chốt vẫn giữ nguyên: callback email p
 chứng minh, role UI production bị cơ chế an toàn chặn trước request, đổi tầng bàn
 cần tọa độ canonical, Pages là demo tĩnh, combo không có CRUD database, chưa có
 reset password/email-SMS/order/payment/analytics/multi-branch và 3D/panorama.
+
+## Mở rộng sau bàn giao · 03/10/2026
+
+Yêu cầu mới mở phạm vi các hạng mục trước đây chưa triển khai. Nhóm đầu bổ sung
+`/forgot-password`, `/auth/recovery`, `/reset-password`, API mật khẩu cùng origin
+và `/api/health` (liveness, không chứng nhận DB/Auth/scheduler readiness).
+Recovery dùng Supabase PKCE hoặc OTP SSR, kiểm tra profile active, chỉ cập nhật
+mật khẩu của user đang được Auth xác minh và thu hồi refresh sessions sau update.
+
+Contract/HTTP/browser guest và hai chế độ build đã kiểm tra local. Email thật,
+callback production và login bằng mật khẩu mới chưa được chứng minh. Không có
+cloud mutation trong nhóm này. Bằng chứng SQL hồi quy local: 68 nhóm PASS.
+
+Dashboard Supabase xác nhận Free Plan không có project backups; restore vẫn
+chưa kiểm thử. Xem [runbook](docs/operations-runbook.md) và
+[bảng tồn đọng](docs/completion-backlog.md) để phân biệt đã làm/chờ kiểm chứng/TODO.
