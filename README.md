@@ -406,3 +406,30 @@ active cuối cùng PASS local. Đổi bàn sang tầng khác bị chặn cho đ
 tọa độ canonical được duyệt. Báo cáo tối đa 93 ngày, truy vấn tối đa 10.000
 dòng báo lỗi rõ khi vượt giới hạn; hồ sơ phân trang 25 dòng. Không có upload
 ảnh hoặc combo CRUD. Xem [bằng chứng nghiệm thu](docs/database-testing.md).
+
+## Phần 9 · System QA, hardening và CI
+
+Ngày 03/10/2026, Phần 9 **PASS trong phạm vi system QA đã thực hiện**. Đã bổ sung
+`.github/workflows/ci.yml` với PostgreSQL service cô lập, quyền `contents: read`,
+contract/regression tests, SQL integration, normal build, HTTP smoke và Pages build
+tuần tự. Không workflow nào cần Supabase credentials, tài khoản test, email hoặc
+mutation cloud.
+
+- Database loopback sạch `mocvi_test_phase9_20261003`: **68 nhóm PASS**.
+- Identity, booking, Customer booking, Staff contract và asset/spatial checks PASS.
+- Normal build, Pages build, 50 asset decode, 8 public Pages routes, basePath
+  `/nhahang`, 590 tham chiếu link/asset và loại trừ API/private runtime PASS.
+- Local HTTP smoke với origin loopback và Supabase HTTP mock 401 tạm thời PASS
+  cho public/Identity/CSRF, guest fail-closed, booking mutation-off và 50 asset
+  response. Không ghi dữ liệu Supabase.
+- UI responsive/accessibility trước đó được tái sử dụng vì commit này chỉ đổi
+  script/CI, không đổi component; bằng chứng 320/704/1024/1600px, nhãn và console
+  vẫn áp dụng cho runtime `1b5c1f1`.
+
+Alias `test:identity:contract` và `test:public-assets` được khai báo trong
+`package.json` để local/CI gọi cùng một lệnh. Commit CI cuối là `d88798b`, đã
+PASS trên [GitHub Actions](https://github.com/dangtuanminh2702206-wq/nhahang/actions/runs/37114247149)
+và [GitHub Pages](https://github.com/dangtuanminh2702206-wq/nhahang/actions/runs/37114247136);
+kiểm tra [Vercel](https://vercel.com/minh-5f07/nhahang/3xxV6QZqbGuryozVb3RJ9WrMNQy4)
+cũng PASS cho commit này. Không stage các thay đổi 3D, panorama và tooling ngoài
+phạm vi. Phần 10 — bàn giao cuối — chưa triển khai.

@@ -863,3 +863,39 @@ không phải mutation role production. Không thay thế kết quả local bằ
 25 dòng. Combo vẫn snapshot; upload ảnh, CRUD mới ngoài catalogue, reset mật
 khẩu, tài chính, multi-branch và 3D ngoài phạm vi. Các thay đổi 3D chưa commit
 được bảo toàn và không đưa vào commit Admin.
+
+### Phần 9 — system QA, hardening và CI — 03/10/2026
+
+**PASS trong phạm vi các gate đã thực hiện; không phải chứng nhận mọi tính năng
+ngoài MVP.** Commit runtime không đổi UI/logic sau nghiệm thu Phần 8; Phần 9
+bổ sung alias test và workflow CI cô lập.
+
+| Gate | Môi trường và kết quả |
+| --- | --- |
+| SQL integration | Database loopback mới `mocvi_test_phase9_20261003`, migrations 001–006, seed hai lần: **68 nhóm PASS** |
+| Identity contract | `pnpm test:identity:contract`: PASS metadata/role/inactive/callback/Proxy contracts; ghi rõ không phải JWT thật |
+| Booking/Customer/Staff contracts | `pnpm test:booking`, `pnpm test:customer-booking`, `pnpm test:staff`: PASS; các phần mock/contract không thay thế production JWT |
+| Catalogue/assets | `pnpm test:public-assets`: 50 WebP decode, 16 restaurant/30 dish/4 combo, 3 tầng/22 bàn/92 chỗ và spatial metadata PASS |
+| Code quality | `pnpm typecheck`, `pnpm lint`, `git diff --check`: PASS |
+| Normal build | Next.js 16.3.6 production build PASS; route server/API vẫn hiện diện |
+| Pages build | `GITHUB_PAGES=true pnpm build` PASS; asset/export check PASS, 8 public routes, `/nhahang` basePath, không API route/private Supabase URL trong browser chunks |
+| Local HTTP | Server normal với origin loopback và Supabase HTTP mock 401 tạm thời: identity/CSRF/no-store, guest fail-closed, booking mutation-off và public 8 routes/50 asset responses PASS; không ghi cloud |
+| Browser evidence | UI unchanged từ runtime `1b5c1f1`; bằng chứng responsive 320/704/1024/1600, labels, image load và console error của Phần 8 được tái sử dụng, không tuyên bố ca UI mới |
+| CI remote | Commit `d88798b`: [CI quality PASS](https://github.com/dangtuanminh2702206-wq/nhahang/actions/runs/37114247149), [Pages deploy PASS](https://github.com/dangtuanminh2702206-wq/nhahang/actions/runs/37114247136), [Vercel check PASS](https://vercel.com/minh-5f07/nhahang/3xxV6QZqbGuryozVb3RJ9WrMNQy4) |
+| CI definition | `.github/workflows/ci.yml` dùng PostgreSQL service `mocvi_test_*`, lockfile install, mock Supabase loopback chỉ trả 401 cho HTTP guest smoke, quality gates, normal/Pages build tuần tự; không production secrets/cloud mutation |
+
+Alias test được thêm vào `package.json` để tránh script tồn tại nhưng không thể gọi
+qua `pnpm`. Commit `d88798b` đã push trên `codex/restaurant-booking-platform` và
+đã có bằng chứng CI/Pages/Vercel nêu trong bảng trên.
+
+Không phát hiện bug runtime mới cần sửa trong các gate local. Hai lỗi smoke ban đầu
+là lỗi harness: khởi động server sau Pages build và dùng origin khác
+`NEXT_PUBLIC_SITE_URL`; sau đó phát hiện build CI chưa có Supabase config nên profile
+chạy demo, rồi bổ sung mock loopback và biến build/runtime chỉ dành cho CI. Đã rebuild
+normal, chạy origin cùng cổng và cờ mutation-off chỉ trong tiến trình, không sửa
+`.env.local`.
+
+Không chạy signup/resend, role mutation, load test, migration cloud, thay policy,
+đổi dữ liệu production hoặc thao tác 3D. JWT/Auth thật, live database và các giới
+hạn đã ghi ở các phần trước vẫn phải được phân biệt với contract/local CI; mock
+Supabase chỉ chứng minh guest fail-closed/HTTP guard, không chứng minh JWT thật.

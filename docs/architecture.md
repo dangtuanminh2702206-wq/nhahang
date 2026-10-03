@@ -182,7 +182,8 @@ booking để ép khớp UI.
 - Phần 3: design system/public đã chốt, đủ 50 ảnh FINAL và đồng bộ spatial FloorPlan.
 - Phần 4: có implementation authentication, hồ sơ và authorization; một Customer đã kiểm chứng đọc/lưu hồ sơ, reload và logout. Signup mới/các ca JWT còn thiếu xem database-testing.md.
 - Phần 5–8: booking, Customer, Staff và Admin.
-- Phần 9–10: kiểm thử, CI, Vercel và bàn giao.
+- Phần 9: system QA, hardening và CI; Phần 10: kiểm thử bàn giao cuối, vận hành
+  và checklist phát hành nếu được duyệt riêng.
 
 ## Identity implementation · 01/10/2026
 
