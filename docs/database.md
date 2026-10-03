@@ -3,9 +3,9 @@
 ## Trạng thái và ranh giới
 
 **Cập nhật hiện hành 03/10/2026:** các đoạn dưới ghi lại mốc Phần 2. Migration
-Phần 4–7 và scheduler đã áp production theo các lượt duyệt; Staff workflow đã
-được kiểm chứng, còn gate tạo walk-in thành công trong giờ phục vụ thật. Bộ SQL
-local sạch hiện đạt 53 nhóm. Nguồn nghiệm thu mới nhất: database-testing.md.
+Phần 4–7 và scheduler đã áp production theo các lượt duyệt; Staff workflow và
+walk-in production trong giờ phục vụ đã được kiểm chứng. Bộ SQL local sạch hiện
+đạt 53 nhóm. Nguồn nghiệm thu mới nhất: database-testing.md.
 
 Migration và seed đã chạy thành công trên Supabase development và PostgreSQL
 local. Bộ 18 nhóm kiểm thử tích hợp local và smoke test quyền trên Supabase đều
@@ -254,8 +254,9 @@ bị lọc như foundation. Không thay policy/rule của RPC đã deploy.
 
 Không có chuyển ngược từ trạng thái cuối. Việc dọn xong cleaning → available là
 thao tác bàn riêng qua `staff_operation(ready)`, không tự động theo đồng hồ.
-Implementation có đủ mutation không đồng nghĩa toàn bộ nghiệm thu production
-đã hoàn tất; gate walk-in hiện còn chờ giờ phục vụ thật.
+Implementation và nghiệm thu production của Phần 7 đã đạt trong phạm vi Staff
+operations; booking walk-in QA được tạo bằng JWT Staff thật trong giờ phục vụ,
+hoàn tất và trả bàn về `available`.
 
 ## Phân quyền và SECURITY DEFINER
 
@@ -377,7 +378,7 @@ Production đã bật job `mocvi-expire-pending` mỗi phút bằng script owner
 [`phase7-scheduler.sql`](../supabase/operations/phase7-scheduler.sql).
 Job succeeded đúng phút QA hết hạn tự nhiên đã được đối chiếu ngày 03/10;
 history/notification/audit không trùng sau nhiều lần cron. Bằng chứng Staff UI/JWT
-và gate walk-in còn lại nằm ở [`database-testing.md`](database-testing.md).
+và walk-in production nằm ở [`database-testing.md`](database-testing.md).
 
 - [PostgreSQL: range và exclusion constraint](https://www.postgresql.org/docs/current/rangetypes.html).
 - [PostgreSQL: Row Security](https://www.postgresql.org/docs/current/ddl-rowsecurity.html).

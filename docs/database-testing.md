@@ -750,3 +750,31 @@ thực sự khả dụng, xác minh confirmed/customer_id null và chu trình ph
 rồi dọn bàn available. Không dùng owner fixture để thay ca tạo walk-in thật,
 không đổi policy production. Operator chọn tự gọi tiếp sau 10:00: **không
 lên lịch hoặc chạy kiểm thử tự động lúc mở cửa**.
+
+### Phần 7 — nghiệm thu walk-in production đạt — 03/10/2026
+
+Gate cuối được thực hiện sau 10:00 bằng UI Staff trên production với JWT thật.
+Booking QA `2c5e4f18-47bf-4136-8c2e-fe9dedb1ff00` được tạo lúc 10:16
+Asia/Saigon trên T1-B02, 2 khách. Truy vấn owner sau thao tác chỉ dùng để đọc
+đối chiếu, không tạo hoặc sửa dữ liệu:
+
+```text
+source=walk_in
+status=confirmed → completed
+customer_id=null
+guest_count=2
+actual_guest_count=2
+table=T1-B02
+history_count=3
+audit_count=3
+```
+
+Chu trình UI/JWT đạt `confirmed → checked_in → completed`; Staff xác nhận dọn
+bàn sau đó và bàn trở lại `available`. Đọc lại production cho thấy **22/22 bàn
+available, 0 cleaning**. Không có booking thứ hai để giả lập retry; history ghi
+đúng ba chuyển trạng thái thực tế.
+
+Với gate này, **Phần 7 PASS trong phạm vi Staff operations đã thống nhất**.
+Các fixture owner-prepared trước đó vẫn được giữ để chứng minh các nhánh nghiệp
+vụ khác; chúng không được dùng thay cho bằng chứng walk-in này. Không đổi policy,
+giờ phục vụ, role, RLS hoặc scheduler.

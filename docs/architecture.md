@@ -270,6 +270,7 @@ booking đã đổi trạng thái sau lần gọi đầu. Client không có EXEC
 UPDATE booking/table trực tiếp.
 
 Job `mocvi-expire-pending` mỗi phút đã kiểm chứng hết hạn tự nhiên trên production
-ngày 03/10. Staff/Admin workflow và quyền production đã đạt; Phần 7 còn một gate
-tạo walk-in thành công trong giờ phục vụ thật. Xem database-testing.md để phân
-biệt fixture owner được duyệt, SQL local, HTTP local và JWT/UI production.
+ngày 03/10. Staff/Admin workflow, quyền production và ca walk-in trong giờ phục
+vụ thật đã đạt; Phần 7 PASS trong phạm vi Staff operations. Xem
+database-testing.md để phân biệt fixture owner được duyệt, SQL local, HTTP local
+và JWT/UI production.

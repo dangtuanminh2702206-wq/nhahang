@@ -347,3 +347,18 @@ Mục này thay thế trạng thái kiểm thử Phần 7 ngày 02/10 ở trên,
   sau tạo, không thay thế bằng chứng walk-in. Operator chọn tự gọi tiếp sau
   10:00 ngày 03/10; không tự chạy hoặc đổi policy. Chi tiết trong
   [database-testing.md](docs/database-testing.md).
+
+### Nghiệm thu Phần 7 — walk-in production đạt — 03/10/2026
+
+Gate walk-in còn lại đã đạt lúc 10:16 Asia/Saigon bằng phiên Staff JWT thật
+trên `moc-vi-restaurant.vercel.app`:
+
+- Booking QA `2c5e4f18-47bf-4136-8c2e-fe9dedb1ff00` được tạo qua form Staff với
+  `source=walk_in`, `status=confirmed`, `customer_id=null`, T1-B02, 2 khách.
+- Chu trình thực tế đạt: `confirmed → checked_in → completed → cleaning →
+  available`; khách thực tế là 2, history có 3 chuyển trạng thái và audit có 3
+  bản ghi cho booking.
+- Đọc lại production sau khi dọn bàn: 22/22 bàn `available`, không còn bàn
+  `cleaning`. Phần 7 **PASS trong phạm vi Staff operations đã thống nhất**.
+- Các đoạn PARTIAL phía trên được giữ làm lịch sử; bằng chứng chi tiết ở
+  [database-testing.md](docs/database-testing.md).
