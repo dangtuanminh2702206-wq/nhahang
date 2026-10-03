@@ -76,9 +76,14 @@ jobs:
         run: pnpm test:db
 
       - name: Normal production build
+        env:
+          NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
         run: pnpm build
 
       - name: Start isolated server
+        env:
+          NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+          BOOKING_LOCAL_MUTATIONS_ENABLED: "false"
         shell: bash
         run: |
           pnpm start --hostname 127.0.0.1 --port 3000 > next-server.log 2>&1 &
