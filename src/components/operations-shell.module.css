@@ -95,6 +95,11 @@
 .workspace :global(.admin-menu-list summary) { padding-block: 1rem; }
 .workspace :global(.admin-menu-list details[open]) { border-color: var(--workspace-line); }
 .workspace :global(.admin-search) { display: grid; gap: .5rem; }
+.workspace :global(#booking-history p) { overflow-wrap: anywhere; }
+.workspace :global(#booking-history .admin-list-row) { flex-wrap: wrap; gap: 1rem; }
+.workspace :global(#booking-history .admin-form-grid) { width: 100%; }
+.workspace :global(#booking-history button.booking-error) { margin: 0; color: var(--destructive); border-color: var(--destructive); }
+.workspace :global(#booking-history button.booking-error:hover) { background: var(--muted); color: var(--destructive); }
 .workspace :global(.staff-table-grid) { margin-top: 1.25rem; gap: 1rem; }
 .workspace :global(.staff-table-card) { border-radius: 8px; min-height: 8rem; background: var(--workspace-subtle); }
 .workspace :global(.staff-table-card h3) { font-size: 1rem; }

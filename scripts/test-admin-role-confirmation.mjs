@@ -15,6 +15,7 @@ const source = await readFile(new URL('../src/components/admin-console.tsx', imp
 const exports = {};
 const jsx = (type, props) => ({ type, props });
 const modules = {
+  '@/components/admin-booking-history': { AdminBookingHistory: () => null },
   'react/jsx-runtime': { jsx, jsxs: jsx },
   'react': { useState: initial => {
     const slot = cursor++;

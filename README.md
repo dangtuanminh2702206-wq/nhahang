@@ -29,6 +29,18 @@ Combo CRUD và đặt món đã bật/kiểm thử production. Recovery email v�
 đã được operator xác nhận; luồng Customer A/B → booking → order → Staff đạt qua
 HTTP và SQL read-back. Các kết quả browser được ghi riêng, không suy từ API.
 
+## Admin xóa lịch sử đặt bàn
+
+Trong `/admin` → **Lịch sử đặt bàn**, chọn khoảng ngày báo cáo, chọn từng booking,
+nhập nguyên mã booking và lý do rồi xác nhận. Xóa vĩnh viễn cả đơn món, chi tiết,
+lịch sử và thông báo liên quan; không có hoàn tác trên website. Audit và retry
+receipts được giữ. Server chỉ cho Admin active xóa booking terminal đã qua giờ
+kết thúc, không còn đơn món đang xử lý; snapshot cũ bị từ chối.
+
+Rollout database **chưa thực hiện**: cần duyệt riêng migration
+`202610040001_admin_booking_deletion.sql` trước khi dùng trên production.
+Không có dữ liệu production nào được xóa trong nhiệm vụ triển khai này.
+
 ## Tech stack
 
 - Next.js App Router

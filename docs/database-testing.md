@@ -1,5 +1,26 @@
 # Kiểm thử Phần 2
 
+## Admin xóa lịch sử đặt bàn · 04/10/2026
+
+- Migration mới `202610040001_admin_booking_deletion.sql`; chưa áp production,
+  cần operator duyệt riêng. Không xóa fixture hay dữ liệu thật trên Supabase.
+- SQL local PostgreSQL 18.4 loopback, database trống `mocvi_test_*`: **91 nhóm
+  PASS**, gồm 4 nhóm mới về purge. Guest/Customer/Staff/inactive Admin bị từ chối,
+  DELETE trực tiếp bị chặn; yêu cầu mã chính xác, lý do, snapshot timestamp gốc,
+  trạng thái terminal trong quá khứ và đơn món đã kết thúc.
+- Xóa booking/order/items/history/notifications nguyên tử; audit failure rollback,
+  dữ liệu không liên quan và private retry receipts được giữ. Hai kết nối xóa
+  đồng thời có đúng một winner và một deletion audit. Không thay clock/policy cloud.
+- `node scripts/test-booking-deletion.mjs`: PASS contract API và synthetic component
+  confirmation/cancel. Mở form hoặc hủy không gửi mutation; whitelist, Admin role,
+  origin, no-store và lỗi xung đột an toàn được kiểm tra. CI chạy gate này và SQL suite.
+- Typecheck/lint, normal build, Pages build và exported asset/basePath checks: PASS.
+  HTTP local Guest `/admin`: streamed redirect về login (HTTP 200/RSC redirect,
+  không có form xóa); POST Admin đúng origin cấu hình → 401/no-store,
+  origin khác → 403/no-store, không mutation.
+- Browser trực tiếp: NOT RUN do công cụ chặn truy cập tab. Synthetic UI không phải
+  bằng chứng browser hoặc JWT production. Rollout/JWT xóa production: NOT RUN.
+
 ## Trạng thái hiện tại
 
 - **Phần 4 — PASS trong phạm vi Identity/Auth đã thống nhất.** Bằng chứng gồm

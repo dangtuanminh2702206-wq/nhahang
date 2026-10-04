@@ -84,6 +84,9 @@ jobs:
       - name: Admin access confirmation regression
         run: node scripts/test-admin-role-confirmation.mjs
 
+      - name: Admin booking deletion contract and confirmation
+        run: node scripts/test-booking-deletion.mjs
+
       - name: Public asset and spatial checks
         run: pnpm test:public-assets
 

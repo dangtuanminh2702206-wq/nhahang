@@ -26,7 +26,7 @@ export type AdminCategory = { id: string; code: string; name: string; sort_order
 export type AdminMenuItem = { id: string; code: string; category_id: string; name: string; description: string; price: string | number; image_path: string | null; is_available: boolean; is_active: boolean; is_featured: boolean; sort_order: number };
 export type AdminProfile = { id: string; full_name: string; phone: string | null; role: "customer" | "staff" | "admin"; is_active: boolean; created_at: string };
 export type AdminAudit = { id: string; actor_id: string | null; entity_id: string; entity_type: string; action: string; details: Record<string, unknown>; created_at: string };
-export type AdminBookingSummary = { id: string; table_id: string; status: string; source: string; starts_at: string };
+export type AdminBookingSummary = { id: string; table_id: string; status: string; source: string; starts_at: string; ends_at: string; updated_at: string; contact_name: string };
 
 export type AdminSnapshot = {
   settings: AdminSettings;
@@ -70,7 +70,7 @@ export async function getAdminSnapshot(supabase: SupabaseClient, range: { from: 
     read<AdminMenuItem[]>(supabase.from("menu_items").select("id,code,category_id,name,description,price,image_path,is_available,is_active,is_featured,sort_order").order("sort_order").order("code"), "ADMIN_MENU_UNAVAILABLE"),
     allRows<AdminProfile>("profiles", "id,full_name,phone,role,is_active,created_at", "created_at", "ADMIN_PROFILES_UNAVAILABLE"),
     read<AdminAudit[]>(supabase.from("audit_logs").select("id,actor_id,entity_id,entity_type,action,details,created_at").order("created_at", { ascending: false }).limit(80), "ADMIN_AUDIT_UNAVAILABLE"),
-    allRows<AdminBookingSummary>("bookings", "id,table_id,status,source,starts_at", "starts_at", "ADMIN_BOOKINGS_UNAVAILABLE", true),
+    allRows<AdminBookingSummary>("bookings", "id,table_id,status,source,starts_at,ends_at,updated_at,contact_name", "starts_at", "ADMIN_BOOKINGS_UNAVAILABLE", true),
   ]);
   return { settings, hours, closures, areas, tables, categories, menuItems, profiles, audits, bookings };
 }
@@ -78,6 +78,10 @@ export async function getAdminSnapshot(supabase: SupabaseClient, range: { from: 
 export function adminErrorMessage(error: unknown) {
   const code = error instanceof Error ? error.message : "";
   const messages: Record<string, string> = {
+    BOOKING_NOT_FOUND: "Booking không còn tồn tại. Hãy tải lại trang.",
+    BOOKING_NOT_DELETABLE: "Chỉ xóa booking ở trạng thái kết thúc và đã qua giờ kết thúc.",
+    ORDER_NOT_FINISHED: "Đơn món còn xử lý. Không thể xóa booking này.",
+    DELETE_CONFIRMATION_REQUIRED: "Nhập đúng toàn bộ mã booking để xác nhận xóa.",
     ADMIN_CONFLICT: "Dữ liệu vừa thay đổi ở nơi khác. Hãy tải lại rồi thử lại.",
     ADMIN_EXPECTED_REQUIRED: "Thiếu dữ liệu đối chiếu. Hãy tải lại trang trước khi lưu.",
     SPATIAL_MAPPING_REQUIRED: "Chuyển tầng cần sơ đồ vị trí được duyệt; chức năng này chưa được hỗ trợ.",

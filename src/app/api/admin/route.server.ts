@@ -33,7 +33,13 @@ export async function POST(request: NextRequest) {
     let data: unknown;
     let error: { message?: string; code?: string } | null = null;
     const action = fields.action;
-    if (action === "settings") {
+    if (action === "booking-delete") {
+      if (Object.keys(fields).some(key => !["action", "id", "expectedUpdatedAt", "confirmation", "reason"].includes(key))) return invalid();
+      const bookingId = id(fields.id);
+      const expected = text(fields.expectedUpdatedAt, 40);
+      if (!bookingId || !expected || !Number.isFinite(Date.parse(expected)) || fields.confirmation !== bookingId) return invalid("Nhập đúng mã booking và tải lại dữ liệu trước khi xóa.");
+      ({ data, error } = await supabase.rpc("admin_delete_booking", { p_id: bookingId, p_expected_updated_at: expected, p_confirmation: fields.confirmation, p_reason: reason }));
+    } else if (action === "settings") {
       const name = text(fields.name, 120);
       const values = ["durationMinutes", "bufferMinutes", "minNoticeMinutes", "maxAdvanceDays", "pendingMinutes", "cancellationMinutes", "earlyCheckinMinutes", "noShowMinutes", "maxActiveBookings", "maxGuests"];
       const numbers = values.map((key) => integer(fields[key], 0, 100000));

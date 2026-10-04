@@ -5,6 +5,7 @@ import pg from 'pg';
 import { testAdminDatabase } from './test-admin-database.mjs';
 import { testComboDatabase } from './test-combo-database.mjs';
 import { testOrderDatabase } from './test-order-database.mjs';
+import { testBookingDeletionDatabase } from './test-booking-deletion-database.mjs';
 
 // This harness intentionally accepts only an empty loopback test database.
 const url = process.env.TEST_DATABASE_URL;
@@ -639,6 +640,7 @@ try {
   await testAdminDatabase({ admin, left, right, actor, check, compete, A, B, S, D, tables, start });
   await testComboDatabase({ admin, left, right, actor, check, compete, A, S, D });
   await testOrderDatabase({ admin, left, right, actor, check, compete, A, B, S, D, tables, start, clearBookings });
+  await testBookingDeletionDatabase({ admin, left, right, actor, check, compete, A, S, D, tables, start, clearBookings });
   console.log(`${passed} database checks passed. Supabase Auth/JWT integration requires separate validation.`);
 } finally {
   await Promise.allSettled(clients.map(c=>c.end()));
