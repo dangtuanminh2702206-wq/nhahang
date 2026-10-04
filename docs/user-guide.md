@@ -45,6 +45,13 @@ và sức chứa cần thiết; không trả thông tin khách hàng.
 Không nhập thông tin tài khoản trên GitHub Pages hoặc bản local chưa cấu hình
 Supabase. Tài khoản đăng ký không tự được cấp Staff/Admin.
 
+### Đổi mật khẩu khi đang đăng nhập
+
+Mở **Hồ sơ**, chọn **Đổi mật khẩu** dưới phần chỉnh sửa hồ sơ. Nhập mật khẩu
+mới hai lần rồi lưu; sau khi thành công, đăng nhập lại bằng mật khẩu mới.
+Chức năng này dùng cho chính tài khoản active đang đăng nhập, bao gồm Customer,
+Staff và Admin, không đổi quyền hoặc mật khẩu của người khác.
+
 ### Quên mật khẩu
 
 Tại trang đăng nhập, chọn `Quên mật khẩu?`, nhập email và yêu cầu liên kết.

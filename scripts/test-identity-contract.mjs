@@ -253,3 +253,6 @@ for (const [code, expected] of [['pkce_code_verifier_not_found','browser'],['bad
 }
 console.log('PASS password contracts: origin/content whitelist, input bounds, enumeration response, quota, verified active ownership, update/logout failure, global logout, PKCE/recovery OTP, expired links and fixed redirects.');
 console.log('NOT RUN here: provider email delivery, real recovery cookies or production password update.');
+const profilePageSource = await readFile(new URL('../src/app/profile/page.tsx', import.meta.url), 'utf8');
+assert.match(profilePageSource, /<Link\b[^>]*href="\/reset-password"[^>]*>Đổi mật khẩu<\/Link>/);
+console.log('PASS profile navigation source contract: visible change-password link targets existing reset-password route.');
