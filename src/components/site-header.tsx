@@ -33,7 +33,7 @@ export function SiteHeader() {
           <summary aria-label="Mở điều hướng">Menu</summary>
           <nav aria-label="Điều hướng di động">
             {navigation.map((item) => <Link key={item.href} href={item.href} aria-current={isCurrent(item.href) ? "page" : undefined} className={isCurrent(item.href) ? "is-current" : undefined}>{item.label}</Link>)}
-            <Link href="/reservation">Đặt bàn · Preview</Link>
+            <Link href="/reservation">Đặt bàn</Link>
           </nav>
         </details>
       </div>

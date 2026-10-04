@@ -7,6 +7,15 @@ import type { AdminAudit, AdminSettings, AdminSnapshot } from "@/lib/admin";
 
 type Props = { snapshot: AdminSnapshot; range: { from: string; to: string }; combosEnabled?: boolean };
 type FormValues = Record<string, FormDataEntryValue>;
+const sectionLinks = [
+  { id: "overview", label: "Tổng quan" },
+  { id: "policy", label: "Chính sách" },
+  { id: "schedule", label: "Lịch phục vụ" },
+  { id: "spaces", label: "Khu vực và bàn" },
+  { id: "menu", label: "Thực đơn" },
+  { id: "accounts", label: "Tài khoản" },
+  { id: "audit", label: "Audit" },
+] as const;
 
 function stringValue(form: FormData, key: string) { return String(form.get(key) ?? "").trim(); }
 function booleanValue(form: FormData, key: string) { return form.get(key) === "on"; }
@@ -16,10 +25,11 @@ function RowForm({ action, expectedValues, onSubmit, children, busy = false }: {
 }
 
 function Section({ eyebrow, title, note, children }: { eyebrow: string; title: string; note?: string; children: ReactNode }) {
-  return <section className="admin-section"><div className="admin-section-heading"><div><p className="eyebrow">{eyebrow}</p><h2>{title}</h2></div>{note && <p className="section-note">{note}</p>}</div>{children}</section>;
+  const id = sectionLinks.find((section) => section.label === eyebrow)?.id;
+  return <section id={id} aria-labelledby={id ? `${id}-title` : undefined} className="admin-section"><div className="admin-section-heading"><div><p className="eyebrow">{eyebrow}</p><h2 id={id ? `${id}-title` : undefined}>{title}</h2></div>{note && <p className="section-note">{note}</p>}</div>{children}</section>;
 }
 
-function TableWrap({ children }: { children: ReactNode }) { return <div className="admin-table-wrap"><table className="admin-table">{children}</table></div>; }
+function TableWrap({ children }: { children: ReactNode }) { return <div className="admin-table-wrap" tabIndex={0} role="region" aria-label="Bảng dữ liệu quản trị, cuộn ngang để xem đầy đủ"><table className="admin-table">{children}</table></div>; }
 
 function policyExpected(settings: AdminSettings) {
   return { name: settings.name, duration_minutes: settings.duration_minutes, buffer_minutes: settings.buffer_minutes, min_notice_minutes: settings.min_notice_minutes, max_advance_days: settings.max_advance_days, pending_minutes: settings.pending_minutes, cancellation_minutes: settings.cancellation_minutes, early_checkin_minutes: settings.early_checkin_minutes, no_show_minutes: settings.no_show_minutes, max_active_bookings: settings.max_active_bookings, max_guests: settings.max_guests };
@@ -108,6 +118,7 @@ export function AdminConsole({ snapshot, range, combosEnabled = false }: Props) 
   for (const booking of bookings) { byStatus.set(booking.status, (byStatus.get(booking.status) ?? 0) + 1); bySource.set(booking.source, (bySource.get(booking.source) ?? 0) + 1); const floor = tableById.get(booking.table_id)?.area_id ?? "--"; byFloor.set(floor, (byFloor.get(floor) ?? 0) + 1); const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh" }).format(new Date(booking.starts_at)); byDay.set(day, (byDay.get(day) ?? 0) + 1); }
   return <section className="section"><div className="site-container admin-container"><header className="admin-header"><div><p className="eyebrow">Admin management · {settings.timezone}</p><h1>Điều hành bằng dữ liệu.</h1><p className="lead">Một nơi để cập nhật policy, catalogue, mặt bằng và quyền truy cập. Mọi thay đổi đều được kiểm soát và lưu lịch sử.</p></div><div className="admin-header-links"><Link className="back-link" href="/staff">Mở vận hành Staff ↗</Link><Link className="back-link" href="/">Về trang chính ↗</Link></div></header>
     <div className="admin-live-note" role="status"><strong>Dữ liệu live:</strong> bản Vercel đọc Supabase sau mỗi request. GitHub Pages vẫn là snapshot canonical, không gọi Admin API.</div>
+    <nav className="admin-section-nav" aria-label="Nhóm chức năng quản trị">{sectionLinks.map(({ id, label }) => <a key={id} href={`#${id}`}>{label}</a>)}</nav>
     {combosEnabled && <p><Link className="text-link" href="/admin/combos">Quản lý combo ↗</Link></p>}
     <p className="admin-message" role={messageIsError ? "alert" : "status"} aria-live="polite">{busy ? "Đang lưu thay đổi…" : message}</p>
     <Section eyebrow="Tổng quan" title="Booking trong khoảng đã chọn" note="Số lượng booking, không phải doanh thu hay tỷ lệ lấp đầy."><form className="admin-range-form" method="get"><label>Từ ngày<input type="date" name="from" defaultValue={range.from} /></label><label>Đến ngày<input type="date" name="to" defaultValue={range.to} /></label><button className="button button-secondary" type="submit">Xem báo cáo</button></form><div className="admin-summary-line"><p><strong>{bookings.length}</strong> booking · {range.from} → {range.to}</p><p><strong>{profiles.filter((profile) => profile.is_active).length}</strong> tài khoản active · <strong>{tables.filter((table) => table.is_active).length}</strong> bàn active</p></div><div className="admin-report-grid"><div><h3>Theo ngày</h3><ul>{[...byDay].map(([key, value]) => <li key={key}><span>{key}</span><strong>{value}</strong></li>)}</ul></div><div><h3>Theo trạng thái</h3><ul>{[...byStatus].map(([key, value]) => <li key={key}><span>{key}</span><strong>{value}</strong></li>)}</ul></div><div><h3>Theo nguồn</h3><ul>{[...bySource].map(([key, value]) => <li key={key}><span>{key}</span><strong>{value}</strong></li>)}</ul></div><div><h3>Theo tầng</h3><ul>{[...byFloor].map(([key, value]) => <li key={key}><span>{areaById.get(key)?.name ?? key}</span><strong>{value}</strong></li>)}</ul></div></div></Section>

@@ -1,0 +1,136 @@
+/* Private operations styling never changes public page compositions. */
+.workspace {
+  --workspace-radius: 12px;
+  --workspace-line: #83917f;
+  --workspace-background: #f0f2eb;
+  --workspace-input: #fffefb;
+  --workspace-subtle: #f7f8f2;
+  --workspace-highlight: #e9eee4;
+  background: var(--workspace-background);
+  min-width: 0;
+  padding-bottom: 2rem;
+}
+.workspace :global(.operations-nav) {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem max(1.25rem, calc((100% - 84rem) / 2));
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.workspace :global(.operations-brand) { font-weight: 700; white-space: nowrap; }
+.workspace :global(.operations-brand span) { font-weight: 400; color: var(--muted-foreground); margin-left: .5rem; }
+.workspace :global(.operations-nav > div) { display: flex; flex-wrap: wrap; gap: .5rem; }
+.workspace :global(.operations-nav a) { display: inline-flex; align-items: center; min-height: 44px; padding: .6rem 1rem; border-radius: 7px; font-size: .875rem; font-weight: 600; }
+.workspace :global(.operations-nav a[aria-current="page"]) { background: var(--primary); color: var(--on-primary); }
+.workspace :global(.operations-nav a:hover:not([aria-current])) { background: var(--muted); }
+.workspace :global(.section) { padding-block: clamp(2rem, 4vw, 3.5rem); }
+.workspace :global(.site-container) { width: min(84rem, calc(100% - 3rem)); }
+.workspace :global(h1) { font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -.035em; line-height: 1.15; }
+.workspace :global(h2) { font-family: var(--font-body); font-size: clamp(1.25rem, 2vw, 1.55rem); font-weight: 700; letter-spacing: -.025em; line-height: 1.35; }
+.workspace :global(h3) { font-family: var(--font-body); font-size: 1.05rem; font-weight: 600; line-height: 1.4; }
+.workspace :global(.lead) { max-width: 65ch; font-size: 1rem; color: var(--muted-foreground); }
+.workspace :global(.eyebrow) { font-size: .7rem; letter-spacing: .12em; }
+.workspace :global(.section-heading), .workspace :global(.admin-header), .workspace :global(.booking-detail-heading) { margin-bottom: 1.75rem; gap: 1.5rem; }
+.workspace :global(.admin-header) { align-items: start; padding-bottom: 1.5rem; }
+.workspace :global(.admin-header-links) { flex-shrink: 0; }
+.workspace :global(.back-link) { font-size: .875rem; }
+.workspace :global(.button) { min-height: 44px; padding: .65rem 1rem; border-radius: 7px; font-size: .875rem; font-weight: 600; line-height: 1.4; }
+.workspace :global(.button-secondary) { background: var(--surface); border-color: var(--workspace-line); }
+.workspace :global(.button-secondary:hover), .workspace :global(.button-secondary[aria-pressed="true"]) { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+.workspace :global(.staff-section), .workspace :global(.admin-section), .workspace :global(.booking-detail-section), .workspace :global(.order-section) {
+  min-width: 0;
+  margin-top: 1.5rem;
+  padding: clamp(1rem, 2.5vw, 1.75rem);
+  border: 1px solid var(--border);
+  border-radius: var(--workspace-radius);
+  background: var(--surface);
+  scroll-margin-top: 2rem;
+}
+.workspace :global(h2[id]) { scroll-margin-top: 2rem; }
+.workspace :global(.staff-section > .button) { margin-bottom: .75rem; }
+.workspace :global(.admin-section-heading), .workspace :global(.booking-section-heading) { align-items: start; gap: 1.5rem; margin-bottom: 1.5rem; }
+.workspace :global(.admin-section-heading h2) { margin-top: .3rem; }
+.workspace :global(.section-note) { max-width: 48ch; font-size: .875rem; line-height: 1.6; }
+.workspace :global(.admin-section-nav) { display: flex; flex-wrap: wrap; gap: .5rem; margin-block: 1.25rem; }
+.workspace :global(.admin-section-nav a) { min-height: 44px; display: inline-flex; align-items: center; padding: .5rem .9rem; border: 1px solid var(--workspace-line); border-radius: 7px; background: var(--surface); color: var(--primary); font-size: .875rem; font-weight: 600; }
+.workspace :global(.admin-section-nav a:hover) { background: var(--muted); }
+.workspace :global(.staff-filters) { grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 1.25rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--workspace-radius); }
+.workspace :global(.staff-summary), .workspace :global(.admin-summary-line) { gap: 1rem; padding-block: 1.5rem; }
+.workspace :global(.staff-summary strong), .workspace :global(.admin-summary-line strong) { font-size: 1.6rem; }
+.workspace :global(input:not([type="checkbox"]):not([type="hidden"])), .workspace :global(select), .workspace :global(textarea) {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 46px;
+  padding: .65rem .8rem;
+  border: 1px solid var(--workspace-line);
+  border-radius: 7px;
+  background: var(--workspace-input);
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+.workspace :global(input[readonly]) { background: var(--muted); color: var(--muted-foreground); }
+.workspace :global(input:disabled), .workspace :global(select:disabled), .workspace :global(textarea:disabled) { background: var(--muted); cursor: not-allowed; }
+.workspace :global(input:focus-visible), .workspace :global(select:focus-visible), .workspace :global(textarea:focus-visible) { outline: 2px solid var(--ring); outline-offset: 2px; }
+.workspace :global(input[type="checkbox"]) { accent-color: var(--primary); width: 1.15rem; height: 1.15rem; min-height: 0; flex: 0 0 auto; }
+.workspace :global(label.checkbox-label), .workspace :global(label:has(> input[type="checkbox"])) { display: flex; align-items: center; gap: .65rem; min-height: 44px; }
+.workspace :global(.admin-form-grid > label), .workspace :global(.staff-create-form label), .workspace :global(.staff-filters label) { font-size: .8125rem; color: var(--foreground); gap: .5rem; }
+.workspace :global(.admin-row-form > label) { min-width: 0; flex-basis: 11rem; }
+.workspace :global(.admin-row-form > .admin-form-grid) { width: 100%; }
+.workspace :global(.admin-form-grid), .workspace :global(.staff-create-form) { gap: 1.25rem; }
+.workspace :global(.admin-row-form) { gap: 1rem; padding-block: 1.25rem; }
+.workspace :global(.admin-live-note) { border-radius: 7px; font-size: .875rem; }
+.workspace :global(.admin-message:empty), .workspace :global(.staff-action-message:empty) { display: none; }
+.workspace :global(.admin-message:not(:empty)), .workspace :global(.staff-action-message:not(:empty)) { padding: .8rem 1rem; border-radius: 7px; background: var(--muted); overflow-wrap: anywhere; }
+.workspace :global(.admin-report-grid) { gap: 1rem; }
+.workspace :global(.admin-report-grid > div) { border: 1px solid var(--border); border-radius: 8px; padding: 1rem; background: var(--workspace-subtle); }
+.workspace :global(.admin-table-wrap) { border: 1px solid var(--border); border-radius: 8px; overscroll-behavior-x: contain; }
+.workspace :global(.admin-table th) { background: var(--workspace-highlight); font-size: .75rem; color: var(--foreground); padding: 1rem; }
+.workspace :global(.admin-table td) { padding: 1rem; font-size: .875rem; }
+.workspace :global(.admin-table tbody tr:nth-child(even)) { background: var(--workspace-subtle); }
+.workspace :global(.admin-menu-list details) { border: 1px solid var(--border); border-radius: 8px; padding-inline: 1rem; background: var(--workspace-input); }
+.workspace :global(.admin-menu-list summary) { padding-block: 1rem; }
+.workspace :global(.admin-menu-list details[open]) { border-color: var(--workspace-line); }
+.workspace :global(.admin-search) { display: grid; gap: .5rem; }
+.workspace :global(.staff-table-grid) { margin-top: 1.25rem; gap: 1rem; }
+.workspace :global(.staff-table-card) { border-radius: 8px; min-height: 8rem; background: var(--workspace-subtle); }
+.workspace :global(.staff-table-card h3) { font-size: 1rem; }
+.workspace :global(.staff-booking-row) { gap: 1.25rem; padding: 1.25rem .5rem; }
+.workspace :global(.staff-booking-row:hover) { background: var(--workspace-subtle); }
+.workspace :global(.staff-booking-row h3) { font-size: 1.1rem; }
+.workspace :global(.staff-booking-row .text-link) { flex-shrink: 0; font-size: .875rem; min-height: 44px; display: inline-flex; align-items: center; }
+.workspace :global(.booking-detail-grid) { gap: 1.5rem; align-items: start; }
+.workspace :global(.booking-detail-grid > section) { margin-top: 0; }
+.workspace :global(.booking-facts dd) { overflow-wrap: anywhere; }
+.workspace :global(.booking-history li) { padding-block: 1rem; }
+.workspace :global(.booking-history .meta-line) { font-size: .7rem; }
+.workspace :global(.booking-history span) { font-size: .875rem; }
+.workspace :global(.status) { border-radius: 6px; padding: .35rem .6rem; font-size: .8125rem; font-weight: 600; }
+.workspace :global(.order-status-line) { padding: 1rem; border-radius: 8px; background: var(--workspace-highlight); border: 0; }
+.workspace :global(.order-line-list) { border: 0; }
+.workspace :global(.staff-action-panel) { margin-top: 1.5rem; }
+.workspace :global(.combo-editor legend) { color: var(--muted-foreground); font-size: .8125rem; margin-block: .75rem; }
+.workspace :global(.combo-editor h3) { margin-top: .5rem; }
+@media (max-width: 1024px) {
+  .workspace :global(.admin-report-grid), .workspace :global(.admin-form-grid), .workspace :global(.staff-create-form), .workspace :global(.staff-table-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .workspace :global(.admin-section-heading), .workspace :global(.booking-section-heading) { flex-direction: column; gap: .75rem; }
+}
+@media (max-width: 704px) {
+  .workspace :global(.site-container) { width: calc(100% - 2rem); }
+  .workspace :global(.operations-nav) { padding: 1rem; gap: .75rem; }
+  .workspace :global(.operations-nav > div) { width: 100%; }
+  .workspace :global(.operations-nav a) { padding-inline: .75rem; }
+  .workspace :global(.staff-filters), .workspace :global(.admin-form-grid), .workspace :global(.staff-create-form) { grid-template-columns: minmax(0, 1fr); }
+  .workspace :global(.staff-create-notes) { grid-column: auto; }
+  .workspace :global(.admin-row-form > label), .workspace :global(.staff-action-row label) { width: 100%; min-width: 0; flex: 0 1 auto; }
+  .workspace :global(.admin-row-form > .admin-form-grid) { width: 100%; }
+  .workspace :global(.booking-detail-grid) { grid-template-columns: minmax(0, 1fr); }
+  .workspace :global(.staff-action-row > .button) { flex: 1 1 auto; }
+  .workspace :global(.admin-header-links) { justify-items: start; }
+}
+@media (max-width: 380px) {
+  .workspace :global(.staff-table-grid), .workspace :global(.admin-report-grid) { grid-template-columns: minmax(0, 1fr); }
+}

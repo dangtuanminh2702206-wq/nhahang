@@ -34,5 +34,6 @@ export function AccountControl() {
       setPending(false);
     } catch { setMessage("Chưa thể đăng xuất. Vui lòng thử lại."); setPending(false); }
   }
-  return <div className="account-control">{authenticated ? <>{customer && <Link href="/my-bookings">Đặt bàn của tôi</Link>}{staff && <Link href="/staff">Vận hành</Link>}{admin && <Link href="/admin">Quản trị</Link>}<Link href="/profile">Hồ sơ</Link><button type="button" disabled={pending} onClick={logout}>{pending ? "Đang thoát…" : "Đăng xuất"}</button></> : <Link href="/login">Đăng nhập</Link>}{message && <p role="alert">{message}</p>}</div>;
+  const links = authenticated ? <>{customer && <Link href="/my-bookings">Đặt bàn của tôi</Link>}{staff && <Link href="/staff">Vận hành</Link>}{admin && <Link href="/admin">Quản trị</Link>}<Link href="/profile">Hồ sơ</Link><button type="button" disabled={pending} onClick={logout}>{pending ? "Đang thoát…" : "Đăng xuất"}</button></> : <Link href="/login">Đăng nhập</Link>;
+  return <div className="account-control"><div className="account-links">{links}</div>{authenticated && <details className="account-menu" key={pathname}><summary>Tài khoản</summary><nav aria-label="Tài khoản của tôi">{links}</nav></details>}{message && <p role="alert">{message}</p>}</div>;
 }

@@ -17,7 +17,19 @@
 .account-control { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; font-size: .875rem; }
 .account-control a, .account-control button { display: inline-flex; align-items: center; min-height: 44px; background: transparent; color: var(--primary); border: 0; font: inherit; cursor: pointer; }
 .account-control p { max-width: 12rem; }
+.account-links { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
+.account-menu { display: none; position: relative; }
+.account-menu summary { display: flex; align-items: center; min-height: 44px; padding: .5rem .75rem; border: 1px solid var(--border); border-radius: var(--radius); color: var(--primary); font-size: .875rem; font-weight: 600; list-style: none; white-space: nowrap; }
+.account-menu summary::-webkit-details-marker { display: none; }
+.account-menu nav { position: absolute; z-index: 12; right: 0; top: calc(100% + .5rem); display: grid; gap: .25rem; width: 13rem; padding: .5rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); box-shadow: var(--shadow); }
+.account-menu nav a, .account-menu nav button { padding: .6rem .75rem; font-size: .9375rem; text-align: left; border-radius: 4px; }
+.account-menu nav a:hover, .account-menu nav button:hover { background: var(--muted); }
+@media (max-width: 1200px) {
+  .account-control:has(.account-menu) .account-links { display: none; }
+  .account-menu { display: block; }
+}
 @media (max-width: 704px) {
+  .header-inner { gap: .5rem; }
   .account-control { max-width: 6.5rem; margin-left: auto; gap: 0; }
   .account-control a, .account-control button { font-size: .8125rem; }
   .identity-form .button { width: 100%; }
