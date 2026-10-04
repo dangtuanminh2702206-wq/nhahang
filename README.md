@@ -517,3 +517,11 @@ cloud mutation trong nhóm này. Bằng chứng SQL hồi quy local: 68 nhóm PA
 Dashboard Supabase xác nhận Free Plan không có project backups; restore vẫn
 chưa kiểm thử. Xem [runbook](docs/operations-runbook.md) và
 [bảng tồn đọng](docs/completion-backlog.md) để phân biệt đã làm/chờ kiểm chứng/TODO.
+
+### Nghiệm thu quản lý quyền cô lập · 04/10/2026
+
+Gate đổi role/khóa tài khoản qua UI, từ chối inactive, bảo vệ Admin duy nhất và
+stale-update conflict đã PASS trên Next local + SQL RLS/RPC thật với Auth giả
+lập. Full SQL suite đạt 86 nhóm. Không thay quyền production; không suy thành
+JWT production PASS. Xem [bằng chứng kiểm thử](docs/database-testing.md#role-ui-cô-lập--04102026)
+và mục R03 trong [backlog](docs/completion-backlog.md).

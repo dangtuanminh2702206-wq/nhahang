@@ -81,6 +81,9 @@ jobs:
       - name: Staff contract tests
         run: pnpm test:staff
 
+      - name: Admin access confirmation regression
+        run: node scripts/test-admin-role-confirmation.mjs
+
       - name: Public asset and spatial checks
         run: pnpm test:public-assets
 

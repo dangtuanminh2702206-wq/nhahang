@@ -1077,3 +1077,60 @@ trạng thái Đã phục vụ và tổng dự kiến đúng; booking Đã hủy
 được lưu ngoài repository, không chứa mật khẩu/token.
 Chưa chứng nhận interaction responsive đầy đủ cho form order qua browser trong
 lượt rollout này; browser có gián đoạn, không tính timeout là PASS.
+
+## Role UI cô lập — 04/10/2026
+
+Nghiệm thu riêng gate quản lý quyền bằng giao diện. Không đổi role/active của
+bất kỳ tài khoản production nào, không áp migration cloud, không dùng password
+hoặc JWT production. Môi trường gồm Next local, bridge loopback
+`scripts/test-admin-role-ui.mjs` và database mới `mocvi_test_role_ui_*`.
+Bridge chỉ chấp nhận schema Auth giả lập tối thiểu của `test:db`; Auth là
+synthetic, nhưng Next UI/API, transaction, RLS và `admin_update_profile` là mã
+thật chạy với role PostgreSQL tương ứng. Đây không phải nghiệm thu Supabase
+Auth/JWT hay toàn bộ giao thức PostgREST.
+
+| Ca kiểm thử | Bằng chứng | Kết quả |
+| --- | --- | --- |
+| Customer → Staff; Admin test khác → Staff rồi khôi phục Admin | Browser submit → Next API → SQL read-back/audit | PASS |
+| Khóa Customer rồi thử login; mở khóa qua UI | Browser + profile SQL trusted | PASS: inactive bị từ chối; baseline đã khôi phục |
+| Tài khoản bị hạ xuống Staff vào `/admin` | Browser route guard + trusted profile | PASS: không có quyền truy cập |
+| Chuẩn bị thay đổi rồi hủy | Browser và component-event regression | PASS: không gửi mutation trước xác nhận |
+| Hai tab giữ snapshot khác nhau | Browser + RPC thật | PASS: tab cũ nhận conflict, không ghi đè/audit thừa |
+| Admin active duy nhất tự hạ quyền/tự khóa | Browser + RPC thật + SQL read-back | PASS: `SELF_PROTECTION`, Admin vẫn active |
+| Hai Admin hạ quyền đồng thời, quyền Guest/Customer/Staff/inactive, rollback audit | SQL integration cô lập | PASS: invariant còn đúng một active Admin; không giả đây là browser race |
+| Viewport 320/704/1024/1600px | Browser đo viewport/page/table thực tế | PASS: không tràn ngang toàn trang, bảng có vùng cuộn riêng |
+
+Full SQL runner trên database trống đạt **86 nhóm PASS**, migration 001–008 theo
+thứ tự và seed chạy hai lần. Cơ chế self-protection kiểm tra trước last-Admin:
+UI trả `SELF_PROTECTION`, không ghi nhầm thành đã nhận mã `LAST_ADMIN`.
+Chứng minh concurrency/last-Admin invariant là ca SQL thực tế riêng.
+
+Đổi hộp native confirm của thao tác profile thành bước xác nhận inline có
+role/trạng thái/lý do, nút Hủy và Xác nhận, giữ payload snapshot và thông báo lỗi.
+Không sửa API/RPC, grants, policy hoặc bỏ bước xác nhận. Row form remount theo
+trusted role/active sau refresh để không giữ giá trị uncontrolled cũ. Skill UI/UX
+hướng dẫn explicit feedback, label và focus; không redesign trang Admin.
+
+`scripts/test-admin-role-confirmation.mjs` PASS cho confirm/cancel, không gửi
+request sớm, payload bất biến, focus return, refresh và conflict feedback; CI
+đã bổ sung chạy regression này. Đây là component-event mock, không JWT test.
+Typecheck, lint, normal build và identity/combo/booking contracts PASS. Build
+dùng process env loopback, không đổi `.env.local`; không phải cloud/live-data
+gate. CI cloud chưa chạy cho thay đổi này, không được suy từ kết quả local.
+
+Để tái lập: tạo database loopback trống tên `mocvi_test_*`, chạy
+`TEST_DATABASE_URL=<local-only> node scripts/test-database.mjs` trước, rồi cùng
+biến đó chạy `node scripts/test-admin-role-ui.mjs`. Chạy Next ở port riêng với
+process env `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54322`, publishable key
+fixture `local-ui-test-key`, site URL local tương ứng và `GITHUB_PAGES=false`.
+Không sửa env production. Bridge chỉ chứa email thuộc `qa.example.invalid` và
+mật khẩu fixture local `LOCAL-QA-ONLY`; chúng không phải tài khoản cloud.
+Với ca sole-Admin, ghi baseline và tạm inactive Admin fixture cũ của SQL suite
+trong database riêng, rồi khôi phục sau kiểm thử; không làm điều này trên cloud.
+
+Bốn profile ROLE UI QA đã trở lại role/active ban đầu, xác minh SQL riêng; giữ
+7 audit của thao tác qua UI. Fixture Admin cũ dùng để thiết lập sole-Admin cũng
+đã khôi phục active. Không DELETE history. Lượt đọc console cuối bị gián đoạn,
+không chứng nhận console-clean hoặc browser keyboard đầy đủ từ lượt đó;
+focus-return có regression event riêng. Báo cáo này chỉ đóng R03, không đóng
+gate xoay mật khẩu/thu hồi phiên QA hoặc toàn bộ backlog.
