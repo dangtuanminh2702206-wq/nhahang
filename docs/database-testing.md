@@ -1263,7 +1263,8 @@ không chặn phạm vi đồ án đặt bàn/đặt món, thanh toán tại qu�
 - Dùng hai fixture do website cần lead time, check-in chỉ mở gần giờ; không
   suy thành một booking Customer liên tục đã check-in/complete/ready.
 
-Ảnh public menu/combo trong docs/screenshots không có dữ liệu khách; ảnh
-nghiệp vụ/fixture lưu riêng ngoài Git. Link tài liệu/ảnh và git diff --check
+Ảnh public menu/combo và vùng đơn món QA trong docs/screenshots không có
+email/credential/định danh fixture; ảnh private đầy đủ lưu riêng ngoài Git.
+Link tài liệu/ảnh và git diff --check
 đạt. Không chạy lại lint/build/SQL cho thay đổi chỉ tài liệu; bằng chứng 86 SQL
 và CI/runtime đã ghi ở trên vẫn là bằng chứng trước lượt docs này.
