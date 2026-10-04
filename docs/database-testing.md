@@ -916,6 +916,20 @@ không tạo fixture production mới. Trạng thái bàn giao tổng thể: **P
 cho đến khi database integration, recovery email thật, role UI cô lập và QA
 account rotation có bằng chứng riêng.
 
+### Recovery email thật — nghiệm thu bổ sung 04/10/2026
+
+Kết quả này thay thế trạng thái recovery PARTIAL trong mục kiểm tra trước đó.
+Website production chấp nhận một yêu cầu gửi recovery mới; operator xác nhận
+đã mở thư mới, tới form đặt mật khẩu mới, lưu và đăng nhập lại thành công.
+**PASS — recovery email production theo xác nhận operator.** Không dùng phiên
+đăng nhập cũ hoặc kết quả mock làm bằng chứng cho kết luận này.
+
+Identity/password contract và SSR recovery cookie storage chạy lại PASS.
+Không sửa runtime, SMTP, template, expiry, quyền hoặc database trong lượt này.
+Không kiểm thử riêng mật khẩu cũ bị từ chối, refresh-token revocation hoặc JWT
+cũ sau expiry; các gate đó vẫn chưa có bằng chứng mới. R04 rotation tất cả QA
+không được đánh dấu PASS từ việc khôi phục một tài khoản.
+
 ### Phần 9 — system QA, hardening và CI — 03/10/2026
 
 **PASS trong phạm vi các gate đã thực hiện; không phải chứng nhận mọi tính năng

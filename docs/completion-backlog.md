@@ -7,7 +7,7 @@ MVP; bằng chứng nghiệm thu lịch sử giữ ở `database-testing.md`.
 | ID | Phần | Yêu cầu | Hiện trạng | Tiêu chí nghiệm thu | Phụ thuộc | Bằng chứng | Trạng thái |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | R01 | 1–9 | Hồi quy nền tảng | MVP đã nghiệm thu theo phạm vi cũ | Quality/SQL/HTTP/browser và CI theo commit mới | Database loopback, server cô lập | Contract/build/Pages gates chạy lại ngày 04/10; SQL integration thiếu database loopback | PARTIAL — database gate chưa chạy trong lượt này |
-| R02 | 4 | Khôi phục mật khẩu | Request/callback/form đã lên production; user nhận thư nhưng callback lỗi | Validation/ownership/session PASS; email thật và login bằng mật khẩu mới | Quota email, QA xác nhận | Contracts/SDK storage PASS; callback E2E chưa đạt; provider đang 429 | PARTIAL — email quota blocks retest |
+| R02 | 4 | Khôi phục mật khẩu | Recovery email production đã hoàn tất với thư mới | Validation/ownership/session; email thật, đặt mật khẩu mới và login lại | QA owner xác nhận | Contract/SDK storage PASS; owner xác nhận recovery production thành công ngày 04/10 | PASS — email recovery theo xác nhận operator |
 | R03 | 4,8 | Role UI trên môi trường cô lập | SQL/JWT cũ đạt; browser production bị chặn | Admin-last/self/inactive/concurrent qua UI QA cô lập | Phiên test Admin/dev hợp lệ | database-testing.md | NOT RUN |
 | R04 | 4 | Tài khoản QA đã lộ credential | Không đưa credential vào code hoặc báo cáo | Owner chọn tài khoản, đổi mật khẩu/thu hồi phiên rồi kiểm chứng | Xác nhận đúng tài khoản test và phiên owner | Chưa thay tài khoản | BLOCKED — owner action |
 | R05 | 3,8 | Combo live và CRUD | Migration 007 đã áp; flag Production bật; 4 combo public live | Migration/RLS/audit/conflict/Admin/public; bảo toàn nội dung canonical | Số lượng chưa duyệt giữ NULL | 76 SQL local; Admin production create/update/hide; public live và combo trong ORDER QA PASS | PASS — catalogue CRUD đã nghiệm thu trong phạm vi |
@@ -168,6 +168,20 @@ Trạng thái bàn giao hiện tại: **PARTIAL**. Các gate code, contract, bui
 asset và các nghiệm thu production đã có bằng chứng đều giữ nguyên; database
 integration, recovery email thật, role UI cô lập và rotation tài khoản QA cần
 được hoàn tất trước khi công bố toàn bộ hệ thống đã nghiệm thu.
+
+### Recovery email production — nghiệm thu bổ sung 04/10/2026
+
+Thay thế kết luận recovery PARTIAL trong các lượt kiểm tra phía trên. Một yêu cầu
+khôi phục mới trên domain production được chấp nhận, không còn báo quota ở bước
+gửi. Operator xác nhận đã mở thư mới, đến form đặt mật khẩu mới, lưu mật khẩu
+và đăng nhập lại thành công. Đây là bằng chứng E2E do operator xác nhận;
+contract và SSR cookie storage cũng chạy lại PASS trong lượt này.
+
+Không sửa runtime hoặc cấu hình Auth để đạt kết quả; không resend lặp, không
+ghi mật khẩu hoặc link/token vào repository. R02 hiện PASS cho luồng recovery
+email production. Chưa kiểm thử riêng việc mật khẩu cũ bị từ chối hoặc thu hồi
+tất cả phiên đang tồn tại; không suy kết quả này thành R04 PASS hay JWT cũ bị
+vô hiệu tức thì. Role UI cô lập và rotation các tài khoản QA khác vẫn còn mở.
 
 ### Backup prerequisite
 
