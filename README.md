@@ -37,8 +37,8 @@ lịch sử và thông báo liên quan; không có hoàn tác trên website. Aud
 receipts được giữ. Server chỉ cho Admin active xóa booking terminal đã qua giờ
 kết thúc, không còn đơn món đang xử lý; snapshot cũ bị từ chối.
 
-Rollout database **chưa thực hiện**: cần duyệt riêng migration
-`202610040001_admin_booking_deletion.sql` trước khi dùng trên production.
+Migration `202610040001_admin_booking_deletion.sql` đã áp production ngày
+04/10/2026 sau khi operator duyệt; RPC/grants được đối chiếu đúng source.
 Không có dữ liệu production nào được xóa trong nhiệm vụ triển khai này.
 
 ## Tech stack

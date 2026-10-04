@@ -2,8 +2,12 @@
 
 ## Admin xóa lịch sử đặt bàn · 04/10/2026
 
-- Migration mới `202610040001_admin_booking_deletion.sql`; chưa áp production,
-  cần operator duyệt riêng. Không xóa fixture hay dữ liệu thật trên Supabase.
+- Migration `202610040001_admin_booking_deletion.sql` đã áp production ngày
+  04/10/2026 sau khi operator duyệt. TLS/project ref được xác minh; function body,
+  SECURITY DEFINER/search_path và grants đúng source: anon không execute,
+  authenticated được execute nhưng RPC kiểm tra trusted Admin active.
+  Before/after row counts booking/order/history/notifications/audit không đổi;
+  schema cache đã reload. Không xóa fixture hay dữ liệu thật trên Supabase.
 - SQL local PostgreSQL 18.4 loopback, database trống `mocvi_test_*`: **91 nhóm
   PASS**, gồm 4 nhóm mới về purge. Guest/Customer/Staff/inactive Admin bị từ chối,
   DELETE trực tiếp bị chặn; yêu cầu mã chính xác, lý do, snapshot timestamp gốc,
@@ -19,7 +23,12 @@
   không có form xóa); POST Admin đúng origin cấu hình → 401/no-store,
   origin khác → 403/no-store, không mutation.
 - Browser trực tiếp: NOT RUN do công cụ chặn truy cập tab. Synthetic UI không phải
-  bằng chứng browser hoặc JWT production. Rollout/JWT xóa production: NOT RUN.
+  bằng chứng browser hoặc JWT production. Rollout database: PASS; JWT thực thi
+  xóa production: NOT RUN vì nhiệm vụ không cho phép xóa booking thật để lấy PASS.
+- Runtime `d052b7d`: [CI](https://github.com/dangtuanminh2702206-wq/nhahang/actions/runs/37203346575)
+  và [Pages](https://github.com/dangtuanminh2702206-wq/nhahang/actions/runs/37203346574)
+  PASS; Vercel Production deployment đúng commit SUCCESS. POST production Admin
+  API với Guest trả 401/private no-store; không thực thi deletion.
 
 ## Trạng thái hiện tại
 
