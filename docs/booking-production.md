@@ -1,5 +1,10 @@
 # Phase 5 production acceptance — 2026-10-02
 
+This document preserves acceptance evidence from the dated booking rollout.
+It is not the current feature list. Staff/Admin, scheduler and ordering were
+implemented and accepted in later phases; see academic-handover.md and
+database-testing.md for current school scope and latest results.
+
 Operator explicitly authorized deployment and test bookings on the existing
 production application/database. This supersedes the earlier local-only limit.
 

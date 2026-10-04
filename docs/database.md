@@ -1,8 +1,14 @@
-# Database và nền tảng nghiệp vụ — Phần 2
+# Database và nền tảng nghiệp vụ
 
 ## Trạng thái và ranh giới
 
-**Cập nhật hiện hành 03/10/2026:** các đoạn dưới ghi lại mốc Phần 2. Migration
+**Cập nhật hiện hành 04/10/2026:** combo/order đã áp production và bật feature
+gate; workflow live đạt, bộ SQL gần nhất có 86 nhóm đạt. ERD/data dictionary
+bên dưới mô tả schema; các đoạn nhật ký Phần 2 ghi trạng thái tại thời điểm đó,
+không phải hướng dẫn vận hành hiện hành. Xem database-testing.md và
+[academic-handover.md](academic-handover.md).
+
+**Nhật ký 03/10/2026:** các đoạn dưới ghi lại mốc Phần 2. Migration
 Phần 4–7 và scheduler đã áp production theo các lượt duyệt; Staff workflow và
 walk-in production trong giờ phục vụ đã được kiểm chứng. Bộ SQL local sạch hiện
 đạt 53 nhóm. Nguồn nghiệm thu mới nhất: database-testing.md.
@@ -37,6 +43,18 @@ erDiagram
   ORDERS ||--|{ ORDER_ITEMS : contains
   ORDERS ||--o{ ORDER_HISTORY : records
   ORDER_HISTORY ||--o| ORDER_NOTIFICATIONS : produces
+  PROFILES ||--o{ ORDERS : owns
+  PROFILES ||--o{ ORDER_NOTIFICATIONS : recipient
+  PROFILES o|--o{ ORDER_HISTORY : actor
+  MENU_COMBOS {
+    uuid id PK
+    text code UK
+    bigint price
+    jsonb components
+    boolean is_active
+    boolean is_available
+    integer version
+  }
   BOOKINGS ||--|{ BOOKING_HISTORY : records
   PROFILES o|--o{ BOOKING_HISTORY : actor
   BOOKING_HISTORY ||--o| NOTIFICATIONS : produces
@@ -61,6 +79,9 @@ erDiagram
 ```
 
 Ba bảng cấu hình/lịch độc lập được truy vấn bởi hàm booking, không cần FK giả.
+MENU_COMBOS chứa thành phần JSONB đã validate; không có bảng combo_items/FK
+thành phần giả. ORDER_ITEMS dùng item_type/item_code và snapshot, không nối FK
+tới catalogue để bảo toàn nội dung đã đặt. Thêm/sửa/ẩn combo qua RPC Admin.
 `audit_logs.entity_id` là định danh audit tổng quát, không phải FK tới booking.
 
 ## Data dictionary
@@ -161,7 +182,22 @@ quản trị phải kiểm tra lịch và booking hiện hữu cùng một giao 
 trigger. Không cấp quyền trực tiếp INSERT/UPDATE/DELETE booking cho ứng dụng.
 DB owner có quyền bypass và chỉ được dùng cho migration/vận hành có kiểm soát.
 
-### Đơn món gắn với booking
+<!-- Catalogue combo và đơn món hiện hành -->
+
+### Combo live
+
+| Bảng | Trường | Ý nghĩa |
+| --- | --- | --- |
+| menu_combos | id, code | UUID PK; mã duy nhất MV-CB theo validation migration 007 |
+| menu_combos | name, description, guest_count | Nội dung và số người; không suy số lượng thành phần chưa được duyệt |
+| menu_combos | price, components | Giá VND; JSONB thành phần được server validate |
+| menu_combos | image_path, sort_order | Path whitelist và thứ tự hiển thị |
+| menu_combos | is_active, is_available, version | Hiển thị/phục vụ và kiểm tra conflict |
+
+Guest đọc active; Admin đọc inactive và mutation qua RPC. Archive bằng inactive,
+giữ audit. Order lưu snapshot thành phần nên thay catalogue không sửa đơn cũ.
+
+### Chi tiết đơn món
 
 | Bảng | Cột | Kiểu / null | Default, ràng buộc và ý nghĩa |
 | --- | --- | --- | --- |
@@ -270,9 +306,9 @@ INSERT. Mọi mutation vận hành về sau phải dùng cùng thứ tự khóa 
 
 `occupied/cleaning` là trạng thái vật lý hiện tại, không thay thế lịch đặt tương
 lai. Không tự chuyển bàn về available khi hết 120 phút. Khách ở quá giờ cần Staff
-xử lý xung đột, đổi lịch/bàn theo quy trình; chưa có thao tác check-in/complete.
+xử lý xung đột theo quy trình; check-in/complete/ready đã có trong Staff operations.
 Phần 5 bổ sung `find_available_tables` trong migration mới
-`202610010001_availability.sql`, **chỉ đã kiểm thử local, chưa áp cloud**.
+`202610010001_availability.sql`, đã áp và kiểm thử cloud trong các lượt sau.
 Hàm SECURITY DEFINER `search_path=''` trả table_id/table_code/area_code/capacity;
 thu hồi PUBLIC EXECUTE, chỉ cấp anon/authenticated. Không mở SELECT booking/contact.
 Lookup read-only bỏ pending đã hết hạn; create_booking vẫn expire/recheck dưới lock.

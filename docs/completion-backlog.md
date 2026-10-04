@@ -1,5 +1,14 @@
 # Hoàn thiện Mộc Vị — backlog mở rộng
 
+## Phạm vi bàn giao môn học hiện hành
+
+Đặt bàn + đặt món/combo + Customer/Staff/Admin; thanh toán tại quầy.
+Các TODO về upload ảnh, đổi tầng bàn tùy ý, SMS/email giao dịch, kho, tài chính
+chuyên sâu, nhiều chi nhánh, 3D/360 và DR thương mại dưới đây là backlog mở rộng
+lịch sử, không phải gate bắt buộc của đồ án. Không gọi chúng PASS nếu chưa làm.
+Trạng thái hiện hành, use case và kịch bản nộp xem [academic-handover.md](academic-handover.md).
+Các mục nghiệm thu theo ngày bên dưới giữ bằng chứng riêng và giới hạn của chúng.
+
 Nguồn yêu cầu: task mở rộng Phần 1–10 ngày 03/10/2026. Điểm bắt đầu:
 `3d968be`, nhánh `codex/restaurant-booking-platform`. Bảng này mở rộng phạm vi
 MVP; bằng chứng nghiệm thu lịch sử giữ ở `database-testing.md`.

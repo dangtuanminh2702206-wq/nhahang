@@ -1236,3 +1236,34 @@ phải chứng nhận chức năng chưa triển khai hoặc cam kết hoàn h�
 Không đưa định danh fixture, email, số liệu khách hoặc credential vào repo.
 Các thay đổi panorama/tooling và asset check đang có của công việc khác vẫn
 được bảo toàn, không thuộc commit nghiệm thu này.
+
+### Bàn giao môn học và diễn tập browser — 04/10/2026
+
+Task hiện tại chỉ đồng bộ tài liệu và diễn tập giao diện; không đổi runtime,
+migration, policy, role hoặc đồng hồ. README/architecture/user-guide mô tả bản
+hiện hành; nhật ký cũ ở architecture-history.md. Bộ báo cáo/use case/ERD/
+sequence/test matrix/demo nằm trong academic-handover.md. Backlog thương mại
+không chặn phạm vi đồ án đặt bàn/đặt món, thanh toán tại quầy.
+
+- Customer tạo một booking website QA qua form: availability → pending PASS.
+  Detail chặn order khi pending; Staff xác nhận và history cập nhật PASS browser.
+- Một Customer khác mở booking đó bị từ chối ownership trên UI: PASS.
+- Walk-in QA riêng được tạo trong giờ mở cửa, check-in với 2 khách, complete,
+  trạng thái bàn cleaning rồi ready qua nút dọn xong: PASS browser. History giữ
+  nguyên, walk-in completed; không còn chiếm trạng thái vật lý bàn.
+- Customer owner gửi một món + một combo rồi sửa quantity món từ 1 thành 2:
+  PASS browser. Trang sau lưu giữ pending, snapshot đơn giá/tổng dự kiến
+  và history customer_updated.
+- Staff chuyển đơn confirmed → preparing → served qua UI: PASS browser;
+  snapshot/tổng vẫn giữ nguyên. Cleanup bằng Staff cancel booking có lý do:
+  reload thấy cancelled, order served và booking history được giữ. Walk-in QA
+  riêng completed và table ready. Không DELETE history/audit.
+- Console cuối phiên không có error được ghi nhận. Đây là browser/server-render
+  persist, không phải một lượt SQL read-back hoặc audit độc lập mới.
+- Dùng hai fixture do website cần lead time, check-in chỉ mở gần giờ; không
+  suy thành một booking Customer liên tục đã check-in/complete/ready.
+
+Ảnh public menu/combo trong docs/screenshots không có dữ liệu khách; ảnh
+nghiệp vụ/fixture lưu riêng ngoài Git. Link tài liệu/ảnh và git diff --check
+đạt. Không chạy lại lint/build/SQL cho thay đổi chỉ tài liệu; bằng chứng 86 SQL
+và CI/runtime đã ghi ở trên vẫn là bằng chứng trước lượt docs này.

@@ -1,319 +1,88 @@
-# Kiến trúc Mộc Vị Restaurant
+# Kiến trúc hiện hành — Mộc Vị Restaurant
 
-## Bối cảnh hệ thống
+Cập nhật 04/10/2026. Đây là đồ án một nhà hàng giả định, hỗ trợ đặt bàn và đặt
+món/combo gắn booking. Thanh toán trực tiếp tại quầy; tổng đơn là tiền dự kiến.
+Nhật ký các giai đoạn được chuyển sang [architecture-history.md](architecture-history.md).
 
-Mộc Vị Restaurant là website quản lý và đặt bàn trực tuyến cho một nhà hàng.
-Hệ thống tập trung vào vòng đời booking từ tìm bàn đến hoàn thành lượt phục vụ.
-Order, hóa đơn, thanh toán, doanh thu, kho và nhiều chi nhánh nằm ngoài phạm vi
-MVP.
+## Vai trò và module
 
-## Vai trò
+| Vai trò | Chức năng |
+| --- | --- |
+| Guest | Xem public, menu, không gian và tìm bàn khả dụng |
+| Customer active | Hồ sơ/mật khẩu, booking của mình, đơn món của mình và thông báo |
+| Staff active | Booking điện thoại/walk-in, xác nhận, check-in, đơn món, hoàn tất và dọn bàn |
+| Admin active | Quyền Staff; policy/lịch, khu vực/bàn, món/combo, tài khoản, báo cáo booking và audit |
 
-- **Guest:** xem nội dung công khai, menu và tìm bàn khả dụng.
-- **Customer:** tạo, xem và hủy booking của chính mình.
-- **Staff:** xử lý booking và vận hành bàn.
-- **Admin:** có quyền của Staff và quản lý cấu hình, tài khoản, menu, bàn và báo
-  cáo booking.
+Public, Identity, Booking, Customer, Staff, Admin, Combo catalogue và Ordering
+đã có implementation. Migration combo/order đã áp production, các feature gate
+đã bật và workflow live đã nghiệm thu; xem [database-testing.md](database-testing.md).
+Đổi/quên mật khẩu được operator xác nhận trên production. Không dùng kết quả
+recovery để suy ra mọi loại callback email đã kiểm chứng trên production.
 
-## Module dự kiến
+## Luồng ứng dụng
 
-- **Public:** thông tin nhà hàng, menu, khu vực và tìm bàn.
-- **Identity:** đăng ký, đăng nhập, hồ sơ và phân quyền.
-- **Booking:** tìm khả dụng, tạo, hủy và theo dõi booking.
-- **Operations:** xác nhận, từ chối, nhận khách, hoàn thành, no-show và đổi bàn.
-- **Catalog:** khu vực, bàn, danh mục và món ăn.
-- **Administration:** lịch hoạt động, tài khoản, thông báo, báo cáo và audit log.
-
-Các module trên mô tả ranh giới nghiệp vụ, không yêu cầu tạo thư mục hoặc tầng
-trừu tượng trước khi có implementation thực tế.
-
-## Nguyên tắc phân tách
-
-- Route và layout nằm trong `src/app` theo App Router.
-- Component hiển thị dùng chung chỉ được đưa vào `src/components` khi có nhu cầu
-  tái sử dụng thực tế.
-- Business rule không phụ thuộc UI. Với booking hiện tại, SQL là nguồn thực thi
-  chính sách; các giá trị cấu hình nằm trong `restaurant_settings`, không nhân
-  bản thành bộ hằng số TypeScript.
-- Data access được gọi từ server; thông tin bí mật không đi vào Client Component.
-- Server Component là mặc định. Chỉ thêm Client Component cho tương tác cần
-  trạng thái trình duyệt.
-- Kiểm tra authorization được thực hiện ở server, không chỉ bằng cách ẩn giao
-  diện.
-
-## Cấu trúc hiện tại
-
-```text
-src/
-├── app/
-│   ├── globals.css
-│   ├── layout.tsx
-│   ├── page.tsx
-│   ├── menu/page.tsx
-│   ├── contact/page.tsx
-│   ├── reservation/page.tsx
-│   └── spaces/
-│       ├── page.tsx
-│       └── [slug]/page.tsx
-├── components/
-│   ├── asset-image.tsx
-│   ├── floor-plan.tsx
-│   ├── media-placeholder.tsx
-│   ├── menu-browser.tsx
-│   ├── reservation-preview.tsx
-│   ├── space-stories.tsx
-│   ├── site-footer.tsx
-│   └── site-header.tsx
-├── config/
-│   └── site.ts
-└── data/
-    ├── media.ts
-    └── restaurant.ts
-
-src/lib/
-└── media.server.ts
-
-docs/
-├── architecture.md
-├── asset-integration-status.md
-├── asset-manifest.md
-├── database.md
-├── database-testing.md
-├── menu-canonical.md
-└── restaurant-world.md
-
-supabase/
-├── migrations/
-│   └── 202609300001_foundation.sql
-├── tests/
-│   └── development-smoke.sql
-└── seed.sql
-
-scripts/
-└── test-database.mjs
+```mermaid
+flowchart LR
+  U[Browser: Guest / Customer / Staff / Admin] --> N[Next.js Server Components]
+  U --> A[Same-origin API handlers]
+  N --> I[Identity: Auth + trusted profile]
+  A --> I
+  I --> R[Supabase RLS và RPC]
+  R --> D[(PostgreSQL)]
+  D --> H[History / notification / audit]
 ```
 
-Các thư mục `components`, `features`, `lib` và `types` chỉ được tạo khi giai đoạn
-sau có file sử dụng thực tế.
+Server Components đọc dữ liệu bằng client Supabase theo request. Client Components
+quản lý form/lựa chọn/loading rồi gọi API cùng origin; actor/role/giá không lấy
+từ trình duyệt. Proxy hỗ trợ refresh cookie, response private dùng no-store.
+Role và active đọc từ profiles; signup metadata không cấp Staff/Admin.
 
-Phần 3A bổ sung `components` và `data` vì đã có nhu cầu tái sử dụng thật: header/footer,
-placeholder ảnh, FloorPlan/TableNode và bộ lọc thực đơn. `src/data/restaurant.ts` là
-catalogue public dùng chung cho Home, Spaces, FloorPlan và Menu; UI không tự khai báo
-lại món hoặc bàn theo trang. Seed trong repo mang cùng catalogue cho môi trường demo,
-không kéo Supabase hay secret vào Client Component.
+SQL thực thi policy, ownership, state machine, locks, idempotency và snapshot
+trong transaction. RPC SECURITY DEFINER có search_path cố định và kiểm tra
+Auth/profile; ứng dụng không được ghi trực tiếp bảng nghiệp vụ. RLS giới hạn đọc.
+Database lỗi phải báo lỗi, không giả catalogue snapshot là dữ liệu live.
 
-Phần 3B dùng `src/data/media.ts` quản lý path/alt/ratio/object-position cho toàn bộ
-50 asset dự kiến. `media.server.ts` kiểm tra file trong `public` khi render/build;
-MenuBrowser chỉ nhận metadata serializable về trạng thái available/pending.
-`AssetImage` là Client Component nhỏ để xử lý lỗi tải, dùng `next/image` và fallback
-giữ nguyên tỷ lệ. Ảnh pending không phát sinh request tới file chưa tồn tại. Khi bổ
-sung ảnh đúng expected path, cần build/deploy lại các trang tĩnh.
+## Cấu trúc thực tế và nguồn dữ liệu
 
-## Quyết định đã chốt
+- src/app: public, Identity, Customer, Staff, Admin và API theo App Router.
+- src/components: FloorPlan, catalogue/form và panel nghiệp vụ.
+- src/lib: Identity, Supabase server client, validation, live mapping và DTO.
+- src/data/restaurant.ts: baseline/codes và tọa độ canonical dùng chung.
+- src/data/media.ts + src/lib/media.server.ts: mapping và kiểm tra asset.
+- supabase/migrations: migration theo thứ tự; supabase/seed.sql chỉ cho baseline demo.
+- scripts: contract, SQL integration, asset/Pages và QA có guard.
+- .github/workflows: CI và Pages; docs: spec, bằng chứng và bàn giao.
 
-- Một nhà hàng, một múi giờ `Asia/Ho_Chi_Minh`.
-- Giao diện tiếng Việt; code và tên kỹ thuật bằng tiếng Anh.
-- Next.js App Router, TypeScript strict và Tailwind CSS.
-- Supabase PostgreSQL, Auth và Storage dự kiến dùng từ Phần 2 trở đi.
-- Vercel là nền tảng triển khai.
-- Guest, Customer, Staff và Admin là bốn vai trò của hệ thống.
-- Một booking gắn với một bàn; chưa hỗ trợ ghép hoặc tách bàn.
-- Có đặt món gắn với booking đã xác nhận: snapshot món/giá, trạng thái đơn,
-  quyền Customer/Staff và thông báo nội bộ. Không triển khai hóa đơn, thanh toán
-  online, doanh thu hoặc kho; tiền đơn chỉ là dự kiến và thanh toán tại quầy.
+Baseline: 3 tầng, 22 bàn, 92 chỗ cấu hình, 30 món, 4 combo, 50 ảnh canonical.
+Chỗ cấu hình không phải bàn trống. Vercel đọc tên/giá/trạng thái/sức chứa/lịch live;
+codes, ảnh và vị trí bàn canonical ở repo. Admin có thể thay dữ liệu vận hành hợp
+lệ; không reset seed để ép production giống snapshot.
 
-## Nền tảng database đã viết ở Phần 2
+Combo live nằm trong menu_combos, thành phần là JSONB có validation; không có
+bảng combo_items. Order_items lưu snapshot tên/giá/thành phần, không giữ FK giả
+tới catalogue. Một booking có tối đa một đơn; Customer sửa/hủy pending. Staff
+xử lý confirmed → preparing → served hoặc cancelled. Booking bị hủy/từ chối/
+no-show hủy đơn chưa served; hoàn tất booking bị chặn nếu đơn còn active.
 
-- Nền tảng ban đầu có 12 bảng với RLS/default-deny; module order bổ sung các bảng
-  `orders`, `order_items`, `order_history`, `order_notifications` và receipt
-  private, vẫn dùng FK RESTRICT bảo toàn lịch sử.
-- `create_booking` và `confirm_booking` là RPC database có kiểm tra danh tính;
-  chưa có API route/Server Action hoặc client Supabase trong Next.js.
-- GiST exclusion constraint chống trùng lịch bàn và lịch sử dụng của Customer.
-  Advisory transaction lock chung tuần tự hóa mutation cho một nhà hàng,
-  bảo vệ giới hạn 3 booking và idempotency ở READ COMMITTED.
-- Booking/history/notification/audit ghi trong cùng giao dịch; expiration là
-  helper private, cần scheduler owner cấu hình riêng trước khi vận hành.
-- Không ORM, không thêm abstraction/module rỗng. Chỉ thêm `pg` ở devDependencies
-  để script test điều khiển các kết nối PostgreSQL thật, kiểm thử cạnh tranh và
-  SET ROLE. Next.js không sử dụng dependency này khi phục vụ ứng dụng.
+## Hai chế độ triển khai
 
-Module order dùng RPC SECURITY DEFINER, không cấp ghi trực tiếp cho bảng. Customer
-chỉ thao tác trên booking của mình ở trạng thái `confirmed`/`checked_in`; Staff và
-Admin xử lý state machine. Giá, tên, combo components và total được lấy từ
-catalogue trong transaction rồi snapshot vào `order_items`. Feature gate production
-được bật riêng sau khi migration 007/008 được áp và kiểm tra live; Pages không có
-Auth/booking/order runtime.
+| Chế độ | Hành vi |
+| --- | --- |
+| Next.js/Vercel | Auth, dữ liệu live, API booking/order và quản trị |
+| GitHub Pages | Snapshot public, basePath /nhahang, form mô phỏng; không Auth/API/database |
 
-Chi tiết ERD, data dictionary, ranh giới thời gian và phần chưa triển khai nằm
-trong [database.md](database.md). Migration/seed đã chạy trên Supabase development;
-18 nhóm kiểm thử PostgreSQL local và smoke test quyền trên Supabase đã đạt ở
-catalogue Phần 2 cũ. Fixture hiện đã cập nhật và 18 nhóm test local đạt với seed
-Phần 3A; development đã sao lưu và thay catalogue có xác nhận, smoke cloud đạt.
-Ứng dụng có lớp Identity kết nối khi có cấu hình server; Auth/JWT thật chưa được kiểm thử.
+pageExtensions tách file server và demo; Pages dùng .next-pages để giữ output riêng.
+Không đưa secrets hoặc service-role vào browser/build demo.
 
-## Dành cho các giai đoạn sau
+## Kiểm thử và phạm vi đồ án
 
-### Baseline trước Phần 4 · cập nhật giao diện 01/10/2026
+CI chạy typecheck/lint/contracts, PostgreSQL cô lập mocvi_test_*, normal build,
+HTTP smoke và Pages export. 86 nhóm SQL gần nhất đạt; workflow production
+Customer A/B → booking → dish/combo → Staff đạt qua HTTP và SQL read-back.
+Bằng chứng browser, JWT, SQL và operator được phân biệt trong tài liệu testing.
 
-- UI và seed repo khớp 3 area/tầng, 22 bàn, 92 chỗ cấu hình, 6 danh mục/30 món.
-  4 combo chỉ thuộc data public, không phải thực thể database. Chi tiết ở
-  [restaurant-world.md](restaurant-world.md) và [menu-canonical.md](menu-canonical.md).
-- 8 trang public: `/`, `/menu`, `/spaces`, `/spaces/floor-1`,
-  `/spaces/floor-2`, `/spaces/floor-3`, `/contact`, `/reservation`. Chọn bàn chỉ xem thông tin vị trí;
-  `neutral/selected` không chứng minh khả dụng thực tế. Menu có 7 tab
-  (Combo + 6 danh mục). Giao diện editorial đã duyệt là mặc định; CSS nằm trong
-  `globals.css`, không có hai template song song. CTA đặt bàn dẫn tới `/reservation`:
-  form mô phỏng phía client, đồng bộ lựa chọn FloorPlan với select nhưng không gọi
-  API, kiểm tra availability, lưu thông tin khách hoặc tạo booking. Các lựa chọn
-  giờ/số khách trong form chỉ minh họa UI, không thay thế chính sách SQL. Contact
-  chưa có địa chỉ/điện thoại/email xác nhận nên không có bản đồ. Các route Identity
-  được bổ sung ở Phần 4 bên dưới; chưa có trang vận hành.
-- Phần 3 giao diện đã chốt, đủ FINAL 50/50 WebP (16 restaurant/30 dish/4 combo).
-  Spatial spec mới nằm trong restaurantFloors, dùng chung cho FloorPlan/reservation;
-  nearbyLandmarks chỉ chuẩn bị metadata 360, không viewer. Gate cuối xem asset-integration-status.md.
-- GitHub Pages đã xuất bản giao diện được duyệt từ commit `4450a88`, dùng static export,
-  basePath `/nhahang`, output `.next-pages`, ảnh gốc không optimize. Chế độ
-  build thông thường giữ Next.js server/ảnh tối ưu; Vercel vẫn là hướng vận hành
-  Auth/booking. Pages không thực thi Server Actions hay API ứng dụng.
-- Fixture và smoke SQL đã cập nhật; 18 nhóm test và smoke local đạt với catalogue
-  mới. Development đã sao lưu/thay seed có xác nhận, catalogue khớp UI và smoke
-  cloud đạt; không tạo booking/profile thử. Xem [database-testing.md](database-testing.md).
-- Phần 4 chỉ tích hợp Auth/phiên, hồ sơ và authorization server-side. Guest là
-  người chưa đăng nhập, không phải giá trị `profiles.role`; đăng ký mặc định
-  Customer, không nhận role Staff/Admin từ metadata người dùng. Có role Admin
-  không đồng nghĩa đã có API quản trị danh mục hoặc cấp quyền.
-
-Ảnh pending không chặn Phần 4. Catalogue development đã đối chiếu sau cập nhật;
-Phần 4 cần kiểm chứng Auth/JWT qua API thật. Không chạy seed trên dữ liệu có
-booking để ép khớp UI.
-
-- Trước khi vận hành booking: cấu hình scheduler expiration và kiểm thử JWT/Auth
-  trên Supabase development khi có authentication flow.
-- Phần 3: design system/public đã chốt, đủ 50 ảnh FINAL và đồng bộ spatial FloorPlan.
-- Phần 4: có implementation authentication, hồ sơ và authorization; một Customer đã kiểm chứng đọc/lưu hồ sơ, reload và logout. Signup mới/các ca JWT còn thiếu xem database-testing.md.
-- Phần 5–8: booking, Customer, Staff và Admin.
-- Phần 9: system QA, hardening và CI; Phần 10: kiểm thử bàn giao cuối, vận hành
-  và checklist phát hành nếu được duyệt riêng.
-
-## Identity implementation · 01/10/2026
-
-- `src/lib/supabase/config.ts`: public publishable key hoặc legacy anon fallback,
-  từ chối secret/service-role, tắt hoàn toàn khi static demo.
-- `server.ts`: request-scoped cookie client; `origin.ts`: origin cấu hình để kiểm
-  tra CSRF và redirect, tránh hostname loopback bị Proxy chuẩn hóa.
-- `src/proxy.server.ts`: refresh cookies/JWT claims; response private/no-store.
-  Default function export cần thiết với extension tùy chọn và Turbopack hiện tại.
-- `src/lib/identity.ts`: getCurrentUser/getCurrentProfile, requireAuthenticatedUser,
-  requireActiveUser/requireRole. React cache chỉ memoize trong request; không cache
-  profile dùng chung giữa người dùng. User được Auth xác minh và đã confirm email;
-  role/is_active đọc database. RLS khiến profile inactive không đọc được: fail closed.
-- `/auth/session/route.server.ts`: GET chỉ trả trạng thái phiên; POST JSON cùng
-  origin cho login/signup/logout/profile. Không trả token, email hoặc profile ID
-  qua status endpoint; update whitelist full_name/phone, lọc id bằng auth user.
-- `/auth/confirm/route.server.ts`: PKCE/code hoặc OTP token_hash signup/email;
-  redirect cố định /profile hoặc /login, không tin query next.
-- `/login`, `/signup`, `/profile` ưu tiên Server Components; IdentityForm và
-  AccountControl xử lý tương tác. Không thêm browser SDK client khi chưa cần.
-- `pageExtensions` server: server.ts/tsx/ts; demo: demo.tsx/tsx/ts. Server handler
-  và Proxy không được discovery trong export. Callback demo có page.demo.tsx;
-  Identity pages demo không gọi cookies/Auth/connection hoặc nhận mật khẩu.
-
-Không đổi migration/seed/grants/RLS; không cấp role hoặc deactivate tài khoản.
-Tại baseline Phần 4 chưa làm booking/availability/dashboard/scheduler. Quên mật khẩu và Staff/Admin
-test account ngoài phạm vi hiện tại. Public URL/key đã cấu hình local; kiểm chứng
-cloud đã kiểm chứng một Customer, còn cần ca signup/callback/refresh và tài khoản
-thứ hai cho cross-user, xem
-database-testing.md; không coi implementation là chứng nhận tích hợp đã hoàn tất.
-
-## Booking foundation · Phần 5 local · 01/10/2026
-
-- `booking-input.ts`: kiểu dữ liệu và validation transport; không nhân bản policy SQL.
-- `booking.ts` server-only: mapping lỗi và cờ local-only fail closed. Cờ không nằm
-  trong `next.config.env`; UI chỉ nhận Boolean từ Server Component mỗi request.
-- Availability handler chỉ gọi public RPC, projection 4 trường; Guest không đọc bookings.
-  Lookup read-only bỏ pending hết hạn; create_booking dọn expiration dưới lock rồi
-  kiểm tra lại policy/exclusion. Snapshot tìm bàn không phải giữ chỗ.
-- Booking handler kiểm tra origin/JSON/whitelist, Customer active qua helpers Phần 4,
-  RPC dưới cookie session; customer/source không do client quyết định. Chỉ trả ID,
-  trạng thái và expiresAt của kết quả thuộc user. Không cache phản hồi hoặc log payload.
-- ReservationPreview giữ một giao diện: demo tĩnh trên Pages, tìm bàn/chờ backend
-  trên server. Khi cờ tắt, không gửi liên hệ; không nhận booking cloud. Khi bật local,
-  khóa thao tác đang gửi, giữ key cho retry cùng payload, xóa khả dụng khi đổi slot.
-- FloorPlan nhận danh sách mã khả dụng đã lọc, disable bàn không phù hợp và có nhãn
-  bằng chữ. Catalogue/ảnh/logic RPC foundation không thay đổi. Proxy thêm reservation
-  và booking endpoint để refresh cookie; Guest lookup không bị yêu cầu đăng nhập.
-- Chưa có Supabase local Auth/PostgREST: toàn tuyến JWT/booking và happy-path UI
-  còn NOT RUN. Không thêm Auth bypass, không dùng service-role hay mock làm bằng chứng JWT.
-- Không có dashboard/scheduler/cloud migration; Phần 3 đã đủ ảnh FINAL và Phần 4 còn
-  các ca Auth chưa kiểm chứng. Xem database-testing.md trước khi bật nghiệp vụ cloud.
-
-## Customer booking management · Phần 6 · 02/10/2026
-
-- Customer active có các route server-rendered `/my-bookings` và
-  `/my-bookings/[id]`; truy vấn dùng request-scoped Supabase client/RLS, không
-  dùng service-role hoặc client-side booking query.
-- `POST /api/bookings/[id]/cancel` chỉ gọi RPC `public.cancel_booking(uuid)`;
-  RPC lấy `auth.uid()`, kiểm tra profile Customer active + ownership, dùng cùng
-  advisory lock/row lock với các mutation booking và chấp nhận đúng mốc 60 phút.
-- Hủy ghi `booking_history`, notification nội bộ và `audit_logs` trong cùng
-  transaction. Retry trạng thái cancelled là no-op; các trạng thái khác ngoài
-  pending/confirmed bị từ chối.
-- Policy `history_read` đã được siết để Customer chỉ đọc history của booking
-  mình; Staff/Admin giữ quyền đọc vận hành hiện có. Notification `read_at` chỉ
-  cập nhật qua route same-origin và recipient hiện tại.
-- UI giữ editorial design đã duyệt, không tạo dashboard/card grid; có loading,
-  empty/error, focus/error feedback và link “Đặt bàn của tôi”. GitHub Pages chỉ
-  export placeholder tĩnh, không thực thi Auth/booking.
-
-## Staff operations · Phần 7 · 02/10/2026
-
-Khu vực `/staff` dùng Server Component để đọc dữ liệu qua Supabase RLS và Client
-Component tối thiểu cho các nút thao tác. Mọi chuyển trạng thái/đổi bàn/dọn bàn gọi
-RPC `staff_operation`; các hàm staff_update/move/ready chỉ là helper nội bộ. Route
-kiểm tra same-origin, JSON, role Staff/Admin active và chỉ trả DTO tối thiểu.
-
-Migration `202610030001_staff_operations.sql` giữ trạng thái booking và trạng thái
-vật lý bàn trong cùng transaction, ghi history/notification/audit bằng helper hiện
-có. Phone/walk-in tái sử dụng `create_booking` với source vận hành; không liên kết
-khách vãng lai vào Customer chỉ bằng số điện thoại/email. Migration 001/002/003
-đã áp production; receipt private theo actor/request bảo vệ retry, kể cả khi
-booking đã đổi trạng thái sau lần gọi đầu. Client không có EXECUTE helper hay
-UPDATE booking/table trực tiếp.
-
-Job `mocvi-expire-pending` mỗi phút đã kiểm chứng hết hạn tự nhiên trên production
-ngày 03/10. Staff/Admin workflow, quyền production và ca walk-in trong giờ phục
-vụ thật đã đạt; Phần 7 PASS trong phạm vi Staff operations. Xem
-database-testing.md để phân biệt fixture owner được duyệt, SQL local, HTTP local
-và JWT/UI production.
-
-### Admin management · Phần 8
-
-Admin dùng Server Component `/admin` để đọc snapshot quản trị và Client Component
-chỉ cho form/filter. API `POST /api/admin` kiểm tra same-origin, content type,
-payload whitelist và `requireRole(["admin"])`; actor/role không nhận từ client.
-Các mutation policy, lịch, khu vực/bàn, menu và profile gọi RPC trong migration
-`202610030004_admin_management.sql`. RPC là SECURITY DEFINER với `search_path = ''`,
-kiểm tra `auth.uid()` qua profile Admin active, khóa transaction chung, expected
-value chống lost update và ghi `audit_logs` trong cùng transaction. Không cấp
-INSERT/UPDATE/DELETE trực tiếp cho authenticated.
-
-Public Vercel menu dùng `src/lib/menu-live.ts`: code, ảnh và nội dung editorial
-canonical vẫn ở data layer; tên, mô tả, giá, active/available, featured và nhóm
-được ghép từ catalogue active trong database. Khi không có Supabase (GitHub Pages),
-trang dùng snapshot repo. Khi live database lỗi, trang báo lỗi thay vì hiển thị
-snapshot như dữ liệu online. Combo không bị biến thành thực thể database; Admin
-không có combo CRUD.
-
-Public Home/Menu đọc tên, giá, ảnh và trạng thái món live. Home/Spaces/chi tiết
-tầng/Reservation ghép khu vực và capacity/description/active với coordinate
-canonical bằng code ổn định qua `spaces-live.ts`. Không tạo vị trí bàn mới.
-Giờ phục vụ ở Home/Contact/Footer đọc business_hours; lịch nghỉ vẫn được kiểm
-tra ở availability/create_booking. Live read lỗi hiển thị lỗi, không giả dùng
-snapshot. Pages không gọi Supabase/API và giữ toàn bộ snapshot canonical.
-
-Báo cáo Admin giới hạn 93 ngày, ngày kết thúc inclusive bằng upper bound ngày
-kế tiếp theo UTC+7. Booking/profile được đọc thành các trang 500 dòng để tránh
-PostgREST cắt ngầm; vượt 10.000 dòng báo lỗi thay vì báo cáo thiếu. Danh sách
-hồ sơ hiển thị 25 dòng/trang sau tìm kiếm. Thay quyền/active cần xác nhận; xóa
-lịch cần xác nhận và lý do nhập trực tiếp.
+Ngoài phạm vi: payment online, SMS/email giao dịch, kho, nhiều chi nhánh, báo cáo
+tài chính chuyên sâu và disaster recovery thương mại. 3D/360 tùy chọn.
+Cross-floor table move giữ khóa đến khi có coordinate được duyệt.
+Chi tiết schema xem [database.md](database.md); use case/demo/test matrix xem
+[academic-handover.md](academic-handover.md).

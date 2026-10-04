@@ -6,6 +6,11 @@ vào tài liệu, GitHub hay chat.
 
 ## Trạng thái và phạm vi
 
+Phạm vi đồ án hiện hành: đặt bàn/đặt món/combo, Customer/Staff/Admin và thanh toán
+tại quầy. Các yêu cầu restore/off-site/RPO/RTO thương mại bên dưới là hướng mở rộng,
+không chặn nghiệm thu môn học. Backup hiện có được giữ với giới hạn đã ghi;
+không gán disaster recovery PASS khi chưa kiểm chứng.
+
 - Repository: `dangtuanminh2702206-wq/nhahang`.
 - Nhánh triển khai: `codex/restaurant-booking-platform`.
 - Runtime server: [moc-vi-restaurant.vercel.app](https://moc-vi-restaurant.vercel.app/).

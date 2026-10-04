@@ -2,7 +2,12 @@
 
 Đây là catalogue mô phỏng chuẩn của đồ án. Giá được ghi bằng VND và không phải giá của cơ sở kinh doanh thật. `menu_items.code` là mã ổn định trong database; UI chỉ đọc catalogue từ `src/data/restaurant.ts` thay vì tạo danh sách menu riêng theo trang.
 
-## Tổng hợp hiện tại
+Trên Vercel, UI ghép baseline/code/ảnh với tên/giá/trạng thái catalogue live;
+combo live nằm trong menu_combos và có Admin CRUD đã nghiệm thu. Pages dùng
+snapshot repo. Các đối chiếu UI/seed bên dưới là baseline demo, không ghi đè
+thay đổi vận hành hợp lệ. Đơn lưu snapshot và tính tiền dự kiến tại server.
+
+## Tổng hợp baseline
 
 Đối chiếu ngày 30/09/2026: 30 mã món duy nhất có tên, danh mục, mô tả, giá và
 featured khớp giữa `src/data/restaurant.ts` và `supabase/seed.sql`. Không dùng

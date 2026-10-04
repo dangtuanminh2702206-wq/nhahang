@@ -148,6 +148,7 @@ Admin có thể:
   93 ngày, ngày kết thúc bao gồm cả ngày được chọn.
 - Cập nhật policy đặt bàn, giờ phục vụ và ngày nghỉ.
 - Cập nhật khu vực, bàn, danh mục và món theo trường được hiển thị.
+- Thêm/sửa/ẩn combo tại `/admin/combos`; giá/thành phần được kiểm tra ở server.
 - Tìm hồ sơ, phân trang 25 hồ sơ mỗi trang và cập nhật role/active khi đủ quyền.
 - Xem audit gần đây.
 
@@ -163,10 +164,16 @@ vào tài liệu hoặc repository.
 1. Guest mở Home, Menu, Spaces và Reservation; tìm bàn để chứng minh projection
    công khai không lộ dữ liệu khách.
 2. Customer đăng nhập, tạo booking hợp lệ, mở `/my-bookings` và xem chi tiết.
-3. Staff xác nhận, check-in với số khách thực tế, hoàn tất và xác nhận dọn bàn.
-4. Admin xem báo cáo/audit, thực hiện một thay đổi catalogue QA có lý do rồi khôi
+3. Staff xác nhận booking. Customer tải lại chi tiết, chọn một món và một combo,
+   gửi đơn rồi sửa số lượng khi còn chờ xác nhận.
+4. Staff xác nhận đơn, chuyển sang đang chuẩn bị và đã phục vụ. Customer xem
+   trạng thái/lịch sử, tổng dự kiến và dòng thanh toán trực tiếp tại quầy.
+5. Khi tới khung check-in hợp lệ, Staff check-in với số khách thực tế, hoàn tất
+   booking rồi xác nhận dọn bàn. Không thay policy hoặc thời gian để demo.
+6. Admin xem báo cáo/audit, thực hiện một thay đổi catalogue QA có lý do rồi khôi
    phục giá trị gốc.
-5. Logout và kiểm tra lại quyền truy cập của từng vai trò.
+7. Logout và kiểm tra lại quyền truy cập của từng vai trò. Xem kịch bản chuẩn bị,
+   expected result và cleanup tại [academic-handover.md](academic-handover.md).
 
 ## Lỗi thường gặp
 
@@ -182,9 +189,11 @@ vào tài liệu hoặc repository.
 
 ## Giới hạn đã chốt
 
-Callback email được chứng minh local; không suy thành callback production. Pages là
-demo tĩnh. Recovery đã có implementation và test local; kiểm chứng email production
-còn chờ QA. Chưa có email/SMS giao dịch, thanh toán online, analytics, multi-branch
-hoặc viewer 360. Đặt món chỉ hoạt động sau booking đã xác nhận, có feature gate và
-migration tương ứng; database production chưa được bật module này.
-Các thay đổi 3D/panorama nằm ngoài luồng vận hành này.
+Pages là demo tĩnh. Combo live và đặt món đã bật trên production; một booking
+có tối đa một đơn, bắt đầu sau xác nhận hoặc check-in. Recovery email production,
+đặt mật khẩu mới và login lại được operator xác nhận ngày 04/10/2026. Điều này
+không chứng nhận mọi loại callback email hoặc refresh-token trace độc lập.
+Không có email/SMS giao dịch, thanh toán online, kho, nhiều chi nhánh hoặc báo cáo
+tài chính chuyên sâu. 3D/360 là nâng cao tùy chọn. Contact chưa có thông tin cơ sở
+thật được xác nhận. Giới hạn và bằng chứng lịch sử xem database-testing.md;
+hướng dẫn này mô tả hành vi hiện hành.
