@@ -10,7 +10,7 @@ MVP; bằng chứng nghiệm thu lịch sử giữ ở `database-testing.md`.
 | R02 | 4 | Khôi phục mật khẩu | Request/callback/form đã lên production; user nhận thư nhưng callback lỗi | Validation/ownership/session PASS; email thật và login bằng mật khẩu mới | Quota email, QA xác nhận | Contracts/SDK storage PASS; callback E2E chưa đạt; provider đang 429 | PARTIAL — email quota blocks retest |
 | R03 | 4,8 | Role UI trên môi trường cô lập | SQL/JWT cũ đạt; browser production bị chặn | Admin-last/self/inactive/concurrent qua UI QA cô lập | Phiên test Admin/dev hợp lệ | database-testing.md | NOT RUN |
 | R04 | 4 | Tài khoản QA đã lộ credential | Không đưa credential vào code hoặc báo cáo | Owner chọn tài khoản, đổi mật khẩu/thu hồi phiên rồi kiểm chứng | Xác nhận đúng tài khoản test và phiên owner | Chưa thay tài khoản | BLOCKED — owner action |
-| R05 | 3,8 | Combo live và CRUD | Migration 007 đã áp; flag Production bật; 4 combo public live | Migration/RLS/audit/conflict/Admin/public; bảo toàn nội dung canonical | Số lượng chưa duyệt giữ NULL | 76 SQL local; public live và combo trong ORDER QA PASS | PARTIAL — Admin CRUD production mutation chưa chạy lại |
+| R05 | 3,8 | Combo live và CRUD | Migration 007 đã áp; flag Production bật; 4 combo public live | Migration/RLS/audit/conflict/Admin/public; bảo toàn nội dung canonical | Số lượng chưa duyệt giữ NULL | 76 SQL local; Admin production create/update/hide; public live và combo trong ORDER QA PASS | PASS — catalogue CRUD đã nghiệm thu trong phạm vi |
 | R06 | 3,8 | Upload ảnh | Catalogue file local | Upload validation/RLS/refs/alt/fallback/public/Pages đạt | Storage bucket và cấu hình upload | Chưa có implementation | TODO |
 | R07 | 3,8 | Chuyển tầng/vị trí bàn | Cross-floor bị khóa | Preview tọa độ, canonical mapping, active-booking protection và audit | Quy tắc vị trí được duyệt qua Admin | Chưa có implementation | TODO |
 | R08 | 4–7 | Email/SMS giao dịch | Notification nội bộ | Outbox/retry/idempotency/sandbox/email QA | Provider, sender/domain, SMS credentials nếu dùng | Đã hỏi cấu hình; chưa gửi | BLOCKED — provider; phần độc lập TODO |
@@ -115,9 +115,31 @@ Plan chưa có backups; đã chọn encrypted pg_dump nhưng chưa có kết n�
 DATABASE_BACKUP_URL hoặc PostgreSQL client binaries để export thật. Rollback
 feature không được gọi là disaster recovery database/Auth/Storage đã PASS.
 
-Điểm tiếp tục: nghiệm thu cloud combo sau khi đủ điều kiện; triển khai R06/R07
-và tooling backup cô lập trong lúc chờ. Các nhóm R08–R14 vẫn chưa hoàn thành,
+Điểm tiếp tục: triển khai R06/R07 và tooling backup cô lập trong lúc chờ. Các nhóm R08–R14 vẫn chưa hoàn thành,
 không đổi TODO thành PASS chỉ vì nhóm này build đạt.
+
+### Nghiệm thu Admin combo trên production — 04/10/2026
+
+- Admin active đã tạo một combo QA qua giao diện production, sau đó sửa tên,
+  mô tả, giá và thành phần. Mỗi lần lưu thành công đều tạo audit và tăng version;
+  không có thao tác DELETE.
+- Combo QA đã được dọn bằng cách đặt `is_active=false` và
+  `is_available=false`. Đọc lại database xác nhận bản ghi vẫn tồn tại với
+  version cuối và đủ ba audit event; Admin vẫn đọc được bản ghi inactive.
+- Sau khi deploy runtime fix `60ef984`, Menu public tải được catalogue live có
+  combo động chưa nằm trong mapping ảnh canonical bằng media fallback an toàn.
+  Sau cleanup, combo QA không còn xuất hiện trong Menu public hoặc catalogue đặt
+  món; bốn combo canonical vẫn hiển thị và các field canonical không thay đổi.
+- `pnpm test:combos`, `pnpm typecheck`, `pnpm lint` và `pnpm build` PASS. Vercel
+  production đã được kiểm tra lại trên domain chính thức sau runtime fix.
+- Không có phiên Customer/Staff hợp lệ trong lượt này để gửi mutation production
+  nhằm chứng minh từ chối bằng JWT thật; không suy từ mock/local contract thành
+  PASS production. Các gate role/RLS/validation/conflict local vẫn giữ bằng chứng
+  76 nhóm SQL PASS.
+
+R05 hiện **PASS trong phạm vi Admin combo catalogue đã thống nhất**. Upload ảnh,
+CRUD catalogue ngoài combo, đổi tầng bàn, backup/restore và các mục TODO khác
+không thuộc nghiệm thu này.
 
 ### Backup prerequisite
 

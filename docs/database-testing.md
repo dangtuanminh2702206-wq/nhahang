@@ -864,6 +864,32 @@ không phải mutation role production. Không thay thế kết quả local bằ
 khẩu, tài chính, multi-branch và 3D ngoài phạm vi. Các thay đổi 3D chưa commit
 được bảo toàn và không đưa vào commit Admin.
 
+### Admin combo catalogue — nghiệm thu production — 04/10/2026
+
+Đây là gate riêng cho combo catalogue, không thay thế các giới hạn của Phần 8
+hoặc nghiệm thu đặt món. Trên Supabase production đã dùng Admin active hợp lệ để
+thực hiện một chu trình QA có kiểm soát qua UI:
+
+| Ca | Expected | Actual | Bằng chứng | Kết quả |
+| --- | --- | --- | --- | --- |
+| Tạo combo QA | Tạo bản ghi hợp lệ, audit và version mới | Combo QA được tạo, đọc lại được trong database, audit được ghi | Browser Admin + database read-back | PASS |
+| Sửa combo QA | Server kiểm tra dữ liệu, tăng version và ghi audit | Tên/mô tả/giá/thành phần cập nhật; version tăng; audit thêm | Browser Admin + database read-back | PASS |
+| Public sync | Combo active live xuất hiện đúng catalogue | Menu production hiển thị combo QA sau deploy runtime `60ef984`; ảnh thiếu dùng fallback, không 404 | Browser production | PASS |
+| Ẩn combo QA | Không DELETE; public và catalogue đặt món loại bản ghi inactive | `is_active=false`, `is_available=false`; Admin vẫn đọc được; public không còn hiển thị; audit/history giữ nguyên | Browser Admin + database/public read-back | PASS |
+| Bảo toàn canonical | Bốn combo chuẩn không đổi | Mã, tên, giá, trạng thái và version canonical khớp baseline trước test | Before/after database read-back | PASS |
+
+Không tạo booking/order QA mới cho gate này. Combo QA được cleanup bằng RPC
+archive/inactive, không DELETE. Validation, RLS, expected-version conflict, no-op,
+role denial và audit atomic tiếp tục được chứng minh bởi bộ kiểm thử cô lập
+`mocvi_test_combo2_20261003` với **76 nhóm SQL PASS**; không dùng local/mock để
+gán thành JWT production PASS. Lượt này không có phiên Customer/Staff hợp lệ để
+gửi mutation production nhằm chứng minh denial bằng JWT thật, nên ca đó là
+**NOT RUN**, không phải PASS.
+
+Trạng thái R05: **PASS trong phạm vi Admin thêm/sửa/ẩn combo production**.
+Upload ảnh, CRUD ngoài catalogue combo, payment, backup/restore và các mục ngoài
+phạm vi đồ án không bị mở rộng bởi gate này.
+
 ### Phần 9 — system QA, hardening và CI — 03/10/2026
 
 **PASS trong phạm vi các gate đã thực hiện; không phải chứng nhận mọi tính năng

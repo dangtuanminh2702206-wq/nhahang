@@ -6,9 +6,9 @@ booking, Customer, Staff và Admin; các mục tiến trình bên dưới có c�
 lịch sử. Trạng thái mở rộng mới được theo dõi tại
 [completion-backlog.md](docs/completion-backlog.md).
 
-Nhóm mở rộng combo đã có code/migration và kiểm thử local; live/Admin combo chỉ
-bật khi `COMBO_CATALOGUE_ENABLED=true` sau rollout database đã kiểm chứng.
-Production chưa bật flag: không coi catalogue tham khảo là dữ liệu live. Công cụ
+Nhóm mở rộng combo đã có code/migration, đã bật live sau rollout database và đã
+nghiệm thu Admin create/update/hide trên production trong phạm vi QA. Bốn combo
+canonical vẫn được bảo toàn; combo QA được archive/inactive sau kiểm thử. Công cụ
 backup mã hóa/restore local được mô tả ở [operations-runbook.md](docs/operations-runbook.md);
 đã có backup production mã hóa và kiểm chứng archive, nhưng chưa nghiệm thu
 restore cô lập, off-site/key recovery hoặc disaster recovery.
