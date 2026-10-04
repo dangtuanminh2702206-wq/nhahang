@@ -38,6 +38,13 @@ rpcError={code:'P0001',message:'PRIVATE'};const conflict=await handler.POST(requ
 console.log('PASS combo API contracts: role, feature gate, origin/JSON whitelist, input bounds, quantity/image validation, no-store and sanitized conflicts.');
 
 const canonical=await load('src/data/restaurant.ts',{}, {Intl});
+const media=await load('src/data/media.ts',{});
+const dynamicImage=media.getMenuImage('MV-CB99','QA combo','combo');
+assert.equal(dynamicImage.path,'/images/menu/combos/pending.webp');
+assert.equal(dynamicImage.aspectRatio,'4 / 3');
+assert.match(dynamicImage.alt,/QA combo/);
+assert.throws(()=>media.getMenuImage('MV-UNKNOWN','QA dish'),'Missing canonical image mapping');
+console.log('PASS combo media fallback: non-canonical live combos fail safe without weakening dish mapping.');
 let dbError=false;
 const combo={code:'MV-CB01',name:'Live renamed',description:'Live',guest_count:2,price:'500000',image_path:'/images/menu/combos/moc-duyen.webp',is_available:false,components:[{label:'QA confirmed',quantity:2,menuCode:null},{label:'QA descriptive',quantity:null,menuCode:null}]};
 const query={select:()=>query,eq:(key,value)=>{assert.equal(key,'is_active');assert.equal(value,true);return query;},order:()=>query,limit:async()=>({data:dbError?null:[combo],error:dbError?{}:null})};

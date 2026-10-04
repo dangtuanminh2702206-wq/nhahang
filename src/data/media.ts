@@ -89,7 +89,17 @@ const menuObjectPositions: Record<string, string> = {
 
 export function getMenuImage(code: string, name: string, kind: "dish" | "combo" = "dish"): MediaAsset {
   const slug = (kind === "combo" ? comboImageSlugs : menuImageSlugs)[code];
-  if (!slug) throw new Error(`Missing canonical image mapping for ${code}`);
+  if (!slug) {
+    if (kind === "combo") {
+      return {
+        path: "/images/menu/combos/pending.webp",
+        alt: `Ảnh combo ${name} đang chờ được bổ sung trong catalogue Mộc Vị`,
+        aspectRatio: "4 / 3",
+        objectPosition: "50% 50%",
+      };
+    }
+    throw new Error(`Missing canonical image mapping for ${code}`);
+  }
   return {
     path: `/images/menu/${kind === "combo" ? "combos" : "dishes"}/${slug}.webp`,
     alt: `Minh họa AI ${name} trong catalogue Mộc Vị`,
