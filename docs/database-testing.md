@@ -1134,3 +1134,105 @@ Bốn profile ROLE UI QA đã trở lại role/active ban đầu, xác minh SQL 
 không chứng nhận console-clean hoặc browser keyboard đầy đủ từ lượt đó;
 focus-return có regression event riêng. Báo cáo này chỉ đóng R03, không đóng
 gate xoay mật khẩu/thu hồi phiên QA hoặc toàn bộ backlog.
+
+## Hồi quy sau đặt món và rotation QA — 04/10/2026
+
+Runtime hiện tại `87bfc45`, nhánh `codex/restaurant-booking-platform`. Chạy lại
+SQL trên database loopback **mới và trống**, migration 001–008, seed hai lần:
+**86 nhóm PASS**. Không dùng database production cho reset/seed/race.
+Customer booking, Staff, order và recovery SDK contracts chạy lại PASS.
+[CI đúng runtime](https://github.com/dangtuanminh2702206-wq/nhahang/actions/runs/37177794523)
+success, gồm typecheck/lint/contracts/SQL/normal build/HTTP smoke/Pages export.
+Build/CI không thay thế bằng chứng JWT production.
+
+| Luồng / yêu cầu | Môi trường và loại bằng chứng | Actual / trạng thái |
+| --- | --- | --- |
+| Customer tạo booking, Staff xác nhận, Customer gửi dish + combo, Staff confirm → preparing → served | SQL thật cô lập + production HTTP/SQL rollout trước, runtime 6b435ab; module booking/order không đổi đến 87bfc45 | PASS SQL chạy lại; bằng chứng live lịch sử còn áp dụng, không phải fresh E2E trong lượt này |
+| Ownership A/B booking/history/notification/order; Guest và role sai bị từ chối | SQL RLS/RPC cô lập + API contracts | PASS; không suy thành JWT production A/B mới |
+| Tranh bàn hai connections, retry một booking/event, cancel/confirm/expire race | SQL cô lập | PASS, không double booking hoặc event trùng |
+| Snapshot tên/giá/tổng server, quantity/catalogue validation, pending edit CAS, Staff race và audit rollback | SQL cô lập + order API contract | PASS |
+| Customer list/detail hiển thị dữ liệu persist và đơn đã phục vụ | Browser production, phiên Customer hiện có, chỉ đọc fixture cũ | PASS: booking đã hủy, order đã phục vụ, tổng dự kiến và thanh toán tại quầy; không tạo fixture mới |
+| Responsive list/detail-order/đặt bàn 320/704/1024/1600 | Browser production đo đúng viewport và scrollWidth | PASS: không tràn ngang toàn trang; không ảnh lỗi; lượt đọc console có 0 error |
+| Chọn Tầng 2 đồng bộ danh sách bàn và marker | Browser production, form chưa submit | PASS: T2-B01 selected/pressed, không tạo booking |
+| HTTP health, Guest route guard Admin/Staff, method policy orders | Production read-only, không cookie | PASS: health 200; private routes hiện guard; GET orders 405 đúng route POST-only |
+| Form order pending tương tác và luồng Staff/A-B mới sau rotation | Browser/JWT production mới | NOT RUN: chưa có các phiên mới đã rotation để chạy đủ chu trình |
+| Mật khẩu riêng từng QA và refresh-token cũ bị thu hồi | Provider Auth thật, từng tài khoản | BLOCKED: operator chưa hoàn tất hand-off, không có bằng chứng mới |
+
+Không ghi định danh booking/order hoặc thông tin khách vào ma trận công khai.
+Fixture SQL chỉ tồn tại local; không tạo/đổi booking production trong lượt này.
+Không thay runtime, policy, role hay mật khẩu cloud để làm test dễ hơn.
+Ma trận đã chốt; trạng thái hồi quy tổng thể vẫn PARTIAL cho fresh live gates
+ở trên, không gộp SQL/mock/browser-read thành full production E2E PASS.
+
+### Quy trình kiểm chứng rotation còn lại
+
+Operator xác định đúng QA và dùng `/reset-password` sau khi đăng nhập, hoặc
+email recovery nếu không còn phiên hợp lệ. Mỗi tài khoản một mật khẩu riêng;
+không gửi mật khẩu lên chat/repo. Bước nhập, xác nhận và submit mật khẩu mới
+phải do operator thực hiện; không chuyển sang SQL/API khác để né hand-off.
+Giữ phiên cũ trong browser riêng trước khi đổi, không logout thủ công phiên đó
+để tạo bằng chứng giả. Sau đổi, login bằng mật khẩu mới phải đạt đúng user/role.
+Ứng dụng gọi `signOut({scope: 'global'})`; phải chứng minh lần refresh của phiên
+cũ bị provider từ chối. JWT cũ có thể còn hiệu lực tới expiry, nên reload ngay
+mà vẫn vào được không chứng minh thu hồi thất bại, cũng không chứng minh PASS.
+Chưa có phiên cũ được giữ và kết quả refresh thật thì ghi NOT RUN/BLOCKED.
+
+### Cập nhật operator sau rotation — 04/10/2026
+
+Operator đã xác nhận Customer, Staff và Admin QA đổi mật khẩu riêng, đăng nhập
+lại và phiên cũ bị đăng xuất. Đóng R04 **theo bằng chứng operator-confirmed**;
+không công bố danh tính/mật khẩu và không ghi đây là đã quan sát trực tiếp
+response refresh-token từ provider. Các giới hạn JWT còn hiệu lực tới expiry
+vẫn giữ nguyên. Không tự đổi credential qua browser/API/SQL trong task này.
+
+Runner `scripts/test-final-workflow-live.mjs` chuẩn bị một lượt production bounded:
+hai Customer khác nhau và Staff active, một booking FINAL QA, món + combo,
+pending edit/CAS, ownership A/B, retry/history, Staff processing và cleanup.
+Mutation đi qua website bằng phiên đăng nhập thật, cookie/JWT trong RAM.
+Read-back dùng kết nối backup đã được cấu hình, TLS xác minh CA và hostname,
+transaction READ ONLY với authenticated RLS subject từ phiên đã được server
+website xác minh. Không dùng key development, không thay `.env.local`; không
+gọi đó là PostgREST/JWT production độc lập. Loopback Host + form token + Origin
+guard; không signup/resend hoặc thay quyền. Script không dùng CI credentials và không
+chạy tự động trong CI. Trạng thái fresh live E2E vẫn NOT RUN đến khi có kết quả
+thực tế `/status`; runner chuẩn bị hoặc login chưa đủ để công bố PASS.
+
+### Fresh FINAL QA hoàn tất — 04/10/2026
+
+Operator nhập credential mới trong form local và bấm chạy. Runner trả
+`stage=COMPLETE`, `outcome=PASS`, `cleanup=PASS` trên runtime **e519787**.
+Không lưu password/cookie/JWT lên đĩa, không tạo user hoặc đổi role/policy.
+Một booking có nhãn FINAL QA; đây không phải load/race production.
+
+| Gate | Bằng chứng thực tế mới | Kết quả |
+| --- | --- | --- |
+| Phiên sau rotation | Website login + GET session xác minh trusted active Customer A/B khác nhau và Staff | PASS |
+| Booking pending → confirmed | Customer tạo qua HTTP; retry cùng ID không tăng history; Staff confirm; SQL RLS read-back | PASS |
+| Booking chưa confirmed không đặt món | Customer API trả 422 trước confirm | PASS |
+| Dish + combo, snapshot | Website create order; SQL đối chiếu tên/đơn giá/tổng catalogue; retry không tăng history | PASS |
+| Cách ly A/B | B không đọc booking/history/order/lines/history của A qua RLS subject; foreign booking create-order 404; internal notifications không lộ B | PASS |
+| Validation/quyền | Guest orders 401; Customer gọi Staff order 403; quantity zero 400 | PASS |
+| Pending edit và stale snapshot | Customer edit thành công; version cũ trả 409, không ghi đè | PASS |
+| Staff và khóa sửa sau confirm | confirmed → preparing → served qua API, SQL xác nhận từng trạng thái; Customer edit sau confirm 409 | PASS |
+| Event/notification | Đúng 5 order history và 5 notification; read-back cuối có 5 order audit | PASS |
+| Cleanup | Staff hủy booking QA; SQL cancelled/order served; Guest availability trả lại đúng slot bàn; history/audit giữ nguyên | PASS |
+
+Read-back RLS sử dụng transaction READ ONLY đặt authenticated subject từ phiên
+đã được website xác minh; không mô tả đây là PostgREST JWT test độc lập. Các
+mutation thực sự dùng cookie Auth mới và authorization/RPC trên website chính.
+SQL kết nối production bằng CA Supabase với hostname/certificate validation;
+không tắt TLS. Lượt cuối đối chiếu riêng bằng read-only query và public availability.
+Runner logout các phiên QA của chính nó và bỏ cookie/client khỏi bộ nhớ.
+
+Kết hợp với 86 nhóm SQL trên database trống (race/rollback/invariants), contracts,
+CI runtime [e519787 PASS](https://github.com/dangtuanminh2702206-wq/nhahang/actions/runs/37179328693)
+và browser responsive list/detail-order/đặt bàn ở 320/704/1024/1600 đã ghi ở trên,
+đóng hồi quy **trong phạm vi ma trận này**. Bộ test không thay thế kiểm thử mọi
+click/form pending/Staff qua browser, kiểm thử tải production hoặc mọi thiết bị.
+Full browser click-through của đơn pending trong lượt FINAL QA là NOT RUN;
+không đổi nhãn nó thành PASS nhờ HTTP. Đây là giới hạn loại bằng chứng, không
+phải chứng nhận chức năng chưa triển khai hoặc cam kết hoàn hảo tuyệt đối.
+
+Không đưa định danh fixture, email, số liệu khách hoặc credential vào repo.
+Các thay đổi panorama/tooling và asset check đang có của công việc khác vẫn
+được bảo toàn, không thuộc commit nghiệm thu này.
