@@ -890,6 +890,32 @@ Trạng thái R05: **PASS trong phạm vi Admin thêm/sửa/ẩn combo productio
 Upload ảnh, CRUD ngoài catalogue combo, payment, backup/restore và các mục ngoài
 phạm vi đồ án không bị mở rộng bởi gate này.
 
+### Kiểm tra lại gate tài khoản và bàn giao — 04/10/2026
+
+Trong lượt kiểm tra này, các contract sau đạt lại: identity/recovery, recovery
+cookie storage, combo, order, booking, Customer booking và Staff. Typecheck, lint,
+normal production build, Pages build, 50 asset/basePath/link checks đều PASS.
+Contract và synthetic provider chỉ chứng minh hành vi code/transport đã cô lập;
+không được dùng để kết luận JWT thật hoặc email provider thật.
+
+`pnpm test:db` trả **NOT RUN** vì terminal không có
+`TEST_DATABASE_URL` trỏ tới một PostgreSQL loopback trống tên `mocvi_test_*`.
+Không dùng Supabase development/production làm database fixture. Vì vậy không
+ghi thêm PASS cho các ca race/RLS SQL trong lượt này; bằng chứng SQL local trước
+đó vẫn giữ nguyên theo commit tương ứng.
+
+Recovery email thật vẫn **PARTIAL** do provider quota và chưa có callback mới
+được xác minh end-to-end. Role management qua UI cô lập **NOT RUN** vì thiếu
+provider/database và phiên test phù hợp. Rotation mật khẩu/thu hồi phiên của
+tài khoản QA đã từng lộ thông tin cần owner thực hiện trong Auth; không ghi
+mật khẩu, token, email hay cookie vào repository.
+
+Bằng chứng Customer → booking → order → Staff production đã được ghi ở mục
+đặt món trước đó và được tái sử dụng theo commit/runtime đã kiểm chứng; lượt này
+không tạo fixture production mới. Trạng thái bàn giao tổng thể: **PARTIAL**,
+cho đến khi database integration, recovery email thật, role UI cô lập và QA
+account rotation có bằng chứng riêng.
+
 ### Phần 9 — system QA, hardening và CI — 03/10/2026
 
 **PASS trong phạm vi các gate đã thực hiện; không phải chứng nhận mọi tính năng

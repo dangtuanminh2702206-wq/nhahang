@@ -6,7 +6,7 @@ MVP; bằng chứng nghiệm thu lịch sử giữ ở `database-testing.md`.
 
 | ID | Phần | Yêu cầu | Hiện trạng | Tiêu chí nghiệm thu | Phụ thuộc | Bằng chứng | Trạng thái |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| R01 | 1–9 | Hồi quy nền tảng | MVP đã nghiệm thu theo phạm vi cũ | Quality/SQL/HTTP/browser và CI theo commit mới | Database loopback, server cô lập | Lịch sử Phần 9; đang chạy lại gates liên quan | IN PROGRESS |
+| R01 | 1–9 | Hồi quy nền tảng | MVP đã nghiệm thu theo phạm vi cũ | Quality/SQL/HTTP/browser và CI theo commit mới | Database loopback, server cô lập | Contract/build/Pages gates chạy lại ngày 04/10; SQL integration thiếu database loopback | PARTIAL — database gate chưa chạy trong lượt này |
 | R02 | 4 | Khôi phục mật khẩu | Request/callback/form đã lên production; user nhận thư nhưng callback lỗi | Validation/ownership/session PASS; email thật và login bằng mật khẩu mới | Quota email, QA xác nhận | Contracts/SDK storage PASS; callback E2E chưa đạt; provider đang 429 | PARTIAL — email quota blocks retest |
 | R03 | 4,8 | Role UI trên môi trường cô lập | SQL/JWT cũ đạt; browser production bị chặn | Admin-last/self/inactive/concurrent qua UI QA cô lập | Phiên test Admin/dev hợp lệ | database-testing.md | NOT RUN |
 | R04 | 4 | Tài khoản QA đã lộ credential | Không đưa credential vào code hoặc báo cáo | Owner chọn tài khoản, đổi mật khẩu/thu hồi phiên rồi kiểm chứng | Xác nhận đúng tài khoản test và phiên owner | Chưa thay tài khoản | BLOCKED — owner action |
@@ -140,6 +140,34 @@ không đổi TODO thành PASS chỉ vì nhóm này build đạt.
 R05 hiện **PASS trong phạm vi Admin combo catalogue đã thống nhất**. Upload ảnh,
 CRUD catalogue ngoài combo, đổi tầng bàn, backup/restore và các mục TODO khác
 không thuộc nghiệm thu này.
+
+### Gate tài khoản và bàn giao cuối — kiểm tra lại 04/10/2026
+
+- Contract recovery/identity, recovery cookie storage, combo, order, booking,
+  Customer booking và Staff đều PASS. Các script contract tiếp tục ghi rõ đây
+  không phải JWT/email production.
+- `pnpm typecheck`, `pnpm lint`, normal `pnpm build`, Pages build,
+  `pnpm test:public-assets` và Pages/basePath/link checks PASS. Bộ asset hiện tại
+  vẫn là 50/50; catalogue là 3 tầng, 22 bàn, 92 chỗ, 30 món và 4 combo.
+- `pnpm test:db` **NOT RUN** vì terminal chưa có `TEST_DATABASE_URL` trỏ tới
+  PostgreSQL loopback trống có tên `mocvi_test_*`. Không dùng Supabase
+  development/production để thay thế fixture và không reset/seed cloud.
+- Recovery email thật vẫn **PARTIAL** do quota/provider và chưa có lượt mới được
+  xác minh end-to-end. Không gửi lại thư để ép PASS.
+- Role management qua UI trên môi trường cô lập **NOT RUN** trong lượt này vì
+  chưa có provider/database cô lập và phiên synthetic phù hợp. SQL/contract local
+  không được dùng thay cho JWT UI.
+- Tài khoản QA có thông tin từng lộ vẫn cần owner tự đổi mật khẩu riêng và thu
+  hồi phiên trong Supabase/Auth; mật khẩu mới không được gửi vào chat, URL, log
+  hoặc repository. Khi chưa có bằng chứng thao tác này, gate được giữ BLOCKED.
+- Bằng chứng production Customer → booking → order → Staff đã ghi ở phần đặt
+  món trước đó và được tái sử dụng theo đúng commit/runtime đã kiểm chứng. Không
+  tạo fixture production mới chỉ để lặp lại cùng một ca trong lượt này.
+
+Trạng thái bàn giao hiện tại: **PARTIAL**. Các gate code, contract, build, Pages,
+asset và các nghiệm thu production đã có bằng chứng đều giữ nguyên; database
+integration, recovery email thật, role UI cô lập và rotation tài khoản QA cần
+được hoàn tất trước khi công bố toàn bộ hệ thống đã nghiệm thu.
 
 ### Backup prerequisite
 
