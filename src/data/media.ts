@@ -39,6 +39,14 @@ export const restaurantMedia = {
   vipTable: restaurantAsset("tables/vip", "Minh họa AI toàn cảnh bàn VIP tám người với đèn ấm và vách gỗ", "3 / 2", "53% 55%"),
 };
 
+// Additional user-approved hero image; the original canonical catalogue is unchanged.
+export const spacesHeroMedia: MediaAsset = {
+  path: "/images/restaurant/exterior/moc-vi-exterior-portrait.png",
+  alt: "Minh họa AI mặt tiền Mộc Vị với cửa kính, cây xanh và ánh đèn ấm lúc chạng vạng",
+  aspectRatio: "4 / 5",
+  objectPosition: "50% 50%",
+};
+
 // Stable menu codes map to one expected filename each, including pending assets.
 export const menuImageSlugs: Record<string, string> = {
   "MV-KV01": "goi-buoi-tom-thit",

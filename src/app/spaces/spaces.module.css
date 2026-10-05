@@ -1,0 +1,16 @@
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(2rem, 4vw, 4rem);
+}
+
+.copy { min-width: 0; }
+.copy h1 { text-wrap: balance; }
+.image { max-width: 30rem; justify-self: center; }
+
+@media (min-width: 1024px) {
+  .hero { grid-template-columns: minmax(0, 1.35fr) minmax(0, .85fr); }
+  .copy h1 { font-size: clamp(3.25rem, 5.2vw, 5.5rem); }
+  .image { justify-self: end; }
+}
