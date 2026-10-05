@@ -50,13 +50,9 @@ export default async function FloorPage({ params }: FloorPageProps) {
                 ))}
               </div>
             </div>
-            <figure className="isometric-block">
-              <AssetImage asset={resolveMedia(restaurantMedia[`isometric-${floor.slug}`])} label={`Isometric · ${floor.name}`} kind="isometric" sizes="(max-width: 704px) calc(100vw - 32px), (max-width: 1024px) 40vw, 480px" />
-              <figcaption>Minh họa AI về concept không gian. Vị trí và sức chứa bàn được xác định bằng sơ đồ tương tác phía trên.</figcaption>
-            </figure>
           </section>
           <section className="floor-scene-section" aria-labelledby="floor-scenes-heading">
-            <div className="section-heading"><div><p className="eyebrow">Góc không gian</p><h2 id="floor-scenes-heading">Một vài góc nhìn của {floor.name}.</h2></div><p className="section-note">Ảnh AI minh họa concept, không gắn với mã bàn cụ thể.</p></div>
+            <div className="section-heading"><div><p className="eyebrow">Góc không gian</p><h2 id="floor-scenes-heading">Một vài góc nhìn của {floor.name}.</h2></div></div>
             <div className="floor-scene-grid">
               {floorScenes[floor.slug].map((scene) => (
                 <figure key={scene.asset.path}>

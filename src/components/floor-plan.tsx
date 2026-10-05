@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { tablePlanImages } from "@/data/table-plans";
 import type { RestaurantFloor, RestaurantTable, TableVisualState } from "@/data/restaurant";
 
 type TableNodeProps = {
@@ -9,14 +12,15 @@ type TableNodeProps = {
   isSelected: boolean;
   disabled?: boolean;
   onSelect: (table: RestaurantTable) => void;
+  hotspot?: readonly [number, number];
 };
 
-export function TableNode({ table, state, isSelected, onSelect, disabled }: TableNodeProps) {
+export function TableNode({ table, state, isSelected, onSelect, disabled, hotspot }: TableNodeProps) {
   return (
     <button
       type="button"
-      className={`table-node table-node-${isSelected ? "selected" : state}`}
-      style={{ left: `${table.planX}%`, top: `${table.planY}%` }}
+      className={`table-node table-node-${isSelected ? "selected" : state}${hotspot ? " table-image-hotspot" : ""}`}
+      style={{ left: `${hotspot?.[0] ?? table.planX}%`, top: `${hotspot?.[1] ?? table.planY}%` }}
       aria-pressed={isSelected}
       disabled={disabled}
       aria-label={`${table.code}, ${table.capacity} chỗ, ${table.position}${table.note ? `, ${table.note}` : ""}${state === "unavailable" ? ", không khả dụng" : state === "available" ? ", sẵn sàng tại lần kiểm tra" : state === "occupied" ? ", đang phục vụ" : state === "cleaning" ? ", cần dọn" : state === "out-of-service" ? ", tạm ngưng" : ""}`}
@@ -42,6 +46,10 @@ export function FloorPlan({ floor, tableState = "neutral", selectedCode, onTable
 }
 
 function PopulatedFloorPlan({ floor, tableState = "neutral", selectedCode, onTableSelect, availableCodes, tableStates }: FloorPlanProps) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const illustration = tablePlanImages[floor.slug];
+  // An Admin-created table without an image hotspot falls back to the complete schematic.
+  const imagePlan = !imageFailed && illustration && floor.tables.every(table => illustration.hotspots[table.code]) ? illustration : undefined;
   const [localSelection, setLocalSelection] = useState<RestaurantTable>(floor.tables[0]);
   const selectedTable = floor.tables.find((table) => table.code === (selectedCode ?? localSelection.code)) ?? floor.tables[0];
   function selectTable(table: RestaurantTable) {
@@ -55,12 +63,12 @@ function PopulatedFloorPlan({ floor, tableState = "neutral", selectedCode, onTab
           <p className="eyebrow">Sơ đồ tương tác</p>
           <h2 id="floor-plan-heading">Chọn một bàn để xem vị trí</h2>
         </div>
-        <p className="floor-plan-status"><span aria-hidden="true" /> {tableStates ? "Trạng thái vật lý tại lần tải · không phải lịch đặt tương lai" : availableCodes ? "Kết quả kiểm tra tạm thời · chưa giữ bàn" : "Trạng thái minh họa: chưa kết nối khả dụng"}</p>
+        <p className="floor-plan-status"><span aria-hidden="true" /> {tableStates ? "Trạng thái bàn hiện tại" : availableCodes ? "Kết quả kiểm tra · chưa giữ bàn" : "Chọn ngày và giờ tại trang Đặt bàn để kiểm tra bàn trống."}</p>
       </div>
       <div className="floor-plan-scroll" tabIndex={0} aria-label={`Sơ đồ tầng ${floor.level}, cuộn ngang nếu cần`}>
-        <div className="floor-plan-canvas">
-          {floor.planLandmarks.map((landmark) => <span key={landmark.label} className={`plan-landmark ${landmark.className}`}>{landmark.label}</span>)}
-          {floor.tables.map((table) => <TableNode key={table.code} table={table} state={availableCodes ? availableCodes.includes(table.code) ? "available" : "unavailable" : tableStates?.[table.code] ?? tableState} disabled={availableCodes !== undefined && !availableCodes.includes(table.code)} isSelected={selectedTable.code === table.code && (!availableCodes || availableCodes.includes(table.code))} onSelect={selectTable} />)}
+        <div className={`floor-plan-canvas${imagePlan ? " floor-plan-image" : ""}`} style={imagePlan ? { aspectRatio: `${imagePlan.width} / ${imagePlan.height}` } : undefined}>
+          {imagePlan ? <Image src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}${imagePlan.path}`} alt={`Sơ đồ bàn tầng ${floor.level} · ${floor.name}`} fill sizes="(max-width: 704px) 672px, (max-width: 1600px) 90vw, 1400px" style={{ objectFit: "contain" }} onError={() => setImageFailed(true)} /> : floor.planLandmarks.map((landmark) => <span key={landmark.label} className={`plan-landmark ${landmark.className}`}>{landmark.label}</span>)}
+          {floor.tables.map((table) => <TableNode key={table.code} table={table} hotspot={imagePlan?.hotspots[table.code]} state={availableCodes ? availableCodes.includes(table.code) ? "available" : "unavailable" : tableStates?.[table.code] ?? tableState} disabled={availableCodes !== undefined && !availableCodes.includes(table.code)} isSelected={selectedTable.code === table.code && (!availableCodes || availableCodes.includes(table.code))} onSelect={selectTable} />)}
         </div>
       </div>
       <aside className="selected-table" aria-live="polite">
@@ -68,6 +76,7 @@ function PopulatedFloorPlan({ floor, tableState = "neutral", selectedCode, onTab
         <strong>{selectedTable.code}</strong>
         {tableStates && <span>{({ available: "Sẵn sàng", occupied: "Đang phục vụ", cleaning: "Cần dọn", "out-of-service": "Tạm ngưng", neutral: "Chưa có trạng thái", unavailable: "Không khả dụng", selected: "Đang chọn" })[tableStates[selectedTable.code] ?? "neutral"]}</span>}
         <span>{selectedTable.capacity} chỗ · {selectedTable.position}{selectedTable.note ? ` · ${selectedTable.note}` : ""}</span>
+        {!onTableSelect && <Link className="button button-primary" href={{ pathname: "/reservation", query: { floor: floor.slug, table: selectedTable.code } }}>Đặt bàn {selectedTable.code} ↗</Link>}
       </aside>
     </section>
   );

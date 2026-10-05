@@ -3,12 +3,16 @@ import { useRef, useState } from "react";
 import { FloorPlan } from "@/components/floor-plan";
 import { restaurantFloors as canonicalFloors, type RestaurantFloor } from "@/data/restaurant";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import type { AvailableTable } from "@/lib/booking-input";
 
 export function ReservationPreview({ demo = true, mutationsEnabled = false, floors = canonicalFloors }: { demo?: boolean; mutationsEnabled?: boolean; floors?: readonly RestaurantFloor[] }) {
   const restaurantFloors = floors;
-  const [floorSlug, setFloorSlug] = useState(restaurantFloors[0].slug);
-  const [tableCode, setTableCode] = useState(restaurantFloors[0].tables[0].code);
+  const searchParams = useSearchParams();
+  const initialFloor = restaurantFloors.find(floor => floor.slug === searchParams.get("floor")) ?? restaurantFloors[0];
+  const initialTable = initialFloor.tables.find(table => table.code === searchParams.get("table")) ?? initialFloor.tables[0];
+  const [floorSlug, setFloorSlug] = useState(initialFloor.slug);
+  const [tableCode, setTableCode] = useState(initialTable.code);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("18:00");
   const [guests, setGuests] = useState("2");
@@ -81,7 +85,7 @@ export function ReservationPreview({ demo = true, mutationsEnabled = false, floo
     requestAnimationFrame(() => summaryRef.current?.focus());
   }
   return <>
-    <aside className="demo-notice"><strong>{demo ? "Đây chỉ là bản thử giao diện." : mutationsEnabled ? "Gửi yêu cầu đặt bàn." : "Chưa nhận đặt bàn thật."}</strong><p>{demo ? "Không gửi thông tin, không giữ chỗ và chưa kiểm tra bàn trống. Vui lòng chỉ nhập dữ liệu giả để thử. Số chỗ là cấu hình catalogue, không phải khả dụng đặt bàn." : "Kết quả tìm bàn chưa giữ chỗ. Yêu cầu được tạo ở trạng thái chờ; chỉ có đặt bàn xác nhận khi nhà hàng duyệt."}</p>{!demo && mutationsEnabled && <p>Cần tài khoản Customer đã đăng nhập để gửi yêu cầu. <Link href="/login">Đăng nhập</Link></p>}</aside>
+    {!demo && <aside className="demo-notice"><strong>{mutationsEnabled ? "Gửi yêu cầu đặt bàn." : "Chưa nhận đặt bàn thật."}</strong><p>Kết quả tìm bàn chưa giữ chỗ. Yêu cầu được tạo ở trạng thái chờ; chỉ có đặt bàn xác nhận khi nhà hàng duyệt.</p>{mutationsEnabled && <p>Cần tài khoản Customer đã đăng nhập để gửi yêu cầu. <Link href="/login">Đăng nhập</Link></p>}</aside>}
     <form ref={formRef} method="post" action="/api/bookings" className="reservation-form" onSubmit={(event) => { event.preventDefault(); if (!demo) void submitBooking(); }} autoComplete="off" aria-busy={pending} onChange={() => { setConfirmed(false); setCreated(false); requestKey.current = null; }}>
       <fieldset disabled={pending}><legend><span>01</span> Thời gian & số khách</legend><div className="form-grid" onChange={invalidate}>
         <label htmlFor="preview-date">Ngày<input id="preview-date" type="date" required value={date} onChange={(event) => setDate(event.target.value)} /></label>
@@ -93,7 +97,7 @@ export function ReservationPreview({ demo = true, mutationsEnabled = false, floo
         <FloorPlan key={floor.slug} floor={floor} selectedCode={tableCode} availableCodes={available?.map(table => table.table_code)} onTableSelect={(table) => { setTableCode(table.code); setConfirmed(false); setCreated(false); requestKey.current = null; }} />
       </fieldset>
       <fieldset disabled={pending || (!demo && !mutationsEnabled)}><legend><span>03</span> Thông tin khách · Dữ liệu thử</legend><div className="form-grid form-grid-two"><label htmlFor="preview-name">Tên khách<input id="preview-name" name="name" required maxLength={120} placeholder="Ví dụ: Khách demo" /></label><label htmlFor="preview-phone">Điện thoại<input id="preview-phone" name="phone" type="tel" required pattern="[0-9+ ().-]{8,32}" maxLength={32} placeholder="Ví dụ: 0900000000" /></label></div><label htmlFor="preview-note">Ghi chú (không bắt buộc)<textarea id="preview-note" name="notes" maxLength={1000} rows={3} placeholder="Ghi chú thử nghiệm" /></label></fieldset>
-      <div className="reservation-confirm"><p className="small-note">{demo ? "Thông tin chỉ nằm trong phiên xem trang; không lưu trữ hay gửi đến nhà hàng." : mutationsEnabled ? "Thông tin liên hệ chỉ được gửi khi bạn bấm gửi yêu cầu đặt bàn." : "Tạo booking đang tắt. Không gửi thông tin liên hệ."}</p>{demo ? <button type="button" className="button button-primary" onClick={confirmPreview}>Xem xác nhận mô phỏng ↗</button> : <button type="submit" className="button button-primary" disabled={!mutationsEnabled || !selected || pending || created}>{pending ? "Đang xử lý…" : "Gửi yêu cầu đặt bàn"}</button>}</div>
+      <div className="reservation-confirm">{!demo && <p className="small-note">{mutationsEnabled ? "Thông tin liên hệ chỉ được gửi khi bạn bấm gửi yêu cầu đặt bàn." : "Tạo booking đang tắt. Không gửi thông tin liên hệ."}</p>}{demo ? <button type="button" className="button button-primary" onClick={confirmPreview}>Xem xác nhận mô phỏng ↗</button> : <button type="submit" className="button button-primary" disabled={!mutationsEnabled || !selected || pending || created}>{pending ? "Đang xử lý…" : "Gửi yêu cầu đặt bàn"}</button>}</div>
       {demo && <div ref={summaryRef} tabIndex={-1} role="status" className={confirmed ? "preview-confirmation" : ""}>{confirmed && <><p className="eyebrow">Tóm tắt lựa chọn · Chưa tạo đặt bàn</p><h2>{floor.name} · {tableCode}</h2><p>{date.split("-").reverse().join("/")} · {time} · {guests} khách</p><p>Đây là kết quả mô phỏng giao diện, không phải xác nhận giữ bàn. Không có dữ liệu nào được gửi đi.</p></>}</div>}
     </form>
   </>;
