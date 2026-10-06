@@ -1338,5 +1338,13 @@ trong Windows/OneDrive, không tính lần đó PASS và không xóa cache để
 Fallback ảnh: browser test cô lập chặn tải table-plan, xác minh sơ đồ đầy đủ 8
 bàn/landmark thay thế, Enter chọn T1-B08 và link Reservation giữ lựa chọn: PASS
 local. Không gây lỗi ảnh production. Production Enter chọn T3-B06/focus/selected
-và console errors rỗng: PASS browser. Assertion fallback được bổ sung vào CI;
-kết quả workflow cuối phải được đối chiếu riêng sau push.
+và console errors rỗng: PASS browser. Assertion fallback được bổ sung vào CI.
+
+Lượt cuối SHA `0c1a378` (runtime không đổi từ `462d693`, test fallback `ab513cc`):
+[CI PASS](https://github.com/dangtuanminh2702206-wq/nhahang/actions/runs/37494360488),
+[Pages PASS](https://github.com/dangtuanminh2702206-wq/nhahang/actions/runs/37494360465),
+[Vercel success](https://vercel.com/minh-5f07/nhahang/3RphYXxcmFpvtNuAEVHoaifS2iYx).
+Sau phát hành, sáu route liên quan trên mỗi domain Vercel/Pages đều HTTP 200.
+Browser Vercel nhận query floor-3/T3-B06; Pages nhận floor-2/T2-B07, form demo và
+ảnh `/nhahang/images/restaurant/table-plans/floor-2.png` tải đúng, console không
+ghi nhận error. Đây là SHA nghiệm thu; commit ghi bổ sung kết quả này chỉ tài liệu.
