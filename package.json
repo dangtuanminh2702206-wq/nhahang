@@ -18,6 +18,8 @@
     "test:order": "node scripts/test-order-contract.mjs",
     "test:backup": "node scripts/test-database-backup.mjs",
     "test:identity:smoke": "node scripts/test-identity-smoke.mjs",
+    "test:table-plans": "node scripts/test-table-plans.mjs",
+    "test:booking:pages-browser": "node scripts/test-booking-pages-browser.mjs",
     "test:public-assets": "node scripts/test-public-assets.mjs"
   },
   "dependencies": {

@@ -90,6 +90,9 @@ jobs:
       - name: Public asset and spatial checks
         run: pnpm test:public-assets
 
+      - name: Table-plan image geometry and canonical mapping
+        run: pnpm test:table-plans
+
       - name: Database integration tests
         run: pnpm test:db
 
@@ -139,3 +142,5 @@ jobs:
         run: |
           pnpm test:public-assets
           pnpm test:booking
+          pnpm test:table-plans
+          pnpm test:booking:pages-browser

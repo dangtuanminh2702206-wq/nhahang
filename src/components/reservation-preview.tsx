@@ -1,18 +1,15 @@
 "use client";
-import { useRef, useState } from "react";
+import { Suspense, useCallback, useRef, useState } from "react";
 import { FloorPlan } from "@/components/floor-plan";
+import { ReservationQuerySelection } from "@/components/reservation-query-selection";
 import { restaurantFloors as canonicalFloors, type RestaurantFloor } from "@/data/restaurant";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import type { AvailableTable } from "@/lib/booking-input";
 
 export function ReservationPreview({ demo = true, mutationsEnabled = false, floors = canonicalFloors }: { demo?: boolean; mutationsEnabled?: boolean; floors?: readonly RestaurantFloor[] }) {
   const restaurantFloors = floors;
-  const searchParams = useSearchParams();
-  const initialFloor = restaurantFloors.find(floor => floor.slug === searchParams.get("floor")) ?? restaurantFloors[0];
-  const initialTable = initialFloor.tables.find(table => table.code === searchParams.get("table")) ?? initialFloor.tables[0];
-  const [floorSlug, setFloorSlug] = useState(initialFloor.slug);
-  const [tableCode, setTableCode] = useState(initialTable.code);
+  const [floorSlug, setFloorSlug] = useState<string>(restaurantFloors[0].slug);
+  const [tableCode, setTableCode] = useState<string>(restaurantFloors[0].tables[0].code);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("18:00");
   const [guests, setGuests] = useState("2");
@@ -31,14 +28,20 @@ export function ReservationPreview({ demo = true, mutationsEnabled = false, floo
   const summaryRef = useRef<HTMLDivElement>(null);
   const floor = restaurantFloors.find((item) => item.slug === floorSlug) ?? restaurantFloors[0];
   const selected = available?.find(table => table.table_code === tableCode && table.area_code === floor.areaCode);
-  function invalidate() {
+  const invalidate = useCallback(() => {
     revision.current++;
     setAvailable(null);
     setMessage("");
     setCreated(false);
     setCreatedBookingId(null);
     requestKey.current = null;
-  }
+  }, []);
+  const applyQuerySelection = useCallback((selection: { floorSlug: string; tableCode: string }) => {
+    setFloorSlug(selection.floorSlug);
+    setTableCode(selection.tableCode);
+    setConfirmed(false);
+    invalidate();
+  }, [invalidate]);
   function notify(text: string, error = false) {
     setMessage(text); setFailed(error);
     requestAnimationFrame(() => summaryRef.current?.focus());
@@ -87,6 +90,7 @@ export function ReservationPreview({ demo = true, mutationsEnabled = false, floo
   return <>
     {!demo && <aside className="demo-notice"><strong>{mutationsEnabled ? "Gửi yêu cầu đặt bàn." : "Chưa nhận đặt bàn thật."}</strong><p>Kết quả tìm bàn chưa giữ chỗ. Yêu cầu được tạo ở trạng thái chờ; chỉ có đặt bàn xác nhận khi nhà hàng duyệt.</p>{mutationsEnabled && <p>Cần tài khoản Customer đã đăng nhập để gửi yêu cầu. <Link href="/login">Đăng nhập</Link></p>}</aside>}
     <form ref={formRef} method="post" action="/api/bookings" className="reservation-form" onSubmit={(event) => { event.preventDefault(); if (!demo) void submitBooking(); }} autoComplete="off" aria-busy={pending} onChange={() => { setConfirmed(false); setCreated(false); requestKey.current = null; }}>
+      <Suspense fallback={null}><ReservationQuerySelection floors={restaurantFloors} onSelect={applyQuerySelection} /></Suspense>
       <fieldset disabled={pending}><legend><span>01</span> Thời gian & số khách</legend><div className="form-grid" onChange={invalidate}>
         <label htmlFor="preview-date">Ngày<input id="preview-date" type="date" required value={date} onChange={(event) => setDate(event.target.value)} /></label>
         <label htmlFor="preview-time">Giờ<select id="preview-time" value={time} onChange={(event) => setTime(event.target.value)}>{["10:00", "12:00", "14:00", "16:00", "18:00", "19:00", "20:00"].map((item) => <option key={item}>{item}</option>)}</select></label>

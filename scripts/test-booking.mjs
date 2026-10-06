@@ -130,6 +130,8 @@ if (process.env.BOOKING_CHECK_PAGES === 'true') {
   const exported=await files(root);
   assert(!exported.some(f=>/\/api\/(availability|bookings)\//.test(f.pathname)));
   const reservation=await readFile(new URL('reservation/index.html',root),'utf8');
+  assert(reservation.includes('class="reservation-form"'), 'Reservation form is present in static HTML');
+  assert(reservation.includes('id="preview-floor"') && reservation.includes('id="preview-table"'), 'Floor and table controls are prerendered');
   assert(reservation.includes('Xem xác nhận mô phỏng'));
   assert(!reservation.includes('Kiểm tra bàn</button>'));
   let references=0;
