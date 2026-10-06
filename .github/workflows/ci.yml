@@ -135,12 +135,18 @@ jobs:
           GITHUB_PAGES: "true"
         run: pnpm build
 
-      - name: Verify Pages export
+      - name: Verify Pages public assets and routes
         env:
           PUBLIC_CHECK_PAGES: "true"
+        run: pnpm test:public-assets
+
+      - name: Verify Pages reservation form and basePath
+        env:
           BOOKING_CHECK_PAGES: "true"
-        run: |
-          pnpm test:public-assets
-          pnpm test:booking
-          pnpm test:table-plans
-          pnpm test:booking:pages-browser
+        run: pnpm test:booking
+
+      - name: Verify table-plan images and canonical mapping
+        run: pnpm test:table-plans
+
+      - name: Verify Pages browser hydration and interactions
+        run: pnpm test:booking:pages-browser
