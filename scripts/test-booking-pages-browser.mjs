@@ -33,14 +33,16 @@ const server = createServer(async (request, response) => {
     if (!pathname.startsWith('/nhahang/')) { response.writeHead(404).end(); return; }
     let relative = pathname.slice('/nhahang/'.length);
     const routePayload = basename(relative).match(/^__next\.(.+)\.__PAGE__\.txt$/);
-    if (routePayload) {
-      const segments = routePayload[1].split('.');
-      relative = join(dirname(relative), `__next.${segments.shift()}`, ...segments, '__PAGE__.txt');
-    }
     if (!relative || relative.endsWith('/')) relative += 'index.html';
     else if (!extname(relative)) relative += '/index.html';
-    const file = resolve(exportRoot, relative);
+    let file = resolve(exportRoot, relative);
     if (!file.startsWith(`${exportRoot}${sep}`)) { response.writeHead(404).end(); return; }
+    if (!existsSync(file) && routePayload) {
+      // Next's Windows export nests segment payloads; Linux keeps dotted filenames.
+      const segments = routePayload[1].split('.');
+      file = resolve(exportRoot, dirname(relative), `__next.${segments.shift()}`, ...segments, '__PAGE__.txt');
+      if (!file.startsWith(`${exportRoot}${sep}`)) { response.writeHead(404).end(); return; }
+    }
     const body = await readFile(file);
     response.writeHead(200, { 'content-type': mimeTypes[extname(file)] ?? 'application/octet-stream' }).end(body);
   } catch {
