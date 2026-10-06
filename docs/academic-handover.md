@@ -251,3 +251,29 @@ Các điểm trả lời bảo vệ:
 Các bước diễn tập trong bảng đã đạt; nhóm có thể dùng bộ tài liệu này cho phạm vi
 môn học đã chốt. Trước demo một booking liên tục, chuẩn bị trước đúng khung giờ.
 Không mở thêm payment/kho/360 hoặc kiểm thử mọi thiết bị để kéo dài nghiệm thu.
+
+## 9. Sơ đồ bàn ảnh và chọn bàn — 06/10/2026
+
+- Vercel production: ba trang tầng hiển thị đúng ảnh và số bàn/sức chứa live:
+  8/32, 8/34, 6/26. Tầng 2 giữ T2-B06 4 chỗ và T2-B07 6 chỗ.
+- Browser click-through: chọn T1-B08 mở Reservation đúng query/tầng/bàn; trong
+  Reservation, chuyển tầng sang tầng 2, click T2-B07 rồi chọn T2-B06 từ danh sách;
+  marker, select và nhãn bàn đang xem đồng bộ.
+- Contact và Spaces trả ảnh mặt tiền dọc bổ sung; PNG sơ đồ bàn là asset phụ,
+  không làm thay đổi baseline 50 WebP/30 món/4 combo.
+- Production responsive: cả ba trang tầng × 320/704/1024/1600 đo đúng viewport,
+  không tràn ngang trang, marker ngoài canvas hoặc ảnh lỗi đã tải. CI Chrome
+  headless Pages cũng PASS hydration/query/select/keyboard và demo không POST.
+- Customer QA tạo booking bằng UI, đọc lại đúng bàn/giờ/số khách sau reload;
+  pending làm bàn không thể chọn trong cùng slot. Fixture đầu hết hạn tự nhiên
+  trong lúc browser gián đoạn. User duyệt một fixture thay thế: Customer hủy
+  thành công, reload giữ cancelled và history “Bạn đã hủy”; kiểm tra cùng slot
+  thấy bàn sẵn sàng. Cả hai terminal, không tạo order hoặc xóa history/audit.
+
+Đối chiếu ảnh và loại bằng chứng theo ngày nằm tại
+[`asset-integration-status.md`](asset-integration-status.md) và
+[`database-testing.md`](database-testing.md). Đây là bằng chứng browser/persist,
+không gọi là SQL read-back độc lập. CI/Pages/Vercel check SHA `09b7bb6` đã đạt;
+giới hạn normal rebuild local EPERM được ghi riêng, không làm thành PASS giả.
+Fallback ảnh đã PASS bằng fault injection trên browser/server export cô lập:
+sơ đồ đầy đủ vẫn chọn bằng Enter và giữ link đặt bàn. Không chặn ảnh production.

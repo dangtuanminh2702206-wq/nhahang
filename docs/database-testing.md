@@ -1298,3 +1298,45 @@ email/credential/định danh fixture; ảnh private đầy đủ lưu riêng ng
 Link tài liệu/ảnh và git diff --check
 đạt. Không chạy lại lint/build/SQL cho thay đổi chỉ tài liệu; bằng chứng 86 SQL
 và CI/runtime đã ghi ở trên vẫn là bằng chứng trước lượt docs này.
+
+### Sơ đồ bàn ảnh, Pages hydration và CI — 06/10/2026
+
+Lỗi CI ở release trước đến từ việc đặt `useSearchParams` dưới Suspense bao trùm
+toàn bộ form Reservation: Pages export chỉ nhận fallback phía server, nên gate
+đúng cách tìm form mô phỏng trong HTML thất bại. Không xóa assertion. Chuyển hook
+query sang component nhỏ có Suspense riêng; form/select được prerender, rồi query
+được kiểm tra với danh sách tầng/bàn hợp lệ khi client hydrate. Query sai quay về
+bàn đầu tiên hợp lệ trong tầng hợp lệ; không thêm booking/API side effect.
+
+| Gate | Môi trường / bằng chứng | Kết quả |
+| --- | --- | --- |
+| TypeScript + lint | Local worktree | PASS |
+| Booking contract | Mock/contract; xác nhận local-only gate và projection | PASS; không phải JWT/DB integration |
+| Asset/sơ đồ | `pnpm test:public-assets`; `pnpm test:table-plans` | PASS: 50 WebP canonical; 3 PNG decode; 22 hotspot, dimensions/bounds đúng |
+| Pages build/export | Local `GITHUB_PAGES=true` | PASS |
+| Pages static gate | `PUBLIC_CHECK_PAGES=true BOOKING_CHECK_PAGES=true pnpm test:booking` | PASS: 729 href/src basePath; không API export hoặc URL Supabase trong browser chunks |
+| Browser hydration CI | Chrome headless, query/hotspot/select/keyboard/demo no-POST, ba tầng × 320/704/1024/1600 | PASS trên SHA `09b7bb6`, CI thực tế |
+| Production image/read-only interaction | Vercel website, browser 06/10; ảnh 3 tầng, tầng 1 8/32, tầng 2 8/34 (B06=4/B07=6), tầng 3 6/26; T1-B08 query, hotspot/select tầng 2 hai chiều | PASS browser |
+| Production responsive | Ba trang tầng × 320/704/1024/1600, đo đúng window.innerWidth | PASS: 12 lượt không overflow trang, marker ngoài canvas hoặc ảnh lỗi đã tải; canvas cuộn riêng |
+| Booking QA fixture | Customer đã xác minh, production UI và trang chi tiết sau reload | PASS: bàn/giờ/số khách lưu đúng; pending chặn chọn cùng bàn; Customer hủy và history ghi “Bạn đã hủy”; kiểm tra lại slot trả bàn sẵn sàng |
+
+Contact/Spaces hiện hiển thị ảnh mặt tiền PNG bổ sung. Ba PNG sơ đồ bàn là asset
+bổ sung ngoài 50 WebP canonical; tọa độ hotspot chỉ là lớp trình bày, identity/
+capacity/availability tiếp tục đến từ catalogue. Cả PNG mặt tiền và sơ đồ không
+đổi tổng 16 restaurant + 30 món + 4 combo trong bộ ảnh canonical. Không thay
+role, booking policy hoặc migration. Fixture đầu tự hết hạn trong lúc công cụ
+browser gián đoạn; user duyệt đúng một fixture thay thế. Cả hai đã cancelled,
+không tạo order, không DELETE history/audit hoặc sửa booking khác. Persist được
+kiểm chứng qua trang server-driven sau reload, không phải SQL read-back độc lập.
+
+CI và Pages thực tế PASS trên `09b7bb6`: [CI](https://github.com/dangtuanminh2702206-wq/nhahang/actions/runs/37473659757),
+[Pages](https://github.com/dangtuanminh2702206-wq/nhahang/actions/runs/37473659699).
+Vercel check cùng SHA success; browser dùng domain production. Harness phục vụ
+segment payload export tương thích tên file Windows/Linux, không bỏ assertion.
+Normal build CI/Vercel PASS; lần normal rebuild local cuối bị EPERM unlink output
+trong Windows/OneDrive, không tính lần đó PASS và không xóa cache để che lỗi.
+Fallback ảnh: browser test cô lập chặn tải table-plan, xác minh sơ đồ đầy đủ 8
+bàn/landmark thay thế, Enter chọn T1-B08 và link Reservation giữ lựa chọn: PASS
+local. Không gây lỗi ảnh production. Production Enter chọn T3-B06/focus/selected
+và console errors rỗng: PASS browser. Assertion fallback được bổ sung vào CI;
+kết quả workflow cuối phải được đối chiếu riêng sau push.

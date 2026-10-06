@@ -18,8 +18,9 @@ liệu Supabase, không tìm khả dụng live và không tạo booking thật.
 | `/contact` | Xem thông tin liên hệ hiện có; không suy ra thông tin chưa được xác nhận |
 | `/reservation` | Tìm bàn theo ngày, giờ và số khách; tạo booking cần Customer đăng nhập |
 
-Sơ đồ bàn dùng vị trí canonical trong data layer. Ảnh isometric và ảnh không gian
-là minh họa concept; không dùng chúng để suy ra vị trí hoặc sức chứa thực tế.
+Trang tầng có sơ đồ ảnh với hotspot để chọn bàn. Mã bàn, sức chứa và trạng thái
+không lấy từ nội dung ảnh mà từ catalogue đang dùng; các ảnh isometric được giữ
+trong repo nhưng hiện không hiển thị trên trang tầng.
 
 ## Guest
 
@@ -71,9 +72,10 @@ production phải được kiểm chứng riêng; test local không thay thế v
 ### Tạo và quản lý booking
 
 1. Đăng nhập bằng Customer active đã xác nhận email.
-2. Mở `/reservation`, chọn ngày, giờ, số khách và tìm bàn.
-3. Chọn bàn phù hợp từ FloorPlan hoặc danh sách, kiểm tra thông tin rồi gửi yêu cầu.
-4. Mở liên kết chi tiết sau khi tạo thành công hoặc vào `/my-bookings`.
+2. Mở `/reservation`, chọn ngày, giờ, số khách rồi bấm **Kiểm tra bàn**.
+3. Chọn bàn khả dụng trên sơ đồ ảnh hoặc danh sách. Đường dẫn từ trang tầng có
+   thể mở form với tầng/bàn đã chọn sẵn; hotspot và danh sách luôn đồng bộ.
+4. Gửi yêu cầu và mở liên kết chi tiết sau khi tạo thành công hoặc vào `/my-bookings`.
 
 Yêu cầu mới bắt đầu ở trạng thái chờ nhà hàng xác nhận. Một booking gắn với một
 bàn; sức chứa, giờ phục vụ, ngày nghỉ, thời gian báo trước, giới hạn booking và

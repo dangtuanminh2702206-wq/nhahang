@@ -333,18 +333,19 @@ Các vai trò dưới đây chưa được gán tên trong repository; điền t
 
 ## Kết luận readiness
 
-Scope mở rộng ngày 03/10 được theo dõi ở [completion-backlog.md](completion-backlog.md).
-Recovery production đã phát hành nhưng email callback vẫn chưa nghiệm thu do
-người dùng gặp lỗi rồi rate limit. Không resend lặp lại để lấy PASS. Combo live
-đang được kiểm thử local, flag `COMBO_CATALOGUE_ENABLED` không tự bật khi deploy.
-Chỉ bật sau migration và kiểm tra khôi phục/before-after theo backlog. Tắt flag
-giữ UI tham khảo, không xóa bảng, audit hoặc dữ liệu để rollback.
+Các ghi chú rollout ở trên phản ánh lịch sử theo ngày; không dùng chúng thay cho
+trạng thái hiện hành. Recovery email/password production và Admin combo CRUD đã
+được nghiệm thu lại trong [database-testing.md](database-testing.md); combo/order đang bật trên
+website Vercel. Pages chỉ là demo tĩnh.
 
-Phần 10 đạt **PARTIAL — sẵn sàng demo và vận hành thử có kiểm soát** khi các
-checklist code/CI/deployment và hướng dẫn đã PASS. Chưa công bố production
-operational readiness đầy đủ tới khi backup/restore, người phụ trách và cửa sổ
-rollback được owner xác minh. Các giới hạn sản phẩm gồm callback email production,
-role UI production, đổi tầng bàn, combo CRUD, reset password, email/SMS giao dịch,
-thanh toán online/payment, analytics, multi-branch và 3D vẫn giữ nguyên. Đặt món
-Customer đã có trong phạm vi MVP; chỉ ghi tổng dự kiến và thanh toán trực tiếp tại
-quầy, không có payment gateway, webhook, kho hoặc hoàn tiền.
+Với phạm vi đồ án đã chốt, luồng đặt bàn, đặt món/combo và thao tác Customer/Staff/
+Admin là nội dung chính. Thanh toán trực tiếp tại quầy; không cần triển khai cổng
+thanh toán, SMS/email giao dịch, kho, nhiều chi nhánh, 3D/360 hoặc DR thương mại.
+Backup ngoài máy/restore production, phân công người vận hành và cửa sổ ứng cứu là
+các yêu cầu vận hành nhà hàng thật, không chặn nghiệm thu môn học; nếu dùng thật,
+phải đánh giá riêng trước khi mở dịch vụ cho khách.
+
+Sơ đồ bàn ảnh hiện hành dùng PNG làm nền và hotspot lấy identity/capacity từ
+catalogue. Chọn bàn chỉ cập nhật lựa chọn; không tự giữ chỗ. Hướng dẫn thao tác
+nằm trong [user-guide.md](user-guide.md); kết quả QA và giới hạn được ghi trong
+[database-testing.md](database-testing.md).

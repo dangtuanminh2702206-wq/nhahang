@@ -11,7 +11,7 @@ giống nguồn FINAL; không regenerate, đổi tên, recompress hoặc lấy �
 
 | Nhóm | Đã có / mục tiêu | UI |
 | --- | ---: | --- |
-| Restaurant / architecture | 16 / 16 | Toàn bộ đã có placement |
+| Restaurant / architecture | 16 / 16 canonical WebP | Mapping đủ; một số concept được giữ nhưng không còn hiển thị |
 | Menu dishes | 30 / 30 | Mỗi mã món có một ảnh riêng |
 | Combo final | 4 / 4 | Dùng ảnh FINAL, không collage/fallback cũ |
 | Tổng | 50 / 50 | Không canonical asset pending |
@@ -32,7 +32,7 @@ Tất cả path dưới đây tính từ project root.
 | Path | Placement | Ratio |
 | --- | --- | --- |
 | `public/images/restaurant/hero/moc-vi-hero.webp` | Home hero, preload duy nhất | 4:5 |
-| `public/images/restaurant/exterior/moc-vi-exterior.webp` | Contact, mặt tiền concept; không suy ra địa chỉ | 16:9 |
+| `public/images/restaurant/exterior/moc-vi-exterior.webp` | Canonical asset được giữ trong manifest; không còn dùng ở Contact/Spaces | 16:9 |
 | `public/images/restaurant/floors/floor-1-moc-gia.webp` | Home, Spaces, detail tầng 1 | 4:3 |
 | `public/images/restaurant/floors/floor-2-moc-tinh.webp` | Home, Spaces, detail tầng 2 | 4:3 |
 | `public/images/restaurant/floors/floor-3-moc-thuong.webp` | Home, Spaces, detail tầng 3 | 4:3 |
@@ -40,15 +40,32 @@ Tất cả path dưới đây tính từ project root.
 | `public/images/restaurant/areas/quiet.webp` | Gallery tầng 2 | 3:2 |
 | `public/images/restaurant/areas/rooftop.webp` | Gallery tầng 3 | 3:2 |
 | `public/images/restaurant/areas/vip.webp` | Gallery tầng 3 | 3:2 |
-| `public/images/restaurant/isometric/floor-1.webp` | Detail tầng 1 | 4:3 |
-| `public/images/restaurant/isometric/floor-2.webp` | Detail tầng 2 | 4:3 |
-| `public/images/restaurant/isometric/floor-3.webp` | Detail tầng 3 | 4:3 |
+| `public/images/restaurant/isometric/floor-1.webp` | Giữ trong catalogue/tệp; hiện không hiển thị ở trang tầng | 4:3 |
+| `public/images/restaurant/isometric/floor-2.webp` | Giữ trong catalogue/tệp; hiện không hiển thị ở trang tầng | 4:3 |
+| `public/images/restaurant/isometric/floor-3.webp` | Giữ trong catalogue/tệp; hiện không hiển thị ở trang tầng | 4:3 |
 | `public/images/restaurant/tables/couple.webp` | Gallery tầng 1 | 3:2 |
 | `public/images/restaurant/tables/family.webp` | Gallery tầng 1 | 3:2 |
 | `public/images/restaurant/tables/group.webp` | Gallery tầng 2 | 3:2 |
 | `public/images/restaurant/tables/vip.webp` | Gallery tầng 3 | 3:2 |
 
-Tất cả là ảnh AI minh họa concept. Isometric và table scenes không xác định vị trí/mã bàn; HTML/CSS FloorPlan vẫn là mô hình tương tác chính thức.
+Contact và Spaces hiện dùng ảnh mặt tiền dọc bổ sung `public/images/restaurant/exterior/moc-vi-exterior-portrait.png` (4:5), không thuộc bộ 50 WebP canonical. Ba ảnh isometric WebP vẫn được giữ để đối chiếu nhưng không còn render trong trang tầng. Ảnh concept và gallery không xác định mã bàn; hotspot đọc mã/sức chứa từ catalogue tầng.
+
+## Sơ đồ bàn ảnh bổ sung — 06/10/2026
+
+Ba PNG sau được dùng làm nền cho hotspot trên trang tầng và Reservation. Chúng là
+ảnh bổ sung, không cộng vào số 50 WebP canonical và không chứa nguồn dữ liệu bàn:
+
+| Path | Kích thước | Hotspot |
+| --- | ---: | ---: |
+| `public/images/restaurant/table-plans/floor-1.png` | 1448 × 1086 | 8 bàn |
+| `public/images/restaurant/table-plans/floor-2.png` | 1671 × 941 | 8 bàn |
+| `public/images/restaurant/table-plans/floor-3.png` | 1292 × 1218 | 6 bàn |
+
+`src/data/table-plans.ts` chỉ lưu tọa độ vùng bấm trên ảnh; identity, số chỗ và
+trạng thái vẫn lấy từ `src/data/restaurant.ts`/catalogue live. Sơ đồ là lớp tương
+tác phụ trợ, không nhân bản dữ liệu nghiệp vụ. `FloorPlan` đồng bộ hotspot và
+select; trang tầng đưa mã đã chọn sang `/reservation` qua query. Query sai quay
+về bàn đầu tiên hợp lệ. Chọn bàn không tự kiểm tra, giữ chỗ hay tạo booking.
 
 ## 20 ảnh món có sẵn trong FINAL
 
@@ -114,12 +131,36 @@ Canvas FloorPlan và thanh tab menu giữ cuộn ngang nội bộ trên mobile t
 đã duyệt; không ép thu nhỏ marker hoặc đổi bố cục. Ảnh dùng geometry/ratio hiện có,
 Next/Image vẫn tải ảnh tối ưu; skeleton lúc lazy-load không phải asset thiếu.
 
-**Trạng thái: Phần 3 PASS / hoàn tất local.** Chưa commit/push/deploy, chờ người
-dùng duyệt diff. Isometric chỉ concept; không có viewer 360. Đặt bàn chưa nhận
-booking thật; không gọi kiểm tra khả dụng hoặc gửi form trong nghiệm thu này.
+**Trạng thái tại 01/10: Phần 3 PASS / hoàn tất local.** Khi đó chưa commit/push/deploy,
+chờ người dùng duyệt diff. Isometric chỉ concept; không có viewer 360. Đặt bàn chưa
+nhận booking thật; không gọi kiểm tra khả dụng hoặc gửi form trong nghiệm thu đó.
 Contact vẫn không bịa địa chỉ/phone/email/map. Không sửa Auth/DB hoặc lịch sử test.
 
 Không sử dụng ảnh Internet, ảnh thay thế từ món khác hoặc combo first-pass chưa đạt QA.
+
+## Nghiệm thu sơ đồ ảnh hiện hành · 06/10/2026
+
+| Gate | Bằng chứng | Kết quả |
+| --- | --- | --- |
+| PNG + hotspot | `pnpm test:table-plans`: decode 3 ảnh; mã/tổng hotspot 8/8/6 = 22; kích thước và bounds đúng | PASS local |
+| Canonical asset regression | `pnpm test:public-assets`: 50 WebP decode, 16/30/4 và 3 tầng/22 bàn/92 chỗ | PASS local |
+| Pages export | Build `GITHUB_PAGES=true`; `PUBLIC_CHECK_PAGES=true BOOKING_CHECK_PAGES=true pnpm test:booking`: 729 href/src đúng `/nhahang`, không API export hoặc Supabase URL | PASS local |
+| Vercel — hình ảnh và dữ liệu | Browser production: 3 trang tầng; ảnh PNG hiển thị; floor 1 8/32, floor 2 8/34 (B06 4, B07 6), floor 3 6/26 | PASS read-only |
+| Vercel — chọn bàn | T1-B08 → Reservation preselected đúng; đổi tầng sang floor 2, click T2-B07 và chọn T2-B06 qua select đều đồng bộ hotspot/select/nhãn | PASS read-only |
+| Responsive production | Ba trang tầng × 320/704/1024/1600 đo đúng viewport: không tràn ngang trang, marker ngoài canvas hoặc ảnh lỗi đã tải | PASS browser |
+| Production booking fixture | Customer UI tạo/đọc lại đúng bàn/giờ/số khách; pending chặn bàn cùng slot; fixture thay thế đã hủy bởi Customer, reload cancelled; cùng slot trả bàn sẵn sàng | PASS browser/persist; không phải SQL read-back độc lập |
+
+Chrome headless browser test mới trong CI bổ sung hydration query đúng/sai, đổi
+hotspot/select hai chiều, phím Enter, xác nhận demo không gửi booking, ảnh/bounds
+và 320/704/1024/1600 trên cả ba trang. [CI](https://github.com/dangtuanminh2702206-wq/nhahang/actions/runs/37473659757)
+và [Pages](https://github.com/dangtuanminh2702206-wq/nhahang/actions/runs/37473659699)
+đều PASS SHA `09b7bb6`; Vercel check cùng SHA success. Fixture đầu tự hết hạn khi
+browser gián đoạn; đúng một fixture thay thế được user duyệt và hủy thành công.
+Cả hai cancelled, không order mới hoặc DELETE history/audit; không đổi catalogue,
+role, policy hoặc migration. Test browser cô lập chặn tải sơ đồ tầng 1: fallback
+vẫn đủ 8 nút/landmark, Enter chọn T1-B08 và link đặt bàn đúng: PASS local; assertion
+được thêm vào CI. Không fault-inject production. Console production không ghi
+nhận error; Enter trên T3-B06 giữ focus và selected state.
 
 ## Kiểm tra lịch sử Phase 3B.1 — pack partial trước FINAL
 

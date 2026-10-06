@@ -29,6 +29,11 @@ Combo CRUD và đặt món đã bật/kiểm thử production. Recovery email v�
 đã được operator xác nhận; luồng Customer A/B → booking → order → Staff đạt qua
 HTTP và SQL read-back. Các kết quả browser được ghi riêng, không suy từ API.
 
+Ba sơ đồ bàn PNG theo tầng được thêm ngoài bộ 50 ảnh WebP canonical. Người dùng
+có thể chọn hotspot; mã bàn và sức chứa vẫn lấy từ catalogue, không suy từ ảnh.
+Liên kết bàn mở form với tầng/bàn được chọn sẵn; chỉ bước kiểm tra khả dụng/gửi
+yêu cầu mới gọi nghiệp vụ. Pages vẫn là demo tĩnh và không tạo booking.
+
 ## Admin xóa lịch sử đặt bàn
 
 Trong `/admin` → **Lịch sử đặt bàn**, chọn khoảng ngày báo cáo, chọn từng booking,
@@ -120,7 +125,8 @@ và tối ưu ảnh mặc định. Không đưa biến bí mật hoặc kết n�
 - [Nhật ký kiến trúc/triển khai theo thời điểm](docs/architecture-history.md)
 
 Bộ CI chạy contract/regression, SQL integration trên PostgreSQL cô lập, typecheck,
-lint, normal build, HTTP smoke và Pages export. 86 nhóm SQL gần nhất đạt; số lượng
+lint, normal build, HTTP smoke, Pages export và Chrome headless smoke cho form
+hydrate/query/hotspot tại các breakpoint. 86 nhóm SQL gần nhất đạt; số lượng
 và bằng chứng production/browser mới nhất ghi trong tài liệu testing. Không dùng
 kết quả build để chứng nhận quyền RLS/JWT. Nhóm bổ sung thông tin lớp, thành viên
 và phân công theo mẫu giảng viên trước khi nộp.
