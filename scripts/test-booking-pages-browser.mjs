@@ -238,7 +238,19 @@ try {
   assert.equal(requests.some(request => request.method === 'POST' || request.url.includes('/api/bookings')), false, 'Demo interactions must not send booking requests');
   assert.deepEqual(sameOriginFailures, [], 'No exported route/image/runtime resource returned HTTP errors');
   assert.deepEqual(runtimeErrors, [], 'No uncaught browser runtime errors');
-  console.log('PASS Pages browser smoke: 3 floor images, 22 canonical hotspots, 4 responsive widths, query and safe fallback, two-way selection, keyboard, hydrated demo confirmation, no booking request or browser errors.');
+  // Fault injection is restricted to this isolated static server, never production.
+  await send('Network.setCacheDisabled', { cacheDisabled: true });
+  await send('Network.setBlockedURLs', { urls: ['*images/restaurant/table-plans/*'] });
+  await navigate('/nhahang/spaces/floor-1/');
+  await evaluate('document.querySelector(".floor-plan-section")?.scrollIntoView({ block: "center" })');
+  await waitFor('document.querySelectorAll(".plan-landmark").length > 0 && !document.querySelector(".floor-plan-image") && document.querySelectorAll(".table-node").length === 8', 'failed image falls back to complete interactive schematic');
+  await evaluate('[...document.querySelectorAll(".table-node")].find(button => button.textContent.includes("T1-B08"))?.focus()');
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', text: '\r', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13 });
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13 });
+  await waitFor('document.querySelector(".table-node[aria-pressed=true]")?.textContent.includes("T1-B08") && document.querySelector(".selected-table a")?.getAttribute("href").includes("table=T1-B08")', 'fallback retains keyboard selection and reservation link');
+  assert.deepEqual(runtimeErrors, [], 'Image fallback must not throw runtime exceptions');
+  await send('Network.setBlockedURLs', { urls: [] });
+  console.log('PASS Pages browser smoke: 3 floor images, 22 canonical hotspots, 4 responsive widths, query and safe fallback, two-way selection, keyboard, hydrated demo confirmation, no booking request or browser errors; isolated image failure retains interactive schematic.');
 } finally {
   socket?.close();
   for (const callback of pending.values()) clearTimeout(callback.timer);
