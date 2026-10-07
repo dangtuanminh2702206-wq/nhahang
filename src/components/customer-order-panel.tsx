@@ -10,6 +10,11 @@ function formatVnd(value: number) { return new Intl.NumberFormat("vi-VN").format
 function itemKey(item: Pick<OrderCatalogueItem, "kind" | "code">) { return `${item.kind}:${item.code}`; }
 
 export function CustomerOrderPanel({ bookingId, bookingStatus, initialOrder, catalogue, enabled }: Props) {
+  // Refresh preserves client state. A new server version must not reuse an old draft.
+  return <CustomerOrderDraft key={`${bookingId}:${initialOrder?.id ?? "new"}:${initialOrder?.version ?? 0}`} bookingId={bookingId} bookingStatus={bookingStatus} initialOrder={initialOrder} catalogue={catalogue} enabled={enabled} />;
+}
+
+function CustomerOrderDraft({ bookingId, bookingStatus, initialOrder, catalogue, enabled }: Props) {
   const router = useRouter();
   const attempt = useRef<{ payload: string; requestId: string } | null>(null);
   const [quantities, setQuantities] = useState<Record<string, number>>(() => Object.fromEntries((initialOrder?.items ?? []).map((item) => [`${item.item_type}:${item.item_code}`, item.quantity])));
@@ -57,6 +62,7 @@ export function CustomerOrderPanel({ bookingId, bookingStatus, initialOrder, cat
     {order && <ol className="order-history" aria-label="Lịch sử đơn món">{order.history.map((event) => <li key={event.id}><span>{orderStatusLabel(event.to_status)}</span>{event.reason && <small>{event.reason}</small>}</li>)}</ol>}
     {(canCreate || editable) && <fieldset className="order-catalogue" disabled={busy}>
       <legend>{editable ? "Cập nhật đơn đang chờ" : "Chọn món và combo"}</legend>
+      {editable && <p className="small-note">Nếu đơn được cập nhật ở nơi khác, form sẽ tải lại số lượng mới nhất. Hãy kiểm tra lại trước khi lưu.</p>}
       {catalogue.map((item) => <label className="order-catalogue-row" key={itemKey(item)}><span><strong>{item.name}</strong><small>{item.kind === "combo" ? "Combo" : "Món lẻ"} · {formatVnd(item.price)}{!item.available && " · Tạm hết"}</small></span><input aria-label={`Số lượng ${item.name}`} type="number" inputMode="numeric" min="0" max="2147483647" step="1" value={quantities[itemKey(item)] ?? 0} disabled={!item.available} onChange={(event) => setQuantity(item, event.target.value)} /></label>)}
       <div className="order-summary"><span>Tổng dự kiến</span><strong>{formatVnd(total)}</strong></div>
       <button className="button button-primary" type="button" onClick={() => void submit(order ? "update" : "create")}>{busy ? "Đang gửi…" : order ? "Cập nhật đơn món" : "Gửi đơn món"}</button>

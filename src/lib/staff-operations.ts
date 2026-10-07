@@ -3,12 +3,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { bookingStatusLabel, formatBookingDate } from "@/lib/customer-bookings";
 
 export type StaffBooking = { id: string; customer_id: string | null; table_id: string; status: string; source: string; contact_name: string; contact_phone: string; contact_email: string | null; notes: string; guest_count: number; actual_guest_count: number | null; checked_in_at: string | null; blocked_until: string; starts_at: string; ends_at: string; expires_at: string | null; reason: string | null; created_at: string; table: { id: string; code: string; capacity: number; status: string; area_id: string } | null };
-export type StaffTable = { id: string; code: string; capacity: number; status: string; area_id: string; description: string };
+export type StaffTable = { id: string; code: string; capacity: number; status: string; area_id: string; description: string; is_active: boolean };
 export type StaffHistory = { id: string; from_status: string | null; to_status: string; reason: string | null; source: string; created_at: string };
 const bookingFields = "id,customer_id,table_id,status,source,contact_name,contact_phone,contact_email,notes,guest_count,actual_guest_count,checked_in_at,blocked_until,starts_at,ends_at,expires_at,reason,created_at";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 async function getTables(supabase: SupabaseClient, ids: string[]) { if (!ids.length) return new Map<string, StaffTable>(); const { data, error } = await supabase.from("tables").select("id,code,capacity,status,area_id,description").in("id", ids); if (error) throw new Error("STAFF_TABLES_UNAVAILABLE"); return new Map(((data ?? []) as StaffTable[]).map((table) => [table.id, table])); }
-export async function getStaffTables(supabase: SupabaseClient) { const { data, error } = await supabase.from("tables").select("id,code,capacity,status,area_id,description").order("code"); if (error) throw new Error("STAFF_TABLES_UNAVAILABLE"); return (data ?? []) as StaffTable[]; }
+export async function getStaffTables(supabase: SupabaseClient) { const { data, error } = await supabase.from("tables").select("id,code,capacity,status,area_id,description,is_active").eq("is_active", true).order("code"); if (error) throw new Error("STAFF_TABLES_UNAVAILABLE"); return (data ?? []) as StaffTable[]; }
 export async function getStaffBookings(supabase: SupabaseClient, filters: { date?: string; status?: string; tableId?: string; floor?: string; search?: string; page?: string }) {
   const pageSize = 25;
   const page = Math.max(1, Math.min(10000, Number.parseInt(filters.page ?? "1", 10) || 1));

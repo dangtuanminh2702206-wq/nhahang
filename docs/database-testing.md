@@ -1348,3 +1348,23 @@ Sau phát hành, sáu route liên quan trên mỗi domain Vercel/Pages đều HT
 Browser Vercel nhận query floor-3/T3-B06; Pages nhận floor-2/T2-B07, form demo và
 ảnh `/nhahang/images/restaurant/table-plans/floor-2.png` tải đúng, console không
 ghi nhận error. Đây là SHA nghiệm thu; commit ghi bổ sung kết quả này chỉ tài liệu.
+
+### Sửa lỗi từ final review — 07/10/2026, local chưa phát hành
+
+- Staff sơ đồ dùng capacity/description của bàn live, giữ codes/tọa độ canonical;
+  danh sách vận hành chỉ dùng bàn active, tầng không có bàn vẫn có empty state.
+- Customer order draft được remount theo booking/order/version. Refresh sau
+  conflict không gửi draft cũ cùng expectedVersion mới; cùng version giữ draft.
+- Form production không còn copy “Dữ liệu thử/Khách demo/Ghi chú thử nghiệm”;
+  Pages vẫn giữ phân biệt mô phỏng. Nhãn tầng không lặp tiền tố từ tên live.
+- `pnpm test:ui-regression` PASS synthetic component events; thêm vào CI.
+  Typecheck/lint và booking/customer-booking/Staff/order/combo/table-plan tests
+  PASS local. Normal build PASS sau retry ngoài sandbox (lần đầu spawn EPERM).
+  Pages build cũng PASS local; không chạy song song hai chế độ build.
+  Pages export gate PASS (729 basePath href/src). Browser smoke cô lập PASS:
+  3 tầng, 22 hotspot, 320/704/1024/1600px, query/fallback, keyboard, chọn bàn
+  hai chiều, xác nhận demo không POST booking và fallback khi ảnh lỗi.
+- Không chạy lại SQL/JWT/browser workflow cloud trong lượt sửa này; không
+  mutation production, không commit/push/deploy. Nghi vấn category inactive
+  trong RPC đặt món và precision tiền rất lớn vẫn cần kiểm chứng cô lập, chưa
+  được sửa hay ghi production PASS.

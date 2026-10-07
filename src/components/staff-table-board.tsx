@@ -3,12 +3,17 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FloorPlan } from "@/components/floor-plan";
 import { restaurantFloors, type TableVisualState } from "@/data/restaurant";
-type Table = { id: string; code: string; capacity: number; status: string; description: string };
+type Table = { id: string; code: string; capacity: number; status: string; description: string; is_active: boolean };
 const labels: Record<string, string> = { available: "Sẵn sàng", occupied: "Đang phục vụ", cleaning: "Cần dọn", out_of_service: "Tạm ngưng" };
 export function StaffTableBoard({ initialTables }: { initialTables: Table[] }) {
   const requestIds = useRef<Record<string, string>>({});
-  const router = useRouter(); const [level, setLevel] = useState(1); const floor = restaurantFloors.find((item) => item.level === level)!;
-  const tables = initialTables; const [message, setMessage] = useState(""); const [pending, setPending] = useState("");
+  const router = useRouter(); const [level, setLevel] = useState(1); const canonicalFloor = restaurantFloors.find((item) => item.level === level)!;
+  const tables = initialTables.filter(table => table.is_active);
+  const floor = { ...canonicalFloor, tables: canonicalFloor.tables.flatMap(table => {
+    const live = tables.find(item => item.code === table.code);
+    return live ? [{ ...table, capacity: live.capacity, position: live.description, note: undefined }] : [];
+  }) };
+  const [message, setMessage] = useState(""); const [pending, setPending] = useState("");
   async function markReady(id: string) { requestIds.current[id] ??= crypto.randomUUID(); setPending(id); setMessage(""); try { const response = await fetch("/api/staff/tables/ready", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tableId: id, requestId: requestIds.current[id] }) }); const result = await response.json().catch(() => null) as { message?: string } | null; if (!response.ok) { setMessage(result?.message ?? "Chưa thể cập nhật bàn."); router.refresh(); return; } delete requestIds.current[id]; setMessage("Đã đánh dấu bàn sẵn sàng."); router.refresh(); } catch { setMessage("Không thể kết nối tới máy chủ."); } finally { setPending(""); } }
   return <section className="staff-section" aria-labelledby="staff-tables-title"><div className="booking-section-heading"><div><p className="eyebrow">Trạng thái vật lý</p><h2 id="staff-tables-title">Bàn trong nhà hàng.</h2></div><p className="section-note">Bàn cần dọn chỉ trở lại sẵn sàng sau thao tác xác nhận của Staff.</p></div><button type="button" className="button button-secondary" onClick={() => router.refresh()}>Cập nhật trạng thái</button><div className="staff-action-row" aria-label="Chọn tầng">{restaurantFloors.map((item) => <button type="button" className="button button-secondary" aria-pressed={level === item.level} key={item.slug} onClick={() => setLevel(item.level)}>Tầng {item.level} · {item.name}</button>)}</div><FloorPlan key={floor.slug} floor={floor} tableStates={Object.fromEntries(tables.map((table) => [table.code, table.status === "out_of_service" ? "out-of-service" : table.status])) as Partial<Record<string, TableVisualState>>} /><div className="staff-table-grid">{tables.filter((table) => table.code.startsWith(`T${level}-`)).map((table) => <article className={`staff-table-card status-${table.status}`} key={table.id}><div><p className="meta-line">{table.code} · {table.capacity} chỗ</p><h3>{labels[table.status] ?? table.status}</h3><p>{table.description || "Không có mô tả"}</p></div>{table.status === "cleaning" && <button className="button button-secondary" type="button" disabled={!!pending} onClick={() => void markReady(table.id)}>{pending === table.id ? "Đang xử lý…" : "Đã dọn xong"}</button>}</article>)}</div><p className="staff-action-message" role="status" aria-live="polite">{message}</p></section>;
 }
