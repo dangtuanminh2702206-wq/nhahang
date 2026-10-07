@@ -122,4 +122,46 @@ export async function testOrderDatabase({ admin, left, right, actor, check, comp
     try { await assert.rejects(createOrder(A, b.id, [{ kind: 'dish', code: 'MV-KV01', quantity: 1 }]), /ORDER_EVENT_FAILURE/); assert.equal((await admin.query('select count(*)::int n from public.orders')).rows[0].n, 0); assert.equal((await admin.query('select count(*)::int n from public.order_items')).rows[0].n, 0); }
     finally { await admin.query('drop trigger order_qa_fail on public.audit_logs; drop function private.order_qa_fail()'); }
   });
+
+  await clearBookings();
+  await check('Hidden category denies create/edit with atomic rollback; existing snapshots remain readable', async () => {
+    const b = await booking();
+    await assert.rejects(actor(left, A, c => c.query('select private.replace_order_items($1,$2::jsonb)', [randomUUID(), '[]'])), e => e.code === '42501');
+    const order = await createOrder(A, b.id, [{ kind: 'dish', code: 'MV-KV01', quantity: 1 }]);
+    const other = await booking(B, 1);
+    const before = await orderCounts(order.id);
+    await admin.query("update public.menu_categories set is_active=false where id=(select category_id from public.menu_items where code='MV-KV01')");
+    try {
+      assert.equal((await actor(left, A, c => c.query("select code from public.menu_items where code='MV-KV01'"))).rowCount, 0);
+      await assert.rejects(createOrder(B, other.id, [{ kind: 'dish', code: 'MV-KV01', quantity: 1 }]), /ITEM_UNAVAILABLE/);
+      await assert.rejects(actor(left, A, c => c.query('select public.update_pending_order($1,$2::jsonb,$3,$4)', [order.id, orderItems([{ kind: 'dish', code: 'MV-KV01', quantity: 2 }]), 1, randomUUID()])), /ITEM_UNAVAILABLE/);
+      assert.deepEqual(await orderCounts(order.id), before);
+      assert.equal((await admin.query('select version from public.orders where id=$1', [order.id])).rows[0].version, 1);
+      assert.equal((await actor(left, A, c => c.query('select quantity from public.order_items where order_id=$1', [order.id]))).rows[0].quantity, 1);
+      assert.equal((await admin.query('select count(*)::int n from public.orders where booking_id=$1', [other.id])).rows[0].n, 0);
+    } finally { await admin.query("update public.menu_categories set is_active=true where id=(select category_id from public.menu_items where code='MV-KV01')"); }
+  });
+
+  await clearBookings();
+  await check('Order numeric safe maximum is exact; maximum+1 and oversized line roll back create/edit', async () => {
+    const b = await booking();
+    const prices = (await admin.query("select code,price from public.menu_items where code in ('MV-KV01','MV-KV02')")).rows;
+    try {
+      await admin.query("update public.menu_items set price=999999999 where code='MV-KV01'");
+      await assert.rejects(createOrder(A, b.id, [{ kind: 'dish', code: 'MV-KV01', quantity: 10000001 }]), /TOTAL_TOO_LARGE/);
+      assert.equal((await admin.query('select count(*)::int n from public.orders')).rows[0].n, 0);
+      await admin.query("update public.menu_items set price=1000000000 where code='MV-KV01'; update public.menu_items set price=1 where code='MV-KV02'");
+      const items = [{ kind: 'dish', code: 'MV-KV01', quantity: 9007199 }, { kind: 'dish', code: 'MV-KV02', quantity: 254740991 }];
+      const tooLarge = [{ ...items[0] }, { ...items[1], quantity: 254740992 }];
+      await assert.rejects(createOrder(A, b.id, tooLarge), /TOTAL_TOO_LARGE/);
+      const order = await createOrder(A, b.id, items);
+      assert.equal(order.total_amount, '9007199254740991');
+      assert.equal(Number(order.total_amount), Number.MAX_SAFE_INTEGER);
+      const before = await orderCounts(order.id);
+      await assert.rejects(actor(left, A, c => c.query('select public.update_pending_order($1,$2::jsonb,$3,$4)', [order.id, orderItems(tooLarge), 1, randomUUID()])), /TOTAL_TOO_LARGE/);
+      assert.deepEqual(await orderCounts(order.id), before);
+      const saved = (await admin.query('select total_amount,version from public.orders where id=$1', [order.id])).rows[0];
+      assert.equal(saved.total_amount, '9007199254740991'); assert.equal(saved.version, 1);
+    } finally { for (const row of prices) await admin.query('update public.menu_items set price=$1 where code=$2', [row.price, row.code]); }
+  });
 }

@@ -1368,3 +1368,49 @@ ghi nhận error. Đây là SHA nghiệm thu; commit ghi bổ sung kết quả n
   mutation production, không commit/push/deploy. Nghi vấn category inactive
   trong RPC đặt món và precision tiền rất lớn vẫn cần kiểm chứng cô lập, chưa
   được sửa hay ghi production PASS.
+
+### Kiểm chứng SQL catalogue và biên số tiền — 07/10/2026
+
+- Bản sửa UI phía trên đã phát hành ở `eda9004`: CI (gồm SQL cô lập), Pages
+  và Vercel success. Production `/reservation` HTTP 200, copy live mới và nhãn
+  tầng không trùng. Không suy thành kiểm thử JWT workflow mới.
+- Trên schema cũ, SQL loopback tái hiện: Customer SELECT không thấy món thuộc
+  category inactive, nhưng `create_order` vẫn nhận mã món; tổng
+  `10000000989999999` được SQL nhận nhưng chuyển sang JavaScript Number bị
+  làm tròn. Đây là lỗi được tái lập local, không phải mutation production.
+- Additive migration `202610070001_order_catalogue_numeric_safety.sql` kiểm
+  tra/khóa cả món và category active; giữ snapshot đơn cũ. Chặn line/total vượt
+  `9007199254740991` (Number.MAX_SAFE_INTEGER), không đổi giá, tồn kho hay
+  giới hạn quantity integer hiện có. Không sửa migration đã áp trước đây.
+- Thu hẹp EXECUTE của helper thay chi tiết đơn: chỉ RPC chạy với quyền owner
+  gọi được; Customer gọi trực tiếp bị 42501. Không đổi quyền các RPC public.
+- Database loopback mới, toàn bộ migrations + seed: **94 nhóm SQL PASS**.
+  Regression kiểm tra create/update bị từ chối, rollback giữ version/lines/
+  history/notifications/audit; max safe được lưu đúng, max+1 và một dòng quá
+  lớn bị chặn. API contract order, typecheck/lint: PASS.
+- `scripts/test-order-upgrade-safety.mjs` PASS trên fixture schema cũ cô lập:
+  migration từ chối dữ liệu tiền quá lớn, rollback schema và giữ nguyên dữ
+  liệu; áp thành công sau cleanup đúng dòng fixture. Script chỉ nhận URL
+  loopback `mocvi_test_*`, không dùng cho Supabase. Tái lập: chạy suite của
+  commit trước migration trên database mới rồi chạy script với cùng URL.
+- Phạm vi lượt này: SQL/tests/docs local; không đổi runtime Next.js nên không
+  chạy lại build/browser. Không tạo booking cloud, không commit/push hay áp
+  migration production. Production fix còn chờ duyệt migration và kiểm tra
+  read-only trước/sau; nếu dữ liệu cũ vượt biên, dừng để duyệt riêng, không
+  tự chỉnh tiền hoặc xóa lịch sử.
+
+### Rollout SQL order safety — 07/10/2026, operator đã duyệt
+
+- Migration `202610070001_order_catalogue_numeric_safety.sql` đã áp lên
+  Supabase `unhybmmbgumyhzaftlli` sau xác nhận. Kết nối đúng project, TLS
+  xác minh certificate; preflight không có order/line vượt ngưỡng an toàn.
+- Transaction giữ nguyên fingerprint dữ liệu booking/order/lines/history/
+  notifications/audit và catalogue. Không tạo fixture cloud hoặc sửa đơn,
+  tài khoản, giá hay combo; chi tiết đối chiếu chỉ lưu ngoài Git.
+- Hai constraints đã validated; helper SQL khớp source, search_path rỗng,
+  SECURITY INVOKER; anon/authenticated không EXECUTE helper. Owner-executed
+  public RPCs giữ nguyên SECURITY DEFINER, config và grants. Đã thông báo
+  PostgREST reload schema; read-back sau commit bằng kết nối mới PASS.
+- Hành vi create/update, rollback và biên số tiền được chứng minh bằng SQL
+  local 94 nhóm PASS ở lượt trước; production ở lượt này là schema/data
+  read-back, không giả thành JWT mutation PASS. Runtime Next.js không đổi.
