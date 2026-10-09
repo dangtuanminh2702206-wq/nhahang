@@ -1,5 +1,25 @@
 # Kiểm thử Phần 2
 
+## Điều chỉnh giá menu · 09/10/2026
+
+- Theo yêu cầu operator: 30 món giảm theo nhóm và 4 combo giảm theo số khách;
+  bảng giá hiện hành ở `docs/menu-canonical.md`, snapshot `restaurant.ts` và
+  seed được đồng bộ. Migration đã áp giữ nguyên, không chạy seed production.
+- Production project `unhybmmbgumyhzaftlli`, TLS verified: before live prices
+  khớp repo; transaction cập nhật đúng 30 món/4 combo, chỉ giá và combo version
+  thay đổi, thêm 34 audit events có lý do. Sau commit đọc lại khớp giá mới.
+  Fingerprint booking/order/items/history/notifications/profiles/categories
+  không đổi; các đơn cũ giữ snapshot giá, không tạo booking/order QA mới.
+  Chi tiết before/after được giữ ngoài Git, không có credentials/contact data
+  trong tài liệu công khai. Không đổi roles/grants/schema.
+- PostgreSQL loopback mới: **95 nhóm SQL PASS**, gồm đối chiếu đủ 30 giá và
+  category, 4 combo cùng thành phần, seed lặp không giảm giá thêm, snapshot
+  đơn mới 2×69.000đ + combo 399.000đ = 537.000đ. Test version combo kiểm tra
+  tăng một bước từ version hiện tại, không giả định mọi baseline có version 1.
+- Typecheck/lint, order/combo contracts, normal/Pages build: PASS local.
+  Bằng chứng SQL fixture không phải JWT mutation production; production
+  trong lượt đổi giá là transaction data update và read-back, không gửi đơn.
+
 ## Admin xóa lịch sử đặt bàn · 04/10/2026
 
 - Migration `202610040001_admin_booking_deletion.sql` đã áp production ngày

@@ -35,7 +35,7 @@ export async function testComboDatabase({admin,left,right,actor,check,compete,A,
   await check('Combo no-op/idempotency, CAS conflict and audit version enforced',async()=>{
     const n=await count();await invoke(args(first));assert.equal(await count(),n);
     const changed=args({...first,name:'FINAL QA combo renamed'});await invoke(changed);
-    assert.equal((await current(first.id)).version,2);assert.equal(await count(),n+1);
+    assert.equal((await current(first.id)).version,first.version+1);assert.equal(await count(),n+1);
     await assert.rejects(invoke(changed),/ADMIN_CONFLICT/);
     const now=await current(first.id);await invoke(args(now));assert.equal(await count(),n+1);
     const restore=args({...first,version:now.version});await invoke(restore);

@@ -1,7 +1,21 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import vm from 'node:vm';
+import ts from 'typescript';
 
 export async function testOrderDatabase({ admin, left, right, actor, check, compete, A, B, S, D, tables, start, clearBookings }) {
+  await check('Approved dish prices and categories match the current canonical baseline', async () => {
+    const exports = {};
+    const source = await readFile(new URL('../src/data/restaurant.ts', import.meta.url), 'utf8');
+    vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, { exports, Intl });
+    const rows = (await admin.query('select m.code,m.price,c.code category from public.menu_items m join public.menu_categories c on c.id=m.category_id order by m.code')).rows;
+    assert.equal(rows.length, 30);
+    for (const row of rows) {
+      const item = exports.restaurantMenu.find(item => item.code === row.code);
+      assert(item); assert.equal(Number(row.price), item.price); assert.equal(row.category, item.category);
+    }
+  });
   const orderItems = (items) => JSON.stringify(items);
   async function booking(owner = A, table = 0, key = randomUUID(), startsAt = start) {
     const result = await actor(left, owner, (client) => client.query(
@@ -31,11 +45,13 @@ export async function testOrderDatabase({ admin, left, right, actor, check, comp
   await check('Order schema and canonical snapshot total are server-controlled', async () => {
     const b = await booking();
     const order = await createOrder(A, b.id, [{ kind: 'dish', code: 'MV-KV01', quantity: 2 }, { kind: 'combo', code: 'MV-CB01', quantity: 1 }]);
-    assert.equal(Number(order.total_amount), 677000);
+    assert.equal(Number(order.total_amount), 537000);
     const rows = (await admin.query('select item_type,item_code,item_name,unit_price,quantity,line_total,snapshot_components from public.order_items where order_id=$1 order by line_no', [order.id])).rows;
     assert.deepEqual(rows.map((row) => [row.item_type, row.item_code, Number(row.quantity)]), [['dish', 'MV-KV01', 2], ['combo', 'MV-CB01', 1]]);
     assert.equal(rows[0].item_name, 'Gỏi bưởi tôm thịt');
-    assert.equal(Number(rows[0].line_total), 178000);
+    assert.equal(Number(rows[0].unit_price), 69000);
+    assert.equal(Number(rows[0].line_total), 138000);
+    assert.equal(Number(rows[1].unit_price), 399000);
     assert.equal(rows[1].snapshot_components[0].label, 'Gỏi bưởi tôm thịt');
   });
 
@@ -72,7 +88,7 @@ export async function testOrderDatabase({ admin, left, right, actor, check, comp
     assert.equal(Number(updated.total_amount), 198000); assert.equal(updated.version, 2);
     assert.equal((await admin.query('select item_name,unit_price from public.order_items where order_id=$1', [order.id])).rows[0].item_name, 'Gỏi bưởi QA');
     await assert.rejects(actor(left, A, (client) => client.query('select * from public.update_pending_order($1,$2::jsonb,$3,$4)', [order.id, orderItems([{ kind: 'dish', code: 'MV-KV01', quantity: 1 }]), 1, randomUUID()])), /ORDER_CONFLICT/);
-    await admin.query("update public.menu_items set name='Gỏi bưởi tôm thịt', price=89000 where code='MV-KV01'");
+    await admin.query("update public.menu_items set name='Gỏi bưởi tôm thịt', price=69000 where code='MV-KV01'");
   });
 
   await clearBookings();
