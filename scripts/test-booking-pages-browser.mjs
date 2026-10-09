@@ -149,9 +149,9 @@ try {
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
 
   const floorBaselines = [
-    { path: 'floor-1', tables: 8, seats: 32, anchor: 'T1-B05' },
-    { path: 'floor-2', tables: 8, seats: 34, anchor: 'T2-B05' },
-    { path: 'floor-3', tables: 6, seats: 26, anchor: 'T3-B05' },
+    { path: 'floor-1', tables: 8, seats: 32, anchor: 'T1-B05', imageWidth: 1448 },
+    { path: 'floor-2', tables: 8, seats: 34, anchor: 'T2-B05', imageWidth: 1671 },
+    { path: 'floor-3', tables: 6, seats: 26, anchor: 'T3-B05', imageWidth: 1292 },
   ];
   for (const floor of floorBaselines) {
     await navigate(`/nhahang/spaces/${floor.path}/`);
@@ -180,6 +180,9 @@ try {
           viewport: window.innerWidth,
           pageWidth: document.documentElement.scrollWidth,
           imageWidth: canvas?.querySelector("img")?.naturalWidth ?? 0,
+          displayedWidth: bounds?.width ?? 0,
+          imageSrc: canvas?.querySelector("img")?.getAttribute("src"),
+          imageSrcSet: canvas?.querySelector("img")?.getAttribute("srcset"),
           markersInside: !!bounds && buttons.every(button => {
             const rect = button.getBoundingClientRect();
             return rect.left >= bounds.left - 1 && rect.top >= bounds.top - 1 && rect.right <= bounds.right + 1 && rect.bottom <= bounds.bottom + 1;
@@ -190,6 +193,10 @@ try {
       assert.equal(responsive.viewport, width);
       assert.ok(responsive.pageWidth <= width, `${floor.path} horizontal overflow at ${width}px`);
       assert.ok(responsive.imageWidth > 0 && responsive.markersInside, `${floor.path} image/hotspot bounds at ${width}px`);
+      assert.equal(responsive.imageWidth, floor.imageWidth, 'Original plan resolution retained');
+      assert.ok(responsive.displayedWidth <= floor.imageWidth + 1, 'No upscaling beyond native width');
+      assert.equal(new URL(responsive.imageSrc, 'http://127.0.0.1').pathname, `/nhahang/images/restaurant/table-plans/${floor.path}.png`);
+      assert.equal(responsive.imageSrcSet, null, 'No lossy/resized plan candidates');
       assert.match(responsive.scrollRegion, /auto|scroll/);
     }
   }

@@ -9,6 +9,19 @@ giống nguồn FINAL; không regenerate, đổi tên, recompress hoặc lấy �
 
 ## Trạng thái hiện tại
 
+### Độ nét sơ đồ bàn — 09/10/2026, kiểm chứng local
+
+- Ba PNG sơ đồ giữ nguyên bytes nguồn người dùng: tầng 1 1448×1086, tầng 2
+  1671×941, tầng 3 1292×1218. Không regenerate/upscale/sharpen ảnh hoặc đổi hotspot.
+- FloorPlan dùng Next/Image `unoptimized` riêng cho sơ đồ để không nén mất chữ/
+  chi tiết; canvas không vượt chiều rộng gốc, giữ tỷ lệ và vùng cuộn mobile.
+  Lazy loading và fallback khi ảnh lỗi vẫn giữ. Đổi lại mỗi ảnh tải khoảng
+  2,4–2,8 MB; ảnh gốc không có thêm chi tiết khi zoom trên màn hình mật độ cao.
+- Typecheck/lint và normal/Pages build PASS. Table-plan contract PASS; browser
+  Pages cô lập PASS ở 320/704/1024/1600px: naturalWidth đúng ảnh gốc, không
+  srcset nén, không kéo quá kích thước gốc, không tràn trang; 22 điểm chọn bàn,
+  keyboard, query, đồng bộ lựa chọn và fallback vẫn đạt. Chưa phát hành lượt sửa này.
+
 | Nhóm | Đã có / mục tiêu | UI |
 | --- | ---: | --- |
 | Restaurant / architecture | 16 / 16 canonical WebP | Mapping đủ; một số concept được giữ nhưng không còn hiển thị |

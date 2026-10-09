@@ -66,8 +66,9 @@ function PopulatedFloorPlan({ floor, tableState = "neutral", selectedCode, onTab
         <p className="floor-plan-status"><span aria-hidden="true" /> {tableStates ? "Trạng thái bàn hiện tại" : availableCodes ? "Kết quả kiểm tra · chưa giữ bàn" : "Chọn ngày và giờ tại trang Đặt bàn để kiểm tra bàn trống."}</p>
       </div>
       <div className="floor-plan-scroll" tabIndex={0} aria-label={`Sơ đồ tầng ${floor.level}, cuộn ngang nếu cần`}>
-        <div className={`floor-plan-canvas${imagePlan ? " floor-plan-image" : ""}`} style={imagePlan ? { aspectRatio: `${imagePlan.width} / ${imagePlan.height}` } : undefined}>
-          {imagePlan ? <Image src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}${imagePlan.path}`} alt={`Sơ đồ bàn tầng ${floor.level} · ${floor.name}`} fill sizes="(max-width: 704px) 672px, (max-width: 1600px) 90vw, 1400px" style={{ objectFit: "contain" }} onError={() => setImageFailed(true)} /> : floor.planLandmarks.map((landmark) => <span key={landmark.label} className={`plan-landmark ${landmark.className}`}>{landmark.label}</span>)}
+        <div className={`floor-plan-canvas${imagePlan ? " floor-plan-image" : ""}`} style={imagePlan ? { aspectRatio: `${imagePlan.width} / ${imagePlan.height}`, maxWidth: imagePlan.width, marginInline: "auto" } : undefined}>
+          {/* Text-heavy plans use original pixels; lossy photo optimization softens labels. */}
+          {imagePlan ? <Image src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}${imagePlan.path}`} alt={`Sơ đồ bàn tầng ${floor.level} · ${floor.name}`} fill unoptimized style={{ objectFit: "contain" }} onError={() => setImageFailed(true)} /> : floor.planLandmarks.map((landmark) => <span key={landmark.label} className={`plan-landmark ${landmark.className}`}>{landmark.label}</span>)}
           {floor.tables.map((table) => <TableNode key={table.code} table={table} hotspot={imagePlan?.hotspots[table.code]} state={availableCodes ? availableCodes.includes(table.code) ? "available" : "unavailable" : tableStates?.[table.code] ?? tableState} disabled={availableCodes !== undefined && !availableCodes.includes(table.code)} isSelected={selectedTable.code === table.code && (!availableCodes || availableCodes.includes(table.code))} onSelect={selectTable} />)}
         </div>
       </div>
