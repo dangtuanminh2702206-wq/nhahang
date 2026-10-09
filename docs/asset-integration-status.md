@@ -9,7 +9,14 @@ giống nguồn FINAL; không regenerate, đổi tên, recompress hoặc lấy �
 
 ## Trạng thái hiện tại
 
-### Độ nét sơ đồ bàn — 09/10/2026, kiểm chứng local
+### Độ nét sơ đồ bàn — 09/10/2026
+
+- Cập nhật tiếp tầng 1 bằng PNG mới người dùng duyệt (1448×1086), SHA-256
+  `b98457fcbfbeb9a1a4002b4528cf5ea22e98f51814fa8f899aaa4d14a6901aad`.
+  Copy nguyên bytes, không nén hoặc sửa pixel; 8 mã bàn/sức chứa và vị trí
+  tương ứng giữ nguyên. Tầng 2/3 không thay ảnh. Table-plan contract, Pages
+  build/browser (320/704/1024/1600px, chọn bàn/keyboard/fallback) PASS sau thay
+  ảnh; SHA-256 bản export khớp nguồn. Chưa commit/push lần thay ảnh mới này.
 
 - Ba PNG sơ đồ giữ nguyên bytes nguồn người dùng: tầng 1 1448×1086, tầng 2
   1671×941, tầng 3 1292×1218. Không regenerate/upscale/sharpen ảnh hoặc đổi hotspot.
@@ -20,7 +27,8 @@ giống nguồn FINAL; không regenerate, đổi tên, recompress hoặc lấy �
 - Typecheck/lint và normal/Pages build PASS. Table-plan contract PASS; browser
   Pages cô lập PASS ở 320/704/1024/1600px: naturalWidth đúng ảnh gốc, không
   srcset nén, không kéo quá kích thước gốc, không tràn trang; 22 điểm chọn bàn,
-  keyboard, query, đồng bộ lựa chọn và fallback vẫn đạt. Chưa phát hành lượt sửa này.
+  keyboard, query, đồng bộ lựa chọn và fallback vẫn đạt. Cơ chế hiển thị đã
+  phát hành ở `e8dd90f`; kết quả này thuộc lần sửa cơ chế trước khi thay ảnh mới.
 
 | Nhóm | Đã có / mục tiêu | UI |
 | --- | ---: | --- |
